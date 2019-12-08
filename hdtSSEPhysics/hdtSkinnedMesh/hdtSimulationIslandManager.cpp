@@ -18,7 +18,7 @@ namespace hdt
 					(colObj1 && (colObj1->mergesSimulationIslands())))
 				{
 
-					m_unionFind.unite(colObj0->getIslandTag(), colObj1->getIslandTag());
+					getUnionFind().unite(colObj0->getIslandTag(), colObj1->getIslandTag());
 				}
 			}
 		}

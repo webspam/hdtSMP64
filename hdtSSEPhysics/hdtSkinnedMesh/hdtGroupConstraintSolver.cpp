@@ -54,7 +54,7 @@ namespace hdt
 	}
 
 	// Enhanced version of gResolveSingleConstraintRowGeneric_sse2 with AVX
-	static btSimdScalar gResolveSingleConstraintRowGeneric_avx256(btSolverBody& body1, btSolverBody& body2, const btSolverConstraint& c)
+	static btScalar gResolveSingleConstraintRowGeneric_avx256(btSolverBody& body1, btSolverBody& body2, const btSolverConstraint& c)
 	{
 		__m128 tmp = _mm_set_ps1(c.m_jacDiagABInv);
 		__m128 deltaImpulse = _mm_set_ps1(c.m_rhs - btScalar(c.m_appliedImpulse) * c.m_cfm);
@@ -90,16 +90,16 @@ namespace hdt
 		deltaAngularVelocity = FMADD256(angularComponent, deltaImpulse2, deltaAngularVelocity);
 		std::tie(body1.internalGetDeltaLinearVelocity().mVec128, body2.internalGetDeltaLinearVelocity().mVec128) = unpack256(deltaLinearVelocity);
 		std::tie(body1.internalGetDeltaAngularVelocity().mVec128, body2.internalGetDeltaAngularVelocity().mVec128) = unpack256(deltaAngularVelocity);
-		
+
 		//body1.internalGetDeltaLinearVelocity().mVec128 = FMADD(_mm_mul_ps(c.m_contactNormal1.mVec128, body1.internalGetInvMass().mVec128), deltaImpulse, body1.internalGetDeltaLinearVelocity().mVec128);
 		//body2.internalGetDeltaLinearVelocity().mVec128 = FMADD(_mm_mul_ps(c.m_contactNormal2.mVec128, body2.internalGetInvMass().mVec128), deltaImpulse, body2.internalGetDeltaLinearVelocity().mVec128);
 		//body1.internalGetDeltaAngularVelocity().mVec128 = FMADD(c.m_angularComponentA.mVec128, deltaImpulse, body1.internalGetDeltaAngularVelocity().mVec128);
 		//body2.internalGetDeltaAngularVelocity().mVec128 = FMADD(c.m_angularComponentB.mVec128, deltaImpulse, body2.internalGetDeltaAngularVelocity().mVec128);
-		return deltaImpulse;
+		return deltaImpulse.m128_f32[0] / c.m_jacDiagABInv;
 	}
 
 	// Enhanced version of gResolveSingleConstraintRowGeneric_sse2 with AVX
-	static btSimdScalar gResolveSingleConstraintRowLowerLimit_avx256(btSolverBody& body1, btSolverBody& body2, const btSolverConstraint& c)
+	static btScalar gResolveSingleConstraintRowLowerLimit_avx256(btSolverBody& body1, btSolverBody& body2, const btSolverConstraint& c)
 	{
 		__m128 tmp = _mm_set_ps1(c.m_jacDiagABInv);
 		__m128 deltaImpulse = _mm_set_ps1(c.m_rhs - btScalar(c.m_appliedImpulse) * c.m_cfm);
@@ -137,7 +137,7 @@ namespace hdt
 		//body1.internalGetDeltaAngularVelocity().mVec128 = FMADD(c.m_angularComponentA.mVec128, deltaImpulse, body1.internalGetDeltaAngularVelocity().mVec128);
 		//body2.internalGetDeltaLinearVelocity().mVec128 = FMADD(_mm_mul_ps(c.m_contactNormal2.mVec128, body2.internalGetInvMass().mVec128), deltaImpulse, body2.internalGetDeltaLinearVelocity().mVec128);
 		//body2.internalGetDeltaAngularVelocity().mVec128 = FMADD(c.m_angularComponentB.mVec128, deltaImpulse, body2.internalGetDeltaAngularVelocity().mVec128);
-		return deltaImpulse;
+		return deltaImpulse.m128_f32[0] / c.m_jacDiagABInv;
 	}
 
 	SolverBodyMt::SolverBodyMt()
@@ -148,7 +148,7 @@ namespace hdt
 	{
 	}
 
-	SolverTask::SolverTask(SolverBodyMt * A, SolverBodyMt * B)
+	SolverTask::SolverTask(SolverBodyMt* A, SolverBodyMt* B)
 		: m_bodyA(A), m_bodyB(B)
 	{
 		if (A > B) std::swap(A, B);
@@ -156,7 +156,7 @@ namespace hdt
 		m_lockOrderB = B;
 	}
 
-	NonContactSolverTask::NonContactSolverTask(SolverBodyMt * A, SolverBodyMt * B, btSolverConstraint ** begin, btSolverConstraint ** end, btSingleConstraintRowSolver s)
+	NonContactSolverTask::NonContactSolverTask(SolverBodyMt* A, SolverBodyMt* B, btSolverConstraint** begin, btSolverConstraint** end, btSingleConstraintRowSolver s)
 		: SolverTask(A, B), m_begin(begin), m_end(end), m_solver(s)
 	{
 		std::random_shuffle(m_begin, m_end);
@@ -171,7 +171,7 @@ namespace hdt
 			m_solver(*m_bodyA->m_body, *m_bodyB->m_body, **i);
 	}
 
-	ContactSolverTask::ContactSolverTask(SolverBodyMt * A, SolverBodyMt * B, btSolverConstraint * c, btSolverConstraint * f0, btSolverConstraint * f1, btSingleConstraintRowSolver sl, btSingleConstraintRowSolver s)
+	ContactSolverTask::ContactSolverTask(SolverBodyMt* A, SolverBodyMt* B, btSolverConstraint* c, btSolverConstraint* f0, btSolverConstraint* f1, btSingleConstraintRowSolver sl, btSingleConstraintRowSolver s)
 		: SolverTask(A, B), m_contact(c), m_friction0(f0), m_friction1(f1), m_solverLowerLimit(sl), m_solver(s)
 	{
 	}
@@ -202,7 +202,7 @@ namespace hdt
 		}
 	}
 
-	ObsoleteSolverTask::ObsoleteSolverTask(SolverBodyMt * A, SolverBodyMt * B, btTypedConstraint * c, float t)
+	ObsoleteSolverTask::ObsoleteSolverTask(SolverBodyMt* A, SolverBodyMt* B, btTypedConstraint* c, float t)
 		: SolverTask(A, B), m_timeStep(t), m_constraint(c)
 	{
 	}
@@ -219,10 +219,10 @@ namespace hdt
 		auto ret = Base::solveGroupCacheFriendlySetup(bodies, numBodies, manifoldPtr, numManifolds, constraints, numConstraints, infoGlobal, debugDrawer);
 
 		concurrency::parallel_for_each(m_groups.begin(), m_groups.end(), [&](ConstraintGroup* i)
-		{
-			i->setup(&m_tmpSolverBodyPool, infoGlobal);
-			i->iteration(bodies, numBodies, infoGlobal);
-		});
+			{
+				i->setup(&m_tmpSolverBodyPool, infoGlobal);
+				i->iteration(bodies, numBodies, infoGlobal);
+			});
 
 		// init solver body
 		for (int j = 0; j < numConstraints; j++)
@@ -251,7 +251,7 @@ namespace hdt
 
 				std::sort(m_nonContactConstraintRowPtrs.begin(), m_nonContactConstraintRowPtrs.end(), [](btSolverConstraint* a, btSolverConstraint* b) {
 					return (((uint64_t)a->m_solverBodyIdA << 32) | a->m_solverBodyIdB) < (((uint64_t)b->m_solverBodyIdA << 32) | b->m_solverBodyIdB);
-				});
+					});
 			}
 
 			SolverBodyMt* lastA = nullptr;
@@ -285,7 +285,7 @@ namespace hdt
 			}
 		}
 
-		for (int j = 0; j<numConstraints; j++)
+		for (int j = 0; j < numConstraints; j++)
 		{
 			if (constraints[j]->isEnabled())
 			{
@@ -311,7 +311,7 @@ namespace hdt
 			auto a = &m_bodiesMt[c->m_solverBodyIdA];
 			auto b = &m_bodiesMt[c->m_solverBodyIdB];
 			auto f0 = &m_tmpSolverContactFrictionConstraintPool[i * multiplier];
-			auto f1 = infoGlobal.m_solverMode & SOLVER_USE_2_FRICTION_DIRECTIONS ? &m_tmpSolverContactFrictionConstraintPool[i*multiplier + 1] : nullptr;
+			auto f1 = infoGlobal.m_solverMode & SOLVER_USE_2_FRICTION_DIRECTIONS ? &m_tmpSolverContactFrictionConstraintPool[i * multiplier + 1] : nullptr;
 			auto task = SolverTaskPtr(new ContactSolverTask(a, b, c, f0, f1, getActiveConstraintRowSolverLowerLimit(), getActiveConstraintRowSolverGeneric()));
 			m_tasks.push_back(task);
 			m_contactTasks.push_back(task);
@@ -321,7 +321,7 @@ namespace hdt
 		return ret;
 	}
 
-	btScalar GroupConstraintSolver::solveGroupCacheFriendlyFinish(btCollisionObject ** bodies, int numBodies, const btContactSolverInfo & infoGlobal)
+	btScalar GroupConstraintSolver::solveGroupCacheFriendlyFinish(btCollisionObject** bodies, int numBodies, const btContactSolverInfo& infoGlobal)
 	{
 		auto ret = Base::solveGroupCacheFriendlyFinish(bodies, numBodies, infoGlobal);
 		m_tasks.clear();
