@@ -45,8 +45,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\detours\include;$(SolutionDir);$(SolutionDir)..;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)..\detours\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)detours\include;$(SolutionDir);$(SolutionDir)..;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\skyrim-dev\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
