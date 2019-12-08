@@ -746,9 +746,9 @@ namespace hdt
 			// vertices data are all the same in every partitions
 			auto partition = skinPartition->m_pkPartitions;
 			auto vf = partition->vertexDesc;
-			if (NiSkinPartition::GetVertexSize(vf) == sizeof(BSGeometryData::VertexUVSkinned) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED))
+			if (NiSkinPartition::GetVertexSize(vf) == sizeof(SkyrimMesh::VertexUVSkinned) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED))
 			{
-				auto vertices = reinterpret_cast<BSGeometryData::VertexUVSkinned*>(partition->shapeData->m_RawVertexData);
+				auto vertices = reinterpret_cast<SkyrimMesh::VertexUVSkinned*>(partition->shapeData->m_RawVertexData);
 				for (int j = 0; j < skinPartition->vertexCount; ++j)
 				{
 					body->m_vertices[j].m_skinPos = convertNi(vertices[j].pos);
@@ -761,9 +761,9 @@ namespace hdt
 					}
 				}
 			}
-			else if (NiSkinPartition::GetVertexSize(vf) == sizeof(BSGeometryData::VertexUVNormalTangentSkinned) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL))
+			else if (NiSkinPartition::GetVertexSize(vf) == sizeof(SkyrimMesh::VertexUVNormalTangentSkinned) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL))
 			{
-				auto vertices = reinterpret_cast<BSGeometryData::VertexUVNormalTangentSkinned*>(partition->shapeData->m_RawVertexData);
+				auto vertices = reinterpret_cast<SkyrimMesh::VertexUVNormalTangentSkinned*>(partition->shapeData->m_RawVertexData);
 				for (int j = 0; j < skinPartition->vertexCount; ++j)
 				{
 					body->m_vertices[j].m_skinPos = convertNi(vertices[j].pos);
@@ -779,8 +779,8 @@ namespace hdt
 			else
 			{
 				Warning("Shape %s  has unsupport vertex format 0x%016llx flag:%x size:%d", name.c_str(), vf, NiSkinPartition::GetVertexFlags(vf), NiSkinPartition::GetVertexSize(vf));
-				Warning("support format flag:%x size:%d", name.c_str(), vf, sizeof(BSGeometryData::VertexUVSkinned), (VF_VERTEX | VF_UV | VF_SKINNED));
-				Warning("support format flag:%x size:%d", name.c_str(), vf, sizeof(BSGeometryData::VertexUVNormalTangentSkinned), (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL));
+				Warning("support format flag:%x size:%d", name.c_str(), vf, sizeof(SkyrimMesh::VertexUVSkinned), (VF_VERTEX | VF_UV | VF_SKINNED));
+				Warning("support format flag:%x size:%d", name.c_str(), vf, sizeof(SkyrimMesh::VertexUVNormalTangentSkinned), (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL));
 				return nullptr;
 			}
 		}
