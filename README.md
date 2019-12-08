@@ -22,5 +22,6 @@ Requires Visual Studio 2019 (Community Edition is fine)
 ## Credits
 
 hydrogensaysHDT - Creating this plugin
+
 ousnius - fixes and updates
 
