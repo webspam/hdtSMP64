@@ -1,14 +1,26 @@
-# hdt-skyrimse-mods
+# hdtSMP for Skyrim Special Edition
 
-hdt skyrimse mods  
-only files inside src/hdt are my works.  
-others are belongs to skse team <https://skse.silverlock.org/>  
+Fork of [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
-## how to compile
+High Heels plugin has been removed, this repository only contains HDT-SMP.
 
-requirement : visual studio 2017 or visual studio 2019 with 2017 compile tools
+## Changes 
 
-1. checkout bulletphysics from <https://github.com/bulletphysics/bullet3>
-2. cmake bulletphysics **without multithreading**, then compile it.
-3. setup bulletphysics includes and library directories in hdtSSEPhysics project.
-4. compile it.
++ build now works with unchanged skse & bullet source
++ support both "." and "," as decimal seperators in config files
+
+## Build Instructions
+
+Requires Visual Studio 2019 (Community Edition is fine)
+
+1) Download the clean skse64 source from [skse's website](http://skse.silverlock.org/)
+2) Extract or clone this repository into the skse64 folder of the source. You can safely delete skse64_loader, skse64_steam_loader, skse64_loader_common, and the skse64 solution.
+3) Download and build [bullet physics](https://github.com/bulletphysics/bullet3) using cmake and Visual Studio. Update the hdtSSEPhysics project to point to your bullet source and built libraries.
+4) Download and build [Microsoft's detours library](https://github.com/microsoft/Detours) using nmake. Update the hdtSSEFramework project to point to your built library.
+5) Build the solution :)
+
+## Credits
+
+hydrogensaysHDT - Creating this plugin
+ousnius - fixes and updates
+
