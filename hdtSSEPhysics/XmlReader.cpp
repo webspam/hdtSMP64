@@ -4,9 +4,15 @@ namespace hdt
 {
 	static inline float convertFloat(const std::string& str)
 	{
+		// Replace decimal comma with point
+		std::string s = str;
+		size_t start_pos = s.find(",");
+		if (start_pos != std::string::npos)
+			s.replace(start_pos, 1, ".");
+
 		char* end;
-		float ret = strtof(str.c_str(), &end);
-		if (end != str.c_str() + str.length())
+		float ret = strtof(s.c_str(), &end);
+		if (end != s.c_str() + s.length())
 			throw std::string("not a float value");
 		return ret;
 	}

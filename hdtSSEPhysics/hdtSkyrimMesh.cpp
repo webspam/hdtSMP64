@@ -7,6 +7,7 @@
 #include "XmlReader.h"
 
 #include <d3d11.h>
+#include <clocale>
 
 namespace hdt
 {
@@ -170,6 +171,13 @@ namespace hdt
 
 		m_mesh = new SkyrimMesh(skeleton);
 
+		// Store original locale
+		char saved_locale[32];
+		strcpy_s(saved_locale, std::setlocale(LC_NUMERIC, nullptr));
+
+		// Set locale to en_US
+		std::setlocale(LC_NUMERIC, "en_US");
+
 		try
 		{
 			while (m_reader->Inspect())
@@ -277,6 +285,9 @@ namespace hdt
 			Error("xml parse error - %s", err.c_str());
 			return nullptr;
 		}
+
+		// Restore original locale
+		std::setlocale(LC_NUMERIC, saved_locale);
 
 		if (m_reader->GetErrorCode() != Xml::ErrorCode::None)
 		{
