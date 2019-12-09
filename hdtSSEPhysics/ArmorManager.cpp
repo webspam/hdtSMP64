@@ -98,7 +98,10 @@ namespace hdt
 
 		for (auto& i : m_skeletons)
 		{
-			if (!i.skeleton->m_parent)
+			// TODO: do this better, only for testing
+			// when entering/exiting an interior NPCs are detached from the scene but not unloaded, so we need to check two levels up 
+			// this properly removes exterior cell armors from the physics world when entering an interior, and vice versa
+			if (!i.skeleton->m_parent || !i.skeleton->m_parent->m_parent || !i.skeleton->m_parent->m_parent->m_parent)
 			{
 				if (i.skeleton->m_uiRefCount == 1)
 				{
