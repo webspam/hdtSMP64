@@ -6,6 +6,8 @@
 #include <skse64\skse64\NiGeometry.h>
 #include "Ref.h"
 
+// note: both of these offsets are 0xDEADBEEF guards and were completely wrong prior to this, but things worked anyway I guess
+// 89 75 C4 48 8D 05 ? ? ? ? 
 class NiCloningProcess
 {
 public:
@@ -15,7 +17,7 @@ public:
 	uint32_t	unk0C = 0;
 	uint32_t	unk10 = 0;
 	uint32_t	unk14 = 0;
-	uintptr_t	unk18 = RelocationManager::s_baseAddr + 0x01dcc48c;
+	uintptr_t	unk18 = RelocationManager::s_baseAddr + 0x01DB348C;
 	void*		unk20 = 0;
 	void*		unk28 = 0;
 	uint32_t	unk30 = 0;
@@ -24,7 +26,7 @@ public:
 	uint32_t	unk3c = 0;
 	uint32_t	unk40 = 0;
 	uint32_t	unk44 = 0;
-	uintptr_t	unk48 = RelocationManager::s_baseAddr + 0x01dcc488;
+	uintptr_t	unk48 = RelocationManager::s_baseAddr + 0x01DB3488;
 	void*		unk50 = 0;
 	void*		unk58 = 0;
 	uint32_t	cloneType = 1;

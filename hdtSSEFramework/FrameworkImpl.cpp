@@ -4,6 +4,7 @@
 #include "HookEngine.h"
 #include "HookArmor.h"
 #include "StringImpl.h"
+#include "Offsets.h"
 #include "../hdtSSEUtils/MemUtils.h"
 #include <debugapi.h>
 
@@ -67,14 +68,14 @@ namespace hdt
 	float FrameworkImpl::getFrameInterval(bool raceMenu)
 	{
 		if (raceMenu)
-			return *(float*)(hookGetBaseAddr() + 0x02f6b94c); // updateTimer instance + 0x1C
-		else return *(float*)(hookGetBaseAddr() + 0x02f6b948); // updateTimer instance + 0x18
+			return *(float*)(hookGetBaseAddr() + offset::GameStepTimer_NoSlowTime); // updateTimer instance + 0x1C
+		else return *(float*)(hookGetBaseAddr() + offset::GameStepTimer_SlowTime); // updateTimer instance + 0x18
 	}
 	
 	struct Timer
 	{
 		MEMBER_FN_PREFIX(Timer);
-		DEFINE_MEMBER_FN_HOOK(updateTimer, void, 0x00c076a0, intptr_t);
+		DEFINE_MEMBER_FN_HOOK(updateTimer, void, offset::UpdateTimerFunction, intptr_t);
 
 		void updateTimer(intptr_t ptr)
 		{

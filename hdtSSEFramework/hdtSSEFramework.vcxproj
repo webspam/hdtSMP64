@@ -100,6 +100,7 @@
     <ClInclude Include="IEventDispatcher.h" />
     <ClInclude Include="IEventListener.h" />
     <ClInclude Include="IString.h" />
+    <ClInclude Include="Offsets.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringImpl.h" />
     <ClInclude Include="targetver.h" />

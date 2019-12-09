@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "HookArmor.h"
 #include "HookUtils.h"
+#include "Offsets.h"
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 #include "FrameworkImpl.h"
 
@@ -16,7 +17,7 @@ namespace hdt
 	{
 		MEMBER_FN_PREFIX(Unk001CB0E0);
 
-		DEFINE_MEMBER_FN_HOOK(unk001CB0E0, NiAVObject*, 0x001cafb0, NiNode* armor, NiNode* skeleton, void* unk3, char unk4, char unk5, void* unk6);
+		DEFINE_MEMBER_FN_HOOK(unk001CB0E0, NiAVObject*, offset::ArmorAttachFunction, NiNode* armor, NiNode* skeleton, void* unk3, char unk4, char unk5, void* unk6);
 		NiAVObject* unk001CB0E0(NiNode* armor, NiNode* skeleton, void* unk3, char unk4, char unk5, void* unk6)
 		{
 			ArmorAttachEvent event;

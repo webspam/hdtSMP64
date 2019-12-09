@@ -3,6 +3,7 @@
 #include "IFramework.h"
 #include "HookUtils.h"
 #include "FrameworkImpl.h"
+#include "Offsets.h"
 #include "../hdtSSEUtils/MemUtils.h"
 
 namespace hdt
@@ -12,7 +13,7 @@ namespace hdt
 		MEMBER_FN_PREFIX(UnkEngine);
 
 		// SleepStub + 0xF
-		DEFINE_MEMBER_FN_HOOK(onFrame, void, 0x005b2ff0);
+		DEFINE_MEMBER_FN_HOOK(onFrame, void, offset::GameLoopFunction);
 
 		void onFrame();
 	};
@@ -28,7 +29,7 @@ namespace hdt
 		FrameworkImpl::instance()->getFrameEventDispatcher()->dispatch(e);
 	}
 
-	auto oldShutdown = (void (*)(bool))(hookGetBaseAddr() + 0x01293d20);
+	auto oldShutdown = (void (*)(bool))(hookGetBaseAddr() + offset::GameShutdownFunction);
 	void shutdown(bool arg0)
 	{
 		FrameworkImpl::instance()->getShutdownEventDispatcher()->dispatch(ShutdownEvent());
