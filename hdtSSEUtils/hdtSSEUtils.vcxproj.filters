@@ -20,19 +20,10 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TESUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="NetImmerseUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LogUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PapyrusUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="INIUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Ref.h">
@@ -41,15 +32,9 @@
     <ClInclude Include="FrameworkUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MemUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TESUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetImmerseUtils.cpp">
@@ -78,12 +63,6 @@
     </ClCompile>
     <ClCompile Include="..\..\skse64\skse64\NiNodes.cpp">
       <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="PapyrusUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="INIUtils.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\skse64\skse64\PapyrusArgs.cpp">
       <Filter>skse</Filter>
@@ -147,9 +126,6 @@
     </ClCompile>
     <ClCompile Include="..\..\skse64\skse64\GameEvents.cpp">
       <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="MemUtils.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

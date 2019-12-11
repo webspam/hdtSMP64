@@ -13,8 +13,6 @@ namespace hdt
 		// 74 35 45 33 C0 33 D2
 		constexpr std::uintptr_t GameStepTimer_SlowTime = 0x02F6B948;
 		constexpr std::uintptr_t GameStepTimer_NoSlowTime = 0x02F6894C;
-		// 44 8B D2 4C 8B C1 
-		constexpr std::uintptr_t UpdateTimerFunction = 0x00C076A0;
 
 		// HookArmor.cpp
 		// E8 ? ? ? ? 48 8B E8 FF C7 

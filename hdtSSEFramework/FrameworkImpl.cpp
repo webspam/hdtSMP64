@@ -5,7 +5,6 @@
 #include "HookArmor.h"
 #include "StringImpl.h"
 #include "Offsets.h"
-#include "../hdtSSEUtils/MemUtils.h"
 #include <debugapi.h>
 
 #include <skse64/skse64_common/skse_version.h>
@@ -72,44 +71,14 @@ namespace hdt
 		else return *(float*)(hookGetBaseAddr() + offset::GameStepTimer_SlowTime); // updateTimer instance + 0x18
 	}
 	
-	struct Timer
-	{
-		MEMBER_FN_PREFIX(Timer);
-		DEFINE_MEMBER_FN_HOOK(updateTimer, void, offset::UpdateTimerFunction, intptr_t);
-
-		void updateTimer(intptr_t ptr)
-		{
-			static bool flag = false;
-			if (!flag)
-			{
-				auto offset = (intptr_t)this - hookGetBaseAddr();
-				hdt::LogInfo("updateTimer instance address : 0x%08llx", offset);
-				flag = true;
-			}
-			CALL_MEMBER_FN(this, updateTimer)(ptr);
-		}
-	};
-	
 	void FrameworkImpl::hook()
 	{
 		if (!m_isHooked)
 		{
 			DetourRestoreAfterWith();
 			DetourTransactionBegin();
-
 			hookEngine();
 			hookArmor();
-			//hookScene();
-			// NiNode::ctor 0x00C57AC0
-			printHookPoint({
-				HookPointPattern{0, 34, "\x48\x89\x4c\x24\x08\x57\x48\x83\xec\x30\x48\xc7\x44\x24\x20\xfe\xff\xff\xff\x48\x89\x5c\x24\x48\x48\x89\x74\x24\x58\x8b\xf2\x48\x8b\xf9"},
-				HookPointPattern{0x2F, 16, "\x48\x89\x07\x48\x8d\x9f\x10\x01\x00\x00\x48\x89\x5c\x24\x50\x48"},
-				}, __FILE__, __LINE__);
-			// updateTimer
-			printHookPoint({
-				HookPointPattern{0, 48, "\x44\x8b\xd2\x4c\x8b\xc1\x44\x2b\x51\x28\x83\x79\x34\x00\x0f\x85\xeb\x01\x00\x00\xf3\x0f\x10\x51\x10\x0f\x57\xe4\x0f\x2e\xd4\x0f\x57\xc0\x74\x35\x45\x8b\x50\x24\x0f\x28\xca\xf3\x0f\x58\x49\x14"},
-				}, __FILE__, __LINE__);
-			DetourAttach((void**)Timer::_updateTimer_GetPtrAddr(), (void*)GetFnAddr(&Timer::updateTimer));
 			
 			DetourTransactionCommit();
 			m_isHooked = true;
@@ -124,7 +93,6 @@ namespace hdt
 			DetourTransactionBegin();
 			unhookEngine();
 			unhookArmor();
-			//unhookScene();
 			DetourTransactionCommit();
 			m_isHooked = false;
 		}

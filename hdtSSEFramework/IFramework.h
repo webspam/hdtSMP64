@@ -3,7 +3,6 @@
 #include "IEventDispatcher.h"
 #include "HookArmor.h"
 #include "HookEngine.h"
-#include "HookScene.h"
 #include "IString.h"
 
 namespace hdt

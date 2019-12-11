@@ -85,15 +85,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="FrameworkUtils.h" />
-    <ClInclude Include="INIUtils.h" />
     <ClInclude Include="LogUtils.h" />
-    <ClInclude Include="MemUtils.h" />
     <ClInclude Include="NetImmerseUtils.h" />
-    <ClInclude Include="PapyrusUtils.h" />
     <ClInclude Include="Ref.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="TESUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\IDataStream.cpp" />
@@ -124,16 +120,12 @@
     <ClCompile Include="..\..\skse64\skse64\PapyrusVM.cpp" />
     <ClCompile Include="..\..\skse64\skse64_common\Relocation.cpp" />
     <ClCompile Include="FrameworkUtils.cpp" />
-    <ClCompile Include="INIUtils.cpp" />
     <ClCompile Include="LogUtils.cpp" />
-    <ClCompile Include="MemUtils.cpp" />
     <ClCompile Include="NetImmerseUtils.cpp" />
-    <ClCompile Include="PapyrusUtils.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="TESUtils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

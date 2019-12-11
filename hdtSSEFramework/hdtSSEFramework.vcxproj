@@ -93,7 +93,6 @@
     <ClInclude Include="EventDispatcherImpl.h" />
     <ClInclude Include="FrameworkImpl.h" />
     <ClInclude Include="HookArmor.h" />
-    <ClInclude Include="HookScene.h" />
     <ClInclude Include="HookUtils.h" />
     <ClInclude Include="HookEngine.h" />
     <ClInclude Include="IFramework.h" />
@@ -111,7 +110,6 @@
     <ClCompile Include="FrameworkImpl.cpp" />
     <ClCompile Include="HookArmor.cpp" />
     <ClCompile Include="HookEngine.cpp" />
-    <ClCompile Include="HookScene.cpp" />
     <ClCompile Include="HookUtils.cpp" />
     <ClCompile Include="IEventDispatcher.cpp" />
     <ClCompile Include="IFramework.cpp" />
