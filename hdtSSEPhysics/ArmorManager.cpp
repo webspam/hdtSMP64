@@ -98,10 +98,7 @@ namespace hdt
 
 		for (auto& i : m_skeletons)
 		{
-			// TODO: do this better, only for testing
-			// when entering/exiting an interior NPCs are detached from the scene but not unloaded, so we need to check two levels up 
-			// this properly removes exterior cell armors from the physics world when entering an interior, and vice versa
-			if (!i.skeleton->m_parent || !i.skeleton->m_parent->m_parent || !i.skeleton->m_parent->m_parent->m_parent)
+			if (!i.isActiveInScene())
 			{
 				if (i.skeleton->m_uiRefCount == 1)
 				{
@@ -139,6 +136,11 @@ namespace hdt
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		
 		m_skeletons.clear();
+	}
+
+	std::vector<ArmorManager::Skeleton> ArmorManager::getSkeletons() const
+	{
+		return m_skeletons;
 	}
 
 	ArmorManager::Skeleton& ArmorManager::getSkeletonData(NiNode * skeleton)
@@ -247,4 +249,13 @@ namespace hdt
 		SkyrimPhysicsWorld::get()->removeSystemByNode(npc);
 		armors.clear();
 	}
+
+	bool ArmorManager::Skeleton::isActiveInScene() const
+	{
+		// TODO: do this better
+		// when entering/exiting an interior NPCs are detached from the scene but not unloaded, so we need to check two levels up 
+		// this properly removes exterior cell armors from the physics world when entering an interior, and vice versa
+		return skeleton->m_parent && skeleton->m_parent->m_parent && skeleton->m_parent->m_parent->m_parent;
+	}
+
 }

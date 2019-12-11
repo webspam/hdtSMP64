@@ -17,16 +17,6 @@ namespace hdt
 		, public IEventListener<FrameEvent>
 		, public IEventListener<ShutdownEvent>
 	{
-	public:
-		ArmorManager();
-		~ArmorManager();
-		
-		static ArmorManager* instance();
-		static IDStr generatePrefix(NiAVObject* armor);
-
-		virtual void onEvent(const ArmorAttachEvent& e) override;
-		virtual void onEvent(const FrameEvent& e) override;
-		virtual void onEvent(const ShutdownEvent&) override;
 
 	protected:
 		struct Armor
@@ -47,6 +37,8 @@ namespace hdt
 			void cleanArmor();
 			void clear();
 
+			bool isActiveInScene() const;
+
 			static void doSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static void doSkeletonClean(NiNode* dst, IString* prefix);
 			static NiNode* cloneNodeTree(NiNode* src, IString * prefix, std::unordered_map<IDStr, IDStr>& map);
@@ -58,6 +50,19 @@ namespace hdt
 		std::vector<Skeleton>	m_skeletons;
 
 		Skeleton& getSkeletonData(NiNode* skeleton);
+
+	public:
+		ArmorManager();
+		~ArmorManager();
+
+		static ArmorManager* instance();
+		static IDStr generatePrefix(NiAVObject* armor);
+
+		virtual void onEvent(const ArmorAttachEvent& e) override;
+		virtual void onEvent(const FrameEvent& e) override;
+		virtual void onEvent(const ShutdownEvent&) override;
+
+		std::vector<Skeleton> getSkeletons() const;
 
 	};
 }
