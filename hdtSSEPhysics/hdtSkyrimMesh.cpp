@@ -66,7 +66,7 @@ namespace hdt
 			btVector3 rotAxis;
 			float rotAngle;
 			btTransformUtil::calculateDiffAxisAngleQuaternion(m_lastRootRotation, newRot, rotAxis, rotAngle);
-			float limit = 10.f*timeStep;
+			float limit = 10.f * timeStep;
 
 			if (rotAngle < -limit || rotAngle > limit)
 			{
@@ -280,7 +280,7 @@ namespace hdt
 					break;
 			}
 		}
-		catch (const std::string& err)
+		catch (const std::string & err)
 		{
 			Error("xml parse error - %s", err.c_str());
 			return nullptr;
@@ -299,7 +299,7 @@ namespace hdt
 		m_mesh->m_shapeRefs.swap(m_shapeRefs);
 		std::sort(m_mesh->m_bones.begin(), m_mesh->m_bones.end(), [](SkinnedMeshBone* a, SkinnedMeshBone* b) {
 			return static_cast<SkyrimBone*>(a)->m_depth < static_cast<SkyrimBone*>(b)->m_depth;
-		});
+			});
 
 		return m_mesh->valid() ? m_mesh : nullptr;
 	}
@@ -787,11 +787,27 @@ namespace hdt
 					}
 				}
 			}
+			else if (NiSkinPartition::GetVertexSize(vf) == sizeof(SkyrimMesh::VertexUVNormalTangentSkinnedColors) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL | VF_COLORS))
+			{
+				auto vertices = reinterpret_cast<SkyrimMesh::VertexUVNormalTangentSkinnedColors*>(partition->shapeData->m_RawVertexData);
+				for (int j = 0; j < skinPartition->vertexCount; ++j)
+				{
+					body->m_vertices[j].m_skinPos = convertNi(vertices[j].pos);
+					for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
+					{
+						auto localBoneIndex = vertices[j].boneIndices[k];
+						assert(localBoneIndex < body->m_skinnedBones.size());
+						body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
+						float32(&body->m_vertices[j].m_weight[k], vertices[j].boneWeights[k]);
+					}
+				}
+			}
 			else
 			{
 				Warning("Shape %s  has unsupport vertex format 0x%016llx flag:%x size:%d", name.c_str(), vf, NiSkinPartition::GetVertexFlags(vf), NiSkinPartition::GetVertexSize(vf));
-				Warning("support format flag:%x size:%d", name.c_str(), vf, sizeof(SkyrimMesh::VertexUVSkinned), (VF_VERTEX | VF_UV | VF_SKINNED));
-				Warning("support format flag:%x size:%d", name.c_str(), vf, sizeof(SkyrimMesh::VertexUVNormalTangentSkinned), (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL));
+				Warning("support format size:%d flag:%x ", sizeof(SkyrimMesh::VertexUVSkinned), (VF_VERTEX | VF_UV | VF_SKINNED));
+				Warning("support format size:%d flag:%x ", sizeof(SkyrimMesh::VertexUVNormalTangentSkinned), (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL));
+				Warning("support format size:%d flag:%x ", sizeof(SkyrimMesh::VertexUVNormalTangentSkinnedColors), (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL | VF_COLORS));
 				return nullptr;
 			}
 		}
@@ -1225,7 +1241,7 @@ namespace hdt
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
 		auto clsname = m_reader->getAttribute("template", "");
 
-		SkyrimBone *bodyA, *bodyB;
+		SkyrimBone* bodyA, * bodyB;
 		if (!findBones(bodyAName, bodyBName, bodyA, bodyB))
 			return nullptr;
 
@@ -1329,7 +1345,7 @@ namespace hdt
 		}
 	}
 
-	const SkyrimMeshParser::BoneTemplate & SkyrimMeshParser::getBoneTemplate(const IDStr & name)
+	const SkyrimMeshParser::BoneTemplate& SkyrimMeshParser::getBoneTemplate(const IDStr& name)
 	{
 		auto iter = m_boneTemplates.find(name);
 		if (iter == m_boneTemplates.end())
@@ -1337,7 +1353,7 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::GenericConstraintTemplate & SkyrimMeshParser::getGenericConstraintTemplate(const IDStr & name)
+	const SkyrimMeshParser::GenericConstraintTemplate& SkyrimMeshParser::getGenericConstraintTemplate(const IDStr& name)
 	{
 		auto iter = m_genericConstraintTemplates.find(name);
 		if (iter == m_genericConstraintTemplates.end())
@@ -1345,7 +1361,7 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::StiffSpringConstraintTemplate & SkyrimMeshParser::getStiffSpringConstraintTemplate(const IDStr & name)
+	const SkyrimMeshParser::StiffSpringConstraintTemplate& SkyrimMeshParser::getStiffSpringConstraintTemplate(const IDStr& name)
 	{
 		auto iter = m_stiffSpringConstraintTemplates.find(name);
 		if (iter == m_stiffSpringConstraintTemplates.end())
@@ -1353,7 +1369,7 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::ConeTwistConstraintTemplate & SkyrimMeshParser::getConeTwistConstraintTemplate(const IDStr & name)
+	const SkyrimMeshParser::ConeTwistConstraintTemplate& SkyrimMeshParser::getConeTwistConstraintTemplate(const IDStr& name)
 	{
 		auto iter = m_coneTwistConstraintTemplates.find(name);
 		if (iter == m_coneTwistConstraintTemplates.end())
@@ -1367,7 +1383,7 @@ namespace hdt
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
 		auto clsname = m_reader->getAttribute("template", "");
 
-		SkyrimBone *bodyA, *bodyB;
+		SkyrimBone* bodyA, * bodyB;
 		if (!findBones(bodyAName, bodyBName, bodyA, bodyB))
 			return nullptr;
 
@@ -1389,7 +1405,7 @@ namespace hdt
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
 		auto clsname = m_reader->getAttribute("template", "");
 
-		SkyrimBone *bodyA = nullptr, *bodyB = nullptr;
+		SkyrimBone* bodyA = nullptr, * bodyB = nullptr;
 		if (!findBones(bodyAName, bodyBName, bodyA, bodyB))
 			return nullptr;
 
