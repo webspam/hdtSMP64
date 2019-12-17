@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<default-bbps>
+	<map shape="CBBE" file="SKSE\Plugins\hdtSkinnedMeshConfigs\cbbe-tbbp.xml"/>
+  <map shape="DG Body" file="SKSE\Plugins\hdtSkinnedMeshConfigs\dg-tbbp.xml"/>
+  <!--<map shape="Feet" file="SKSE\Plugins\hdtSkinnedMeshConfigs\cbbe-feet.xml"/>-->
+	<!--<map shape="CalienteHandFemale1st" file="SKSE\Plugins\hdtSkinnedMeshConfigs\HandsCollide.xml"/>-->
+</default-bbps>
