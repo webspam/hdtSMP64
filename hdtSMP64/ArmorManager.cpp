@@ -1,8 +1,6 @@
-#include "stdafx.h"
 #include "ArmorManager.h"
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
-
 
 namespace hdt
 {

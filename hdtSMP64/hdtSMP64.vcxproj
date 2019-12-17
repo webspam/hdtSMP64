@@ -81,7 +81,7 @@
       <PreprocessorDefinitions>BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ForcedIncludeFiles>stdafx.h;common/IPrefix.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
@@ -103,7 +103,7 @@
       <PreprocessorDefinitions>BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ForcedIncludeFiles>hdtSMP64/stdafx.h;common/IPrefix.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
@@ -126,7 +126,7 @@
       <PreprocessorDefinitions>BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ForcedIncludeFiles>stdafx.h;common/IPrefix.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -174,7 +174,6 @@
     <ClInclude Include="IEventDispatcher.h" />
     <ClInclude Include="IEventListener.h" />
     <ClInclude Include="Offsets.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="XmlReader.h" />
   </ItemGroup>

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stdafx.h"
 #include "hdtConvertNi.h"
 #include "hdtSkyrimBone.h"
 #include "hdtSkyrimShape.h"

@@ -1,7 +1,12 @@
 #pragma once
 
-#include "../stdafx.h"
 #include "../../hdtSSEUtils/FrameworkUtils.h"
+
+#include <btBulletCollisionCommon.h>
+#include <btBulletDynamicsCommon.h>
+
+#include <intrin.h>
+#include <cassert>
 
 #define FLT_DIG         6                       /* # of decimal digits of precision */
 #define FLT_EPSILON     1.192092896e-07F        /* smallest such that 1.0+FLT_EPSILON != 1.0 */
@@ -18,6 +23,8 @@
 
 #undef min
 #undef max
+
+#define HDT_LOCK_GUARD(name, lock) std::lock_guard<decltype(lock)> name(lock)
 
 namespace hdt
 {

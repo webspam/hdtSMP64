@@ -1,5 +1,3 @@
-#include "stdafx.h"
-
 #include "skse64/GameMenus.h"
 #include "skse64/GameReferences.h"
 #include "skse64/ObScript.h"
@@ -7,14 +5,12 @@
 #include "skse64_common/skse_version.h"
 #include "skse64_common/SafeWrite.h"
 
-
 #include "ArmorManager.h"
 #include "config.h"
 #include "EventDebugLogger.h"
 #include "hdtSkyrimPhysicsWorld.h"
 #include "Hooks.h"
 #include "HookEvents.h"
-
 
 #include <shlobj_core.h>
 

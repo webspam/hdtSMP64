@@ -3,6 +3,7 @@
 #include "IString.h"
 #include "../hdtSSEUtils/Ref.h"
 
+#include <vector>
 #include <atomic>
 #include <mutex>
 
