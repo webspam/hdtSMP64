@@ -211,7 +211,7 @@ namespace hdt
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		for (auto& i : m_systems)
-			i->readTransform(-10.0);
+			i->readTransform(RESET_PHYSICS);
 	}
 
 	void SkyrimPhysicsWorld::onEvent(const FrameEvent & e)

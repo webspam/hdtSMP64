@@ -1,4 +1,5 @@
 #include "hdtSkyrimBone.h"
+#include "hdtSkyrimPhysicsWorld.h"
 
 namespace hdt
 {
@@ -43,7 +44,7 @@ namespace hdt
 		}
 		m_rig.getCollisionShape()->setLocalScaling(setAll(newScale));
 
-		if (timeStep <= 0.0)
+		if (timeStep <= RESET_PHYSICS)
 		{
 			m_rig.setWorldTransform(dest);
 			m_rig.setInterpolationWorldTransform(dest);

@@ -7,6 +7,7 @@
 
 #include <d3d11.h>
 #include <clocale>
+#include "hdtSkyrimPhysicsWorld.h"
 
 namespace hdt
 {
@@ -50,11 +51,11 @@ namespace hdt
 
 		if (!m_initialized)
 		{
-			timeStep = -10.0;
+			timeStep = RESET_PHYSICS;
 			m_initialized = true;
 		}
 
-		if (timeStep <= 0)
+		if (timeStep <= RESET_PHYSICS)
 		{
 			updateTransformUpDown(m_skeleton);
 			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
@@ -69,19 +70,22 @@ namespace hdt
 
 			if (rotAngle < -limit || rotAngle > limit)
 			{
-				rotAngle = btClamped(rotAngle, -limit, limit);
-				btQuaternion clampedRot(rotAxis, rotAngle);
-				m_lastRootRotation = clampedRot * m_lastRootRotation;
-				m_skeleton->m_worldTransform.rot = convertBt(m_lastRootRotation);
-
-				for (int i = 0; i < m_skeleton->m_children.m_arrayBufLen; ++i)
-				{
-					auto node = castNiNode(m_skeleton->m_children.m_data[i]);
-					if (node)
-					{
-						updateTransformUpDown(node);
-					}
-				}
+				timeStep = RESET_PHYSICS;
+				updateTransformUpDown(m_skeleton);
+				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
+				// rotAngle = btClamped(rotAngle, -limit, limit);
+				// btQuaternion clampedRot(rotAxis, rotAngle);
+				// m_lastRootRotation = clampedRot * m_lastRootRotation;
+				// m_skeleton->m_worldTransform.rot = convertBt(m_lastRootRotation);
+				//
+				// for (int i = 0; i < m_skeleton->m_children.m_arrayBufLen; ++i)
+				// {
+				// 	auto node = castNiNode(m_skeleton->m_children.m_data[i]);
+				// 	if (node)
+				// 	{
+				// 		updateTransformUpDown(node);
+				// 	}
+				// }
 			}
 		}
 
