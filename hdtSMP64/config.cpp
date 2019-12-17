@@ -3,7 +3,6 @@
 
 #include "hdtSkyrimPhysicsWorld.h"
 
-#include "../hdtSSEUtils/LogUtils.h"
 
 #include <clocale>
 
@@ -28,7 +27,7 @@ namespace hdt
 					TIME_TICK = 1.0f / (btClamped(reader.readInt(), 1, 300));
 				else
 				{
-					LogWarning("Unknown config : ", reader.GetLocalName());
+					_WARNING("Unknown config : ", reader.GetLocalName());
 					reader.skipCurrentElement();
 				}
 				break;
@@ -49,7 +48,7 @@ namespace hdt
 	//				SkyrimPhysicsWorld::get()->getWindCtrl()->m_windStrength = btClamped(reader.readFloat(), 0.f, 10000.f);
 	//			else
 	//			{
-	//				LogWarning("Unknown config : ", reader.GetLocalName());
+	//				_WARNING("Unknown config : ", reader.GetLocalName());
 	//				reader.skipCurrentElement();
 	//			}
 	//			break;
@@ -72,7 +71,7 @@ namespace hdt
 				//	wind(reader);
 				else
 				{
-					LogWarning("Unknown config : ", reader.GetLocalName());
+					_WARNING("Unknown config : ", reader.GetLocalName());
 					reader.skipCurrentElement();
 				}
 				break;
@@ -104,7 +103,7 @@ namespace hdt
 					config(reader);
 				else
 				{
-					LogWarning("Unknown config : ", reader.GetLocalName());
+					_WARNING("Unknown config : ", reader.GetLocalName());
 					reader.skipCurrentElement();
 				}
 			}

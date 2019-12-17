@@ -55,11 +55,11 @@ namespace hdt
 
 			//auto det = dest.getBasis().determinant();
 			//if (det < FLT_EPSILON || isnan(det) || isinf(det))
-			//	LogWarning("Invalid rotation matrix!!");
+			//	_WARNING("Invalid rotation matrix!!");
 
 			//det = m_rig.getInvInertiaTensorWorld().determinant();
 			//if (isnan(det) || isinf(det))
-			//	LogWarning("Invalid inertia tensor matrix!!");
+			//	_WARNING("Invalid inertia tensor matrix!!");
 		}
 		else if (m_rig.isStaticOrKinematicObject())
 		{
@@ -75,7 +75,7 @@ namespace hdt
 		//	auto det = m_rig.getWorldTransform().getBasis().determinant();
 		//	if (isnan(det))
 		//	{
-		//		LogWarning("Invalid world transform");
+		//		_WARNING("Invalid world transform");
 		//		m_rig.setWorldTransform(dest);
 		//		m_rig.setInterpolationWorldTransform(dest);
 		//		m_rig.setLinearVelocity(btVector3(0, 0, 0));

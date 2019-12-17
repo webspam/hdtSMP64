@@ -23,9 +23,6 @@
     <ClInclude Include="NetImmerseUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LogUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Ref.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -44,9 +41,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetImmerseUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LogUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\skse64\skse64\GameTypes.cpp">

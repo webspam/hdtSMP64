@@ -3,7 +3,6 @@
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
 
-#include "../hdtSSEUtils/LogUtils.h"
 
 namespace hdt
 {
@@ -199,7 +198,7 @@ namespace hdt
 			std::string newName(prefix->cstr(), prefix->size());
 			newName += root->m_name;
 			if (map.insert(std::make_pair<IDStr, IDStr>(root->m_name, newName)).second)
-				LogDebug("Rename Bone %s -> %s", root->m_name, newName.c_str());
+				_DMESSAGE("Rename Bone %s -> %s", root->m_name, newName.c_str());
 			setNiNodeName(root, newName.c_str());
 		}
 

@@ -2,7 +2,6 @@
 #include "hdtSkinnedMesh\hdtSkinnedMeshShape.h"
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 #include "../hdtSSEUtils/FrameworkUtils.h"
-#include "../hdtSSEUtils/LogUtils.h"
 #include <skse64\skse64\GameStreams.h>
 #include "XmlReader.h"
 
@@ -104,12 +103,12 @@ namespace hdt
 	template<typename ... Args> void SkyrimMeshParser::Error(const char* fmt, Args ... args)
 	{
 		std::string newfmt = std::string("%s(%d,%d):") + fmt;
-		LogError(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
+		_ERROR(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
 	}
 	template<typename ... Args> void SkyrimMeshParser::Warning(const char* fmt, Args ... args)
 	{
 		std::string newfmt = std::string("%s(%d,%d):") + fmt;
-		LogWarning(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
+		_WARNING(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
 	}
 
 	NiNode* SkyrimMeshParser::findObjectByName(const IDStr& name)

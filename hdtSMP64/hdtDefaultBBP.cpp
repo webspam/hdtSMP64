@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <clocale>
 
-#include "../hdtSSEUtils/LogUtils.h"
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 
 namespace hdt
@@ -47,13 +46,13 @@ namespace hdt
 					}
 					catch (...)
 					{
-						LogWarning("defaultBBP(%d,%d) : invalid map", reader.GetRow(), reader.GetColumn());
+						_WARNING("defaultBBP(%d,%d) : invalid map", reader.GetRow(), reader.GetColumn());
 					}
 					reader.skipCurrentElement();
 				}
 				else
 				{
-					LogWarning("defaultBBP(%d,%d) : unknown element", reader.GetRow(), reader.GetColumn());
+					_WARNING("defaultBBP(%d,%d) : unknown element", reader.GetRow(), reader.GetColumn());
 					reader.skipCurrentElement();
 				}
 			}
