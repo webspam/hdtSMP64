@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IEventDispatcher.h"
+
 #include <unordered_set>
 #include <mutex>
 

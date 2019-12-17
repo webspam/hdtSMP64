@@ -61,6 +61,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;HDTSSEFRAMEWORK_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ForcedIncludeFiles>common/IPrefix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -79,6 +80,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;HDTSSEFRAMEWORK_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ForcedIncludeFiles>common/IPrefix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -90,28 +92,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="EventDispatcherImpl.h" />
     <ClInclude Include="FrameworkImpl.h" />
-    <ClInclude Include="HookArmor.h" />
-    <ClInclude Include="HookUtils.h" />
-    <ClInclude Include="HookEngine.h" />
     <ClInclude Include="IFramework.h" />
-    <ClInclude Include="IEventDispatcher.h" />
-    <ClInclude Include="IEventListener.h" />
     <ClInclude Include="IString.h" />
-    <ClInclude Include="Offsets.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringImpl.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="EventDispatcherImpl.cpp" />
     <ClCompile Include="FrameworkImpl.cpp" />
-    <ClCompile Include="HookArmor.cpp" />
-    <ClCompile Include="HookEngine.cpp" />
-    <ClCompile Include="HookUtils.cpp" />
-    <ClCompile Include="IEventDispatcher.cpp" />
     <ClCompile Include="IFramework.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

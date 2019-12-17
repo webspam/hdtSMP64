@@ -59,18 +59,18 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir);$(SolutionDir)..;F:\skyrim-dev\bullet\src;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\skyrim-dev\bullet\build\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;F:\skyrim-dev\bullet\src;$(SolutionDir)detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\skyrim-dev\bullet\build\lib\Debug;F:\skyrim-dev\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir);$(SolutionDir)..;F:\skyrim-dev\bullet\src;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\skyrim-dev\bullet\build\lib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;F:\skyrim-dev\bullet\src;$(SolutionDir)detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\skyrim-dev\bullet\build\lib\Release;F:\skyrim-dev\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_noAVX|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir);$(SolutionDir)..;F:\skyrim-dev\bullet\src;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\skyrim-dev\bullet\build_noavx\lib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;F:\skyrim-dev\bullet\src;$(SolutionDir)detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\skyrim-dev\bullet\build_noavx\lib\Release;F:\skyrim-dev\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -80,7 +80,7 @@
       <PreprocessorDefinitions>BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>stdafx.h;common/IPrefix.h</ForcedIncludeFiles>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
@@ -89,7 +89,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
-      <AdditionalDependencies>BulletCollision_Debug.lib;BulletDynamics_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BulletCollision_Debug.lib;BulletDynamics_Debug.lib;LinearMath_Debug.lib;detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -102,7 +102,7 @@
       <PreprocessorDefinitions>BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>stdafx.h;common/IPrefix.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
@@ -112,7 +112,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
-      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_noAVX|x64'">
@@ -125,7 +125,7 @@
       <PreprocessorDefinitions>BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>stdafx.h;common/IPrefix.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -134,12 +134,13 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
-      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ArmorManager.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="EventDispatcherImpl.h" />
     <ClInclude Include="hdtConvertNi.h" />
     <ClInclude Include="hdtDefaultBBP.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtAABB.h" />
@@ -166,6 +167,11 @@
     <ClInclude Include="hdtSkyrimMesh.h" />
     <ClInclude Include="hdtSkyrimPhysicsWorld.h" />
     <ClInclude Include="hdtSkyrimShape.h" />
+    <ClInclude Include="HookEvents.h" />
+    <ClInclude Include="Hooks.h" />
+    <ClInclude Include="IEventDispatcher.h" />
+    <ClInclude Include="IEventListener.h" />
+    <ClInclude Include="Offsets.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="XmlReader.h" />
@@ -174,6 +180,7 @@
     <ClCompile Include="ArmorManager.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="EventDispatcherImpl.cpp" />
     <ClCompile Include="hdtConvertNi.cpp" />
     <ClCompile Include="hdtDefaultBBP.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp" />
@@ -199,6 +206,9 @@
     <ClCompile Include="hdtSkyrimPhysicsWorld.cpp" />
     <ClCompile Include="hdtSkyrimShape.cpp" />
     <ClCompile Include="hdtSSEPhysics.cpp" />
+    <ClCompile Include="HookEvents.cpp" />
+    <ClCompile Include="Hooks.cpp" />
+    <ClCompile Include="IEventDispatcher.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

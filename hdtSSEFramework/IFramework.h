@@ -1,8 +1,5 @@
 #pragma once
 
-#include "IEventDispatcher.h"
-#include "HookArmor.h"
-#include "HookEngine.h"
 #include "IString.h"
 
 namespace hdt
@@ -29,10 +26,6 @@ namespace hdt
 		virtual bool isSupportedSkyrimVersion(uint32_t version) = 0;
 
 		virtual IString* getString(const char* strBegin, const char* strEnd = nullptr) = 0;
-		virtual IEventDispatcher<void*>* getCustomEventDispatcher(IString* name) = 0;
-		virtual IEventDispatcher<FrameEvent>* getFrameEventDispatcher() = 0;
-		virtual IEventDispatcher<ShutdownEvent>* getShutdownEventDispatcher() = 0;
-		virtual IEventDispatcher<ArmorAttachEvent>* getArmorAttachEventDispatcher() = 0;
 
 		virtual float getFrameInterval(bool raceMenu) = 0;
 

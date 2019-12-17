@@ -2,8 +2,8 @@
 
 #include "hdtSkyrimMesh.h"
 #include "hdtSkinnedMesh\hdtSkinnedMeshWorld.h"
-#include "../hdtSSEFramework/IEventListener.h"
-#include "../hdtSSEFramework/HookEngine.h"
+#include "IEventListener.h"
+#include "HookEvents.h"
 
 #include <atomic>
 

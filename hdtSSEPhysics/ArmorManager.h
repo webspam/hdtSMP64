@@ -2,11 +2,11 @@
 
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 #include "../hdtSSEUtils/FrameworkUtils.h"
-#include "../hdtSSEFramework/IEventListener.h"
-#include "../hdtSSEFramework/HookArmor.h"
-#include "../hdtSSEFramework/HookEngine.h"
 
 #include "hdtSkyrimMesh.h"
+
+#include "IEventListener.h"
+#include "HookEvents.h"
 
 #include <mutex>
 
