@@ -54,16 +54,14 @@ namespace hdt
 
 				if (m_menuList.size() == 1)
 				{
-					if (!strcmp(evn->menuName.data, "Loading Menu"))
-					{
-						_DMESSAGE("Suspend World - Loading Screen detected");
-						SkyrimPhysicsWorld::get()->suspend(true);
-					}
-					else
-					{
-						_DMESSAGE("Suspend World");
-						SkyrimPhysicsWorld::get()->suspend();
-					}
+					_DMESSAGE("Suspend World");
+					SkyrimPhysicsWorld::get()->suspend();
+				}
+
+				if (!strcmp(evn->menuName.data, "Loading Menu"))
+				{
+					_DMESSAGE("Suspend World - Loading Screen detected");
+					SkyrimPhysicsWorld::get()->suspend(true);
 				}
 			}
 			else
