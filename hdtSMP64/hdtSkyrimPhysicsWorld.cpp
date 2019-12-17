@@ -225,6 +225,10 @@ namespace hdt
 		{
 			doUpdate(interval);
 		}
+		else if (m_suspended)
+		{
+			writeTransform();
+		}
 	}
 
 	void SkyrimPhysicsWorld::onEvent(const ShutdownEvent & e)
