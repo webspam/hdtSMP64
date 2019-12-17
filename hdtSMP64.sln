@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common_vc14", "..\common\co
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "skse64", "skse64\skse64.vcxproj", "{7028B79C-06E3-4D9A-B38C-1DC3680B1BDB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hdtSSEPhysics", "hdtSSEPhysics\hdtSSEPhysics.vcxproj", "{B9F47E7B-068A-419A-9AA8-F72CCE662C2B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hdtSSEPhysics", "hdtSMP64\hdtSMP64.vcxproj", "{B9F47E7B-068A-419A-9AA8-F72CCE662C2B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hdtSSEUtils", "hdtSSEUtils\hdtSSEUtils.vcxproj", "{EBB1A6FA-5E3C-49B5-A5B6-A6495B9CD5B0}"
 EndProject
