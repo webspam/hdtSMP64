@@ -27,8 +27,8 @@ namespace hdt
 			"Dialogue Menu",
 			"RaceSex Menu",
 			"HUD Menu",
-			"Cursor Menu"
-			//"Fader Menu"
+			"Cursor Menu",
+			"LootMenu" // quick loot RE
 		};
 
 		auto iter = std::find(std::begin(menuFilterList), std::end(menuFilterList), menuName);
