@@ -12,6 +12,7 @@ High Heels plugin has been removed, this repository only contains HDT-SMP.
 + write transforms during game pauses, fixes physics appearing to reset while game is paused
 + reset system on loading screens so there's no brief physics glitches when loading between areas
 + better pause logic based on reading pause state from menumanager, fixing issues with added menus that don't pause the game (quickloot, VR)
++ reset physics on actor when large rotations occur instead of clamping rotation
 + add a debug command to print some stats to console
 + removed dependency on hdtSSEFramework and removed it from the repository
 + rename plugin hdtSMP64 to differentiate from the old version that depends on Framework, and because we can support VR, not just SSE
