@@ -43,7 +43,7 @@ namespace hdt
 		}
 		m_rig.getCollisionShape()->setLocalScaling(setAll(newScale));
 
-		if (timeStep <= 1e-4f)
+		if (timeStep <= 0.0)
 		{
 			m_rig.setWorldTransform(dest);
 			m_rig.setInterpolationWorldTransform(dest);
