@@ -94,6 +94,162 @@ namespace hdt
 		std::vector<std::string> m_menuList;
 	} g_freezeEventHandler;
 
+	NiTexturePtr* GetTextureFromIndex(BSLightingShaderMaterial* material, UInt32 index)
+	{
+		switch (index)
+		{
+		case 0:
+			return &material->texture1;
+			break;
+		case 1:
+			return &material->texture2;
+			break;
+		case 2:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
+			{
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkB0;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_GlowMap)
+			{
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkB0;
+			}
+			else
+			{
+				return &material->texture3;
+			}
+		}
+		break;
+		case 3:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
+			{
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkA8;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_Parallax)
+			{
+				return &static_cast<BSLightingShaderMaterialParallax*>(material)->unkA0;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_Parallax || material->GetShaderType() == BSShaderMaterial::kShaderType_ParallaxOcc)
+			{
+				return &static_cast<BSLightingShaderMaterialParallaxOcc*>(material)->unkA0;
+			}
+		}
+		break;
+		case 4:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_Eye)
+			{
+				return &static_cast<BSLightingShaderMaterialEye*>(material)->unkA0;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_EnvironmentMap)
+			{
+				return &static_cast<BSLightingShaderMaterialEnvmap*>(material)->unkA0;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
+			{
+				return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkA8;
+			}
+		}
+		break;
+		case 5:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_Eye)
+			{
+				return &static_cast<BSLightingShaderMaterialEye*>(material)->unkA8;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_EnvironmentMap)
+			{
+				return &static_cast<BSLightingShaderMaterialEnvmap*>(material)->unkA0;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
+			{
+				return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkB0;
+			}
+		}
+		break;
+		case 6:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
+			{
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->renderedTexture;
+			}
+			else if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
+			{
+				return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkA0;
+			}
+		}
+		break;
+		case 7:
+			return &material->texture4;
+			break;
+		}
+
+		return nullptr;
+	}
+	
+	void DumpNodeChildren(NiAVObject* node)
+	{
+		_MESSAGE("{%s} {%s} {%X}", node->GetRTTI()->name, node->m_name, node);
+		if (node->m_extraDataLen > 0) {
+			gLog.Indent();
+			for (UInt16 i = 0; i < node->m_extraDataLen; i++) {
+				_MESSAGE("{%s} {%s} {%X}", node->m_extraData[i]->GetRTTI()->name, node->m_extraData[i]->m_pcName, node);
+			}
+			gLog.Outdent();
+		}
+
+		NiNode* niNode = node->GetAsNiNode();
+		if (niNode && niNode->m_children.m_emptyRunStart > 0)
+		{
+			gLog.Indent();
+			for (int i = 0; i < niNode->m_children.m_emptyRunStart; i++)
+			{
+				NiAVObject* object = niNode->m_children.m_data[i];
+				if (object) {
+					NiNode* childNode = object->GetAsNiNode();
+					BSGeometry* geometry = object->GetAsBSGeometry();
+					if (geometry) {
+						_MESSAGE("{%s} {%s} {%X} - Geometry", object->GetRTTI()->name, object->m_name, object);
+						NiPointer<BSShaderProperty> shaderProperty = niptr_cast<BSShaderProperty>(geometry->m_spEffectState);
+						if (shaderProperty) {
+							BSLightingShaderProperty* lightingShader = ni_cast(shaderProperty, BSLightingShaderProperty);
+							if (lightingShader) {
+								BSLightingShaderMaterial* material = (BSLightingShaderMaterial*)lightingShader->material;
+
+								gLog.Indent();
+								for (int i = 0; i < BSTextureSet::kNumTextures; ++i)
+								{
+									const char* texturePath = material->textureSet->GetTexturePath(i);
+									if (!texturePath) {
+										continue;
+									}
+
+									const char* textureName = "";
+									NiTexturePtr* texture = GetTextureFromIndex(material, i);
+									if (texture) {
+										textureName = texture->get()->name;
+									}
+
+									_MESSAGE("Texture %d - %s (%s)", i, texturePath, textureName);
+								}
+
+								gLog.Outdent();
+							}
+						}
+					}
+					else if (childNode) {
+						DumpNodeChildren(childNode);
+					}
+					else {
+						_MESSAGE("{%s} {%s} {%X}", object->GetRTTI()->name, object->m_name, object);
+					}
+				}
+			}
+			gLog.Outdent();
+		}
+	}
+
 	bool SMPDebug_Execute(const ObScriptParam* paramInfo, ScriptData* scriptData, TESObjectREFR* thisObj, TESObjectREFR* containingObj, Script* scriptObj, ScriptLocals* locals, double& result, UInt32& opcodeOffsetPtr)
 	{
 		auto skeletons = ArmorManager::instance()->getSkeletons();
@@ -120,6 +276,11 @@ namespace hdt
 		Console_Print("[HDT-SMP] active skeletons: %d", activeSkeletons);
 		Console_Print("[HDT-SMP] tracked armors: %d", armors);
 		Console_Print("[HDT-SMP] active armors: %d", activeArmors);
+
+#ifdef DEBUG
+		if (thisObj)
+			DumpNodeChildren(thisObj->GetNiRootNode(0));
+#endif
 
 		return true;
 	}
@@ -174,9 +335,11 @@ extern "C"
 						if (mm)
 							mm->MenuOpenCloseEventDispatcher()->AddEventSink(&hdt::g_freezeEventHandler);
 						hdt::loadConfig();
-						//hdt::g_armorAttachEventDispatcher.addListener(&hdt::g_eventDebugLogger);
-						//GetEventDispatcherList()->unk1B8.AddEventSink(&hdt::g_eventDebugLogger);
-						//GetEventDispatcherList()->unk840.AddEventSink(&hdt::g_eventDebugLogger);
+#ifdef DEBUG
+						hdt::g_armorAttachEventDispatcher.addListener(&hdt::g_eventDebugLogger);
+						GetEventDispatcherList()->unk1B8.AddEventSink(&hdt::g_eventDebugLogger);
+						GetEventDispatcherList()->unk840.AddEventSink(&hdt::g_eventDebugLogger);
+#endif
 					}
 				});
 		}
