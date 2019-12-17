@@ -27,7 +27,7 @@ namespace hdt
 			"Dialogue Menu",
 			"RaceSex Menu",
 			"HUD Menu",
-			"Cursor Menu",
+			"Cursor Menu"
 			//"Fader Menu"
 		};
 
@@ -54,13 +54,16 @@ namespace hdt
 
 				if (m_menuList.size() == 1)
 				{
-					_DMESSAGE("Suspend World");
-					SkyrimPhysicsWorld::get()->suspend();
-				}
-
-				if (!strcmp(evn->menuName.data, "Loading Menu"))
-				{
-					SkyrimPhysicsWorld::get()->suspend(true);
+					if (!strcmp(evn->menuName.data, "Loading Menu"))
+					{
+						_DMESSAGE("Suspend World - Loading Screen detected");
+						SkyrimPhysicsWorld::get()->suspend(true);
+					}
+					else
+					{
+						_DMESSAGE("Suspend World");
+						SkyrimPhysicsWorld::get()->suspend();
+					}
 				}
 			}
 			else
@@ -78,7 +81,7 @@ namespace hdt
 
 					if (m_menuList.empty())
 					{
-						_DMESSAGE("Resume World");
+						_DMESSAGE("Resume World");									
 						SkyrimPhysicsWorld::get()->resume();
 					}
 				}

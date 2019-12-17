@@ -229,10 +229,6 @@ namespace hdt
 		{
 			writeTransform();
 		}
-		else if (m_loading)
-		{
-			readTransform(-10.0);
-		}
 	}
 
 	void SkyrimPhysicsWorld::onEvent(const ShutdownEvent & e)

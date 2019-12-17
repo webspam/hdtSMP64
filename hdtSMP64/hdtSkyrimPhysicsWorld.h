@@ -30,7 +30,14 @@ namespace hdt
 		virtual void onEvent(const ShutdownEvent& e) override;
 
 		inline void suspend(bool loading = false) { m_suspended = true; m_loading = loading; }
-		inline void resume() { m_suspended = false; m_loading = false; }
+		inline void resume() {
+			m_suspended = false;
+			if (m_loading)
+			{
+				resetSystems();
+				m_loading = false;
+			}
+		}
 
 		btVector3 applyTranslationOffset();
 		void restoreTranslationOffset(const btVector3&);
