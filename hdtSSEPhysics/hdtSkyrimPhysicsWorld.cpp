@@ -219,7 +219,7 @@ namespace hdt
 		if (!e.frameEnd) return;
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
-		float interval = RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime;
+		float interval = *(float*)(RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime);
 
 		if (interval > FLT_EPSILON && !m_suspended && !m_systems.empty())
 		{
