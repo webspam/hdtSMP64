@@ -50,11 +50,11 @@ namespace hdt
 
 		if (!m_initialized)
 		{
-			timeStep = 0;
+			timeStep = -10.0;
 			m_initialized = true;
 		}
 
-		if (!timeStep)
+		if (timeStep <= 0)
 		{
 			updateTransformUpDown(m_skeleton);
 			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
