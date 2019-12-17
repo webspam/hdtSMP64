@@ -181,7 +181,6 @@
   <ItemGroup>
     <ClCompile Include="ArmorManager.cpp" />
     <ClCompile Include="config.cpp" />
-    <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="EventDebugLogger.cpp" />
     <ClCompile Include="EventDispatcherImpl.cpp" />
     <ClCompile Include="hdtConvertNi.cpp" />
@@ -208,15 +207,9 @@
     <ClCompile Include="hdtSkyrimMesh.cpp" />
     <ClCompile Include="hdtSkyrimPhysicsWorld.cpp" />
     <ClCompile Include="hdtSkyrimShape.cpp" />
-    <ClCompile Include="hdtSSEPhysics.cpp" />
     <ClCompile Include="HookEvents.cpp" />
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="IEventDispatcher.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release_noAVX|x64'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="XmlReader.cpp" />
   </ItemGroup>
   <ItemGroup>
