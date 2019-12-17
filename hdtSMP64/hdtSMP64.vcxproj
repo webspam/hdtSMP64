@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="ArmorManager.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="EventDebugLogger.h" />
     <ClInclude Include="EventDispatcherImpl.h" />
     <ClInclude Include="hdtConvertNi.h" />
     <ClInclude Include="hdtDefaultBBP.h" />
@@ -181,6 +182,7 @@
     <ClCompile Include="ArmorManager.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="EventDebugLogger.cpp" />
     <ClCompile Include="EventDispatcherImpl.cpp" />
     <ClCompile Include="hdtConvertNi.cpp" />
     <ClCompile Include="hdtDefaultBBP.cpp" />
