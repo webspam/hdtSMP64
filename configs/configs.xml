@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <configs>
+	<smp>
+		<logLevel>5</logLevel>
+	</smp>
 	<solver>
 		<numIterations>16</numIterations>
 		<groupIterations>16</groupIterations>

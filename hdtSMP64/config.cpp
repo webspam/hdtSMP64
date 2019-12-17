@@ -3,7 +3,6 @@
 
 #include "hdtSkyrimPhysicsWorld.h"
 
-
 #include <clocale>
 
 namespace hdt
@@ -58,6 +57,27 @@ namespace hdt
 	//	}
 	//}
 
+	static void smp(XMLReader& reader)
+	{
+		while (reader.Inspect())
+		{
+			switch (reader.GetInspected())
+			{
+			case XMLReader::Inspected::StartTag:
+				if (reader.GetLocalName() == "logLevel")
+					gLog.SetLogLevel((IDebugLog::LogLevel)reader.readInt());
+				else
+				{
+					_WARNING("Unknown config : ", reader.GetLocalName());
+					reader.skipCurrentElement();
+				}
+				break;
+			case XMLReader::Inspected::EndTag:
+				return;
+			}
+		}
+	}
+	
 	static void config(XMLReader& reader)
 	{
 		while (reader.Inspect())
@@ -69,6 +89,8 @@ namespace hdt
 					solver(reader);
 				//else if (reader.GetLocalName() == "wind")
 				//	wind(reader);
+				else if (reader.GetLocalName() == "smp")
+					smp(reader);
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());
