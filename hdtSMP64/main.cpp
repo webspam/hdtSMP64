@@ -19,22 +19,6 @@ namespace hdt
 	IDebugLog	gLog;
 	EventDebugLogger g_eventDebugLogger;
 
-	bool menuFilter(const char* menuName)
-	{
-		static const std::string menuFilterList[] =
-		{
-			"Crafting Menu",
-			"Dialogue Menu",
-			"RaceSex Menu",
-			"HUD Menu",
-			"Cursor Menu",
-			"LootMenu" // quick loot RE
-		};
-
-		auto iter = std::find(std::begin(menuFilterList), std::end(menuFilterList), menuName);
-		return iter != std::end(menuFilterList);
-	}
-
 	class FreezeEventHandler : public BSTEventSink <MenuOpenCloseEvent>
 	{
 	public:
@@ -42,54 +26,27 @@ namespace hdt
 
 		virtual EventResult ReceiveEvent(MenuOpenCloseEvent* evn, EventDispatcher<MenuOpenCloseEvent>* dispatcher) override
 		{
-			if (menuFilter(evn->menuName))
-				return kEvent_Continue;
+			auto mm = MenuManager::GetSingleton();
 
-			std::lock_guard<decltype(m_lock)> l(m_lock);
-
-			if (evn->opening)
+			if (mm->IsGamePaused() && !SkyrimPhysicsWorld::get()->isSuspended())
 			{
-				m_menuList.push_back(evn->menuName.data);
-				_DMESSAGE("Push Menu : %s", evn->menuName.data);
-
-				if (m_menuList.size() == 1)
-				{
-					_DMESSAGE("Suspend World");
-					SkyrimPhysicsWorld::get()->suspend();
-				}
-
-				if (!strcmp(evn->menuName.data, "Loading Menu"))
-				{
-					_DMESSAGE("Suspend World - Loading Screen detected");
-					SkyrimPhysicsWorld::get()->suspend(true);
-				}
+				_DMESSAGE("game pause detected, suspending physics world");
+				SkyrimPhysicsWorld::get()->suspend();
 			}
-			else
+			else if (!mm->IsGamePaused() && SkyrimPhysicsWorld::get()->isSuspended())
 			{
-				auto idx = std::find(m_menuList.begin(), m_menuList.end(), evn->menuName.data);
-				if (idx != m_menuList.end())
-				{
-					m_menuList.erase(idx);
-					_DMESSAGE("Pop Menu : %s", evn->menuName.data);
-
-					if (!strcmp(evn->menuName.data, "LoadWaitSpinner"))
-					{
-						SkyrimPhysicsWorld::get()->resetSystems();
-					}
-
-					if (m_menuList.empty())
-					{
-						_DMESSAGE("Resume World");									
-						SkyrimPhysicsWorld::get()->resume();
-					}
-				}
+				_DMESSAGE("game unpause detected, resuming physics world");
+				SkyrimPhysicsWorld::get()->resume();
+			}
+			
+			if (evn && evn->opening && !strcmp(evn->menuName.data, "Loading Menu"))
+			{
+				_DMESSAGE("loading menu detected, scheduling physics reset on world un-suspend");
+				SkyrimPhysicsWorld::get()->suspend(true);
 			}
 
 			return kEvent_Continue;
 		}
-
-		std::mutex m_lock;
-		std::vector<std::string> m_menuList;
 	} g_freezeEventHandler;
 
 	NiTexturePtr* GetTextureFromIndex(BSLightingShaderMaterial* material, UInt32 index)

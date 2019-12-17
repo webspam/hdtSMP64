@@ -30,6 +30,7 @@ namespace hdt
 		virtual void onEvent(const FrameEvent& e) override;
 		virtual void onEvent(const ShutdownEvent& e) override;
 
+		inline bool isSuspended() { return m_suspended; }
 		inline void suspend(bool loading = false) { m_suspended = true; m_loading = loading; }
 		inline void resume() {
 			m_suspended = false;
