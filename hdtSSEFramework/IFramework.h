@@ -1,6 +1,5 @@
 #pragma once
 
-#include "IString.h"
 
 namespace hdt
 {
@@ -24,12 +23,9 @@ namespace hdt
 
 		virtual APIVersion getApiVersion() = 0;
 		virtual bool isSupportedSkyrimVersion(uint32_t version) = 0;
-
-		virtual IString* getString(const char* strBegin, const char* strEnd = nullptr) = 0;
-
+		
 		virtual float getFrameInterval(bool raceMenu) = 0;
 
-		inline IString* getString(const std::string s) { return getString(s.c_str(), s.c_str() + s.length()); }
 	};
 }
 

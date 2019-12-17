@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../hdtSSEFramework/IFramework.h"
+#include "StringImpl.h"
 
 namespace hdt
 {
@@ -11,8 +12,8 @@ namespace hdt
 		typedef Ref<IString> MyBase;
 	public:
 		IDStr() {}
-		IDStr(const char* str) : MyBase(getFramework()->getString(str)) {}
-		IDStr(const std::string& str) : MyBase(getFramework()->getString(str)) {}
+		IDStr(const char* str) : MyBase(!str ? nullptr : StringManager::instance()->get(str, str + strlen(str))) {}
+		IDStr(const std::string& str) : MyBase(!str.c_str() ? nullptr : StringManager::instance()->get(str.c_str(), str.c_str() + str.length())) {}
 		IDStr(const IDStr& str) : MyBase(str) {}
 		IDStr(IDStr&& str) : MyBase(std::move(str)) {}
 

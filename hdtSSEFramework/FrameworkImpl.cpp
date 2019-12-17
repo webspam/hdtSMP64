@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "FrameworkImpl.h"
-#include "StringImpl.h"
 #include <debugapi.h>
 
 #include "skse64_common/Relocation.h"
@@ -27,13 +26,6 @@ namespace hdt
 		return version == CURRENT_RELEASE_RUNTIME;
 	}
 
-	IString * FrameworkImpl::getString(const char * strBegin, const char * strEnd)
-	{
-		if (!strBegin) return nullptr;
-		if (!strEnd) strEnd = strBegin + strlen(strBegin);
-		return StringManager::instance()->get(strBegin, strEnd);
-	}
-	
 	float FrameworkImpl::getFrameInterval(bool raceMenu)
 	{
 		if (raceMenu)

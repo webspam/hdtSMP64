@@ -32,6 +32,12 @@
     <ClInclude Include="FrameworkUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="StringImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -126,6 +132,9 @@
     </ClCompile>
     <ClCompile Include="..\..\skse64\skse64\GameEvents.cpp">
       <Filter>skse</Filter>
+    </ClCompile>
+    <ClCompile Include="StringImpl.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

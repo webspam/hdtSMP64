@@ -94,9 +94,7 @@
   <ItemGroup>
     <ClInclude Include="FrameworkImpl.h" />
     <ClInclude Include="IFramework.h" />
-    <ClInclude Include="IString.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="StringImpl.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -107,7 +105,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="StringImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="export.def" />

@@ -16,8 +16,6 @@ namespace hdt
 
 		virtual bool isSupportedSkyrimVersion(uint32_t version) override;
 
-		virtual IString* getString(const char* strBegin, const char* strEnd = nullptr) override;
-
 		virtual float getFrameInterval(bool raceMenu) override;
 		
 	protected:

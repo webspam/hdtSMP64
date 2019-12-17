@@ -23,12 +23,6 @@
     <ClInclude Include="FrameworkImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IString.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StringImpl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -41,9 +35,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="IFramework.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StringImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
