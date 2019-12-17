@@ -225,7 +225,7 @@ namespace hdt
 		{
 			doUpdate(interval);
 		}
-		else if (m_suspended)
+		else if (m_suspended && !m_loading)
 		{
 			writeTransform();
 		}

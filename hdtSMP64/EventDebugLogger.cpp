@@ -9,7 +9,7 @@ namespace hdt
 	{
 		if (evn && evn->reference && evn->reference->formType == Character::kTypeID)
 		{
-			_DMESSAGE("received TESCellAttachDetachEvent(formID %08llX, name %s, attached=%s)", evn->reference->formID, evn->reference->GetFullName(), evn->attached ? "true" : "false");
+			_DMESSAGE("received TESCellAttachDetachEvent(formID %08llX, name %s, attached=%s)", evn->reference->formID, evn->reference->baseForm->GetFullName(), evn->attached ? "true" : "false");
 		}
 		return kEvent_Continue;
 	}
@@ -19,7 +19,7 @@ namespace hdt
 	{
 		if (evn && evn->reference && evn->reference->formType == Character::kTypeID)
 		{
-			_DMESSAGE("received TESMoveAttachDetachEvent(formID %08llX, name %s, attached=%s)", evn->reference->formID, evn->reference->GetFullName(), evn->attached ? "true" : "false");
+			_DMESSAGE("received TESMoveAttachDetachEvent(formID %08llX, name %s, attached=%s)", evn->reference->formID, evn->reference->baseForm->GetFullName(), evn->attached ? "true" : "false");
 		}
 		return kEvent_Continue;
 	}

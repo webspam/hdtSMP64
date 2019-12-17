@@ -29,8 +29,8 @@ namespace hdt
 		virtual void onEvent(const FrameEvent& e) override;
 		virtual void onEvent(const ShutdownEvent& e) override;
 
-		inline void suspend() { m_suspended = true; }
-		inline void resume() { m_suspended = false; }
+		inline void suspend(bool loading = false) { m_suspended = true; m_loading = loading; }
+		inline void resume() { m_suspended = false; m_loading = false; }
 
 		btVector3 applyTranslationOffset();
 		void restoreTranslationOffset(const btVector3&);
@@ -43,6 +43,7 @@ namespace hdt
 		std::mutex m_lock;
 
 		std::atomic_bool m_suspended;
+		std::atomic_bool m_loading;
 		float m_averageInterval;
 		float m_accumulatedInterval;
 	};
