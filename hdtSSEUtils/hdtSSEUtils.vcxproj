@@ -121,7 +121,6 @@
     <ClCompile Include="..\..\skse64\skse64\PapyrusNativeFunctions.cpp" />
     <ClCompile Include="..\..\skse64\skse64\PapyrusVM.cpp" />
     <ClCompile Include="..\..\skse64\skse64_common\Relocation.cpp" />
-    <ClCompile Include="FrameworkUtils.cpp" />
     <ClCompile Include="LogUtils.cpp" />
     <ClCompile Include="NetImmerseUtils.cpp" />
     <ClCompile Include="stdafx.cpp">

@@ -1,12 +1,9 @@
 #pragma once
 
-#include "../hdtSSEFramework/IFramework.h"
 #include "StringImpl.h"
 
 namespace hdt
 {
-	IFramework* getFramework();
-
 	class IDStr : public Ref<IString>
 	{
 		typedef Ref<IString> MyBase;
@@ -24,7 +21,6 @@ namespace hdt
 	inline bool operator ==(const IDStr& a, const IDStr& b) { return a() == b(); }
 	inline bool operator !=(const IDStr& a, const IDStr& b) { return a() != b(); }
 
-	bool checkFrameworkVersion(uint32_t major, uint32_t minor);
 }
 
 namespace std

@@ -85,9 +85,6 @@
     <ClCompile Include="..\..\skse64\skse64\GameUtilities.cpp">
       <Filter>skse</Filter>
     </ClCompile>
-    <ClCompile Include="FrameworkUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\skse64\skse64\GameData.cpp">
       <Filter>skse</Filter>
     </ClCompile>

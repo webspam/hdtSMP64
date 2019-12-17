@@ -1,5 +1,6 @@
 #include "hdtSkyrimPhysicsWorld.h"
 #include <ppl.h>
+#include "Offsets.h"
 
 namespace hdt
 {
@@ -218,7 +219,7 @@ namespace hdt
 		if (!e.frameEnd) return;
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
-		float interval = getFramework()->getFrameInterval(false);
+		float interval = RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime;
 
 		if (interval > FLT_EPSILON && !m_suspended && !m_systems.empty())
 		{
