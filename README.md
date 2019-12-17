@@ -9,6 +9,8 @@ High Heels plugin has been removed, this repository only contains HDT-SMP.
 + build now works with unchanged skse & bullet source
 + support both "." and "," as decimal seperators in config files
 + properly remove tracked armors from physics world if the tracked skeleton isn't part of the active scene
++ write transforms during game pauses, fixes physics appearing to reset while game is paused
++ reset system on loading screens so there's no brief physics glitches when loading between areas
 + add a debug command to print some stats to console
 + removed dependency on hdtSSEFramework and removed it from the repository
 + rename plugin hdtSMP64 to differentiate from the old version that depends on Framework, and because we can support VR, not just SSE
