@@ -36,7 +36,14 @@ namespace hdt
 	void ArmorManager::onEvent(const ArmorAttachEvent & e)
 	{
 		auto npc = findNode(e.skeleton, "NPC");
+		
 		if (!npc) return;
+
+		if (!npc->GetExtraData("XPMSE")) return;
+		
+		NiStringExtraData* species = ni_cast(npc->GetExtraData("species"), NiStringExtraData);
+
+		if (!species || strcmp(species->m_pString, "human") != 0) return;
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;

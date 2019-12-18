@@ -1,4 +1,6 @@
 #include "skse64/GameReferences.h"
+#include "skse64/NiObjects.h"
+#include "skse64/NiNodes.h"
 
 #include "EventDebugLogger.h"
 
@@ -26,6 +28,13 @@ namespace hdt
 
 	void EventDebugLogger::onEvent(const ArmorAttachEvent& e)
 	{
-		_DMESSAGE("received ArmorAttachEvent(armorModel=%016llX, skeleton=%016llX, attachedNode=%016llX, hasAttached=%s)", (uintptr_t)e.armorModel, (uintptr_t)e.skeleton, (uintptr_t)e.attachedNode, (uintptr_t)e.hasAttached ? "true" : "false");
+		_DMESSAGE("received ArmorAttachEvent(armorModel=%s (%016llX), skeleton=%s (%016llX), attachedNode=%s (%016llX), hasAttached=%s)", 
+			e.armorModel ? e.armorModel->m_name : "null", 
+			(uintptr_t)e.armorModel, 
+			e.skeleton ? e.skeleton->m_name : "null",
+			(uintptr_t)e.skeleton, 
+			e.attachedNode ? e.attachedNode->m_name : "null", 
+			(uintptr_t)e.attachedNode, 
+			(uintptr_t)e.hasAttached ? "true" : "false");
 	}
 }
