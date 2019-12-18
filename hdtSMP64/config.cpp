@@ -23,7 +23,7 @@ namespace hdt
 				else if (reader.GetLocalName() == "erp")
 					SkyrimPhysicsWorld::get()->getSolverInfo().m_erp = btClamped(reader.readFloat(), 0.01f, 1.0f);
 				else if (reader.GetLocalName() == "min-fps")
-					TIME_TICK = 1.0f / (btClamped(reader.readInt(), 1, 300));
+					SkyrimPhysicsWorld::get()->m_timeTick = 1.0f / (btClamped(reader.readInt(), 1, 300));
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());
@@ -67,7 +67,10 @@ namespace hdt
 				if (reader.GetLocalName() == "logLevel")
 					gLog.SetLogLevel((IDebugLog::LogLevel)reader.readInt());
 				else if (reader.GetLocalName() == "clampRotations")
-					hdt::clampRotations = reader.readBool();
+				{
+					SkyrimPhysicsWorld::get()->m_clampRotations = reader.readBool();
+
+				}
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());

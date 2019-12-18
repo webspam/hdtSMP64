@@ -70,7 +70,7 @@ namespace hdt
 
 			if (rotAngle < -limit || rotAngle > limit)
 			{
-				if (hdt::clampRotations)
+				if (SkyrimPhysicsWorld::get()->m_clampRotations)
 				{
 					rotAngle = btClamped(rotAngle, -limit, limit);
 					btQuaternion clampedRot(rotAxis, rotAngle);

@@ -13,7 +13,7 @@ namespace hdt
 		m_windSpeed.setValue(0, 0, 5 * scaleSkyrim);
 
 		getSolverInfo().m_friction = 0;
-		m_averageInterval = TIME_TICK;
+		m_averageInterval = m_timeTick;
 		m_accumulatedInterval = 0;
 	}
 
@@ -60,7 +60,7 @@ namespace hdt
 		//ScanHair();
 		
 		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
-		auto tick = std::min(m_averageInterval, TIME_TICK);
+		auto tick = std::min(m_averageInterval, m_timeTick);
 
 		m_accumulatedInterval += interval;
 		if (m_accumulatedInterval > tick * 0.25f)

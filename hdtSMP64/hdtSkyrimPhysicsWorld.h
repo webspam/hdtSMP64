@@ -9,9 +9,7 @@
 
 namespace hdt
 {
-	static float TIME_TICK = 1 / 60.f;
 	constexpr float RESET_PHYSICS = -10.0f;
-	static bool clampRotations = false;
 
 	class SkyrimPhysicsWorld : public SkinnedMeshWorld, public IEventListener<FrameEvent>, public IEventListener<ShutdownEvent>
 	{
@@ -44,6 +42,9 @@ namespace hdt
 
 		btVector3 applyTranslationOffset();
 		void restoreTranslationOffset(const btVector3&);
+
+		float m_timeTick = 1 / 60.f;
+		bool m_clampRotations = false;
 
 	private:
 
