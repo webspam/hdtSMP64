@@ -12,7 +12,7 @@ High Heels plugin has been removed, this repository only contains HDT-SMP.
 + write transforms during game pauses, fixes physics appearing to reset while game is paused
 + reset system on loading screens so there's no brief physics glitches when loading between areas
 + better pause logic based on reading pause state from menumanager, fixing issues with added menus that don't pause the game (quickloot, VR)
-+ reset physics on actor when large rotations occur instead of clamping rotation
++ add options for how to handle large rotations
 + filter skeletons to only attach to XPMSE "human" skeletons, fixes SMP breaking lurker skeleton and potentially some other things
 + add a debug command to print some stats to console
 + removed dependency on hdtSSEFramework and removed it from the repository
@@ -39,7 +39,7 @@ add function
 ```
 to MenuManager class
 
-GameEvents.h line 862:
+GameEvents.h line 662:
 
 replace unk840 with
 ```cpp
@@ -50,5 +50,7 @@ EventDispatcher<TESMoveAttachDetachEvent>    		unk840;					//  840 - sink offset
 
 hydrogensaysHDT - Creating this plugin
 
-ousnius - fixes and updates
+aers - that's me :)
+
+ousnius - some fixes, and "consulting"
 
