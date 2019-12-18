@@ -11,6 +11,7 @@ namespace hdt
 {
 	static float TIME_TICK = 1 / 60.f;
 	constexpr float RESET_PHYSICS = -10.0f;
+	static bool clampRotations = false;
 
 	class SkyrimPhysicsWorld : public SkinnedMeshWorld, public IEventListener<FrameEvent>, public IEventListener<ShutdownEvent>
 	{

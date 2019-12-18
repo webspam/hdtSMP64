@@ -66,6 +66,8 @@ namespace hdt
 			case XMLReader::Inspected::StartTag:
 				if (reader.GetLocalName() == "logLevel")
 					gLog.SetLogLevel((IDebugLog::LogLevel)reader.readInt());
+				else if (reader.GetLocalName() == "clampRotations")
+					hdt::clampRotations = reader.readBool();
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());

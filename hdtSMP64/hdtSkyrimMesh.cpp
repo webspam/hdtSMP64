@@ -70,22 +70,28 @@ namespace hdt
 
 			if (rotAngle < -limit || rotAngle > limit)
 			{
-				timeStep = RESET_PHYSICS;
-				updateTransformUpDown(m_skeleton);
-				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
-				// rotAngle = btClamped(rotAngle, -limit, limit);
-				// btQuaternion clampedRot(rotAxis, rotAngle);
-				// m_lastRootRotation = clampedRot * m_lastRootRotation;
-				// m_skeleton->m_worldTransform.rot = convertBt(m_lastRootRotation);
-				//
-				// for (int i = 0; i < m_skeleton->m_children.m_arrayBufLen; ++i)
-				// {
-				// 	auto node = castNiNode(m_skeleton->m_children.m_data[i]);
-				// 	if (node)
-				// 	{
-				// 		updateTransformUpDown(node);
-				// 	}
-				// }
+				if (hdt::clampRotations)
+				{
+					rotAngle = btClamped(rotAngle, -limit, limit);
+					btQuaternion clampedRot(rotAxis, rotAngle);
+					m_lastRootRotation = clampedRot * m_lastRootRotation;
+					m_skeleton->m_worldTransform.rot = convertBt(m_lastRootRotation);
+
+					for (int i = 0; i < m_skeleton->m_children.m_arrayBufLen; ++i)
+					{
+						auto node = castNiNode(m_skeleton->m_children.m_data[i]);
+						if (node)
+						{
+							updateTransformUpDown(node);
+						}
+					}
+				}
+				else
+				{
+					timeStep = RESET_PHYSICS;
+					updateTransformUpDown(m_skeleton);
+					m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
+				}
 			}
 		}
 

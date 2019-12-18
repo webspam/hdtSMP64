@@ -2,7 +2,8 @@
 
 <configs>
 	<smp>
-		<logLevel>5</logLevel>
+		<logLevel>3</logLevel>
+		<clampRotations>false</clampRotations>
 	</smp>
 	<solver>
 		<numIterations>16</numIterations>
