@@ -49,6 +49,23 @@ namespace hdt
 		}
 	} g_freezeEventHandler;
 
+	void checkOldPlugins()
+	{
+		auto framework = GetModuleHandleA("hdtSSEFramework");
+		auto physics = GetModuleHandleA("hdtSSEPhysics");
+		auto hh = GetModuleHandleA("hdtSSEHighHeels");
+
+		if (physics)
+		{
+			MessageBox(NULL, TEXT("hdtSSEPhysics.dll is loaded. This is an older verson of HDT-SMP and conflicts with hdtSMP64.dll. Please remove it."), TEXT("hdtSMP64"), MB_OK);
+		}
+
+		if (framework && !hh)
+		{
+			MessageBox(NULL, TEXT("hdtSSEFramework.dll is loaded but hdtSSEHighHeels.dll is not being used. You no longer need hdtSSEFramework.dll with this version of SMP. Please remove it."), TEXT("hdtSMP64"), MB_OK);
+		}
+	}
+
 	NiTexturePtr* GetTextureFromIndex(BSLightingShaderMaterial* material, UInt32 index)
 	{
 		switch (index)
@@ -289,6 +306,7 @@ extern "C"
 						MenuManager* mm = MenuManager::GetSingleton();
 						if (mm)
 							mm->MenuOpenCloseEventDispatcher()->AddEventSink(&hdt::g_freezeEventHandler);
+						hdt::checkOldPlugins();
 						hdt::loadConfig();
 #ifdef DEBUG
 						hdt::g_armorAttachEventDispatcher.addListener(&hdt::g_eventDebugLogger);
