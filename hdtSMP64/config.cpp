@@ -67,10 +67,11 @@ namespace hdt
 				if (reader.GetLocalName() == "logLevel")
 					gLog.SetLogLevel((IDebugLog::LogLevel)reader.readInt());
 				else if (reader.GetLocalName() == "clampRotations")
-				{
 					SkyrimPhysicsWorld::get()->m_clampRotations = reader.readBool();
-
-				}
+				else if (reader.GetLocalName() == "unclampedResets")
+					SkyrimPhysicsWorld::get()->m_unclampedResets = reader.readBool();
+				else if (reader.GetLocalName() == "unclampedResetAngle")
+					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());

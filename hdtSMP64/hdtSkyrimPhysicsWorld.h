@@ -44,7 +44,9 @@ namespace hdt
 		void restoreTranslationOffset(const btVector3&);
 
 		float m_timeTick = 1 / 60.f;
-		bool m_clampRotations = false;
+		bool m_clampRotations = true;
+		bool m_unclampedResets = true;
+		float m_unclampedResetAngle = 120.0f;
 
 	private:
 

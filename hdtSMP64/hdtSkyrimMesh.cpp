@@ -47,7 +47,7 @@ namespace hdt
 		auto newRoot = m_skeleton;
 		while (newRoot->m_parent)newRoot = newRoot->m_parent;
 		if (m_oldRoot != newRoot)
-			timeStep = 0;
+			timeStep = RESET_PHYSICS;
 
 		if (!m_initialized)
 		{
@@ -66,27 +66,36 @@ namespace hdt
 			btVector3 rotAxis;
 			float rotAngle;
 			btTransformUtil::calculateDiffAxisAngleQuaternion(m_lastRootRotation, newRot, rotAxis, rotAngle);
-			float limit = 10.f * timeStep;
 
-			if (rotAngle < -limit || rotAngle > limit)
+			if (SkyrimPhysicsWorld::get()->m_clampRotations)
 			{
-				if (SkyrimPhysicsWorld::get()->m_clampRotations)
-				{
-					rotAngle = btClamped(rotAngle, -limit, limit);
-					btQuaternion clampedRot(rotAxis, rotAngle);
-					m_lastRootRotation = clampedRot * m_lastRootRotation;
-					m_skeleton->m_worldTransform.rot = convertBt(m_lastRootRotation);
+				float limit = 10.f * timeStep;
 
-					for (int i = 0; i < m_skeleton->m_children.m_arrayBufLen; ++i)
+				if (rotAngle < -limit || rotAngle > limit)
+				{
+					if (SkyrimPhysicsWorld::get()->m_clampRotations)
 					{
-						auto node = castNiNode(m_skeleton->m_children.m_data[i]);
-						if (node)
+						rotAngle = btClamped(rotAngle, -limit, limit);
+						btQuaternion clampedRot(rotAxis, rotAngle);
+						m_lastRootRotation = clampedRot * m_lastRootRotation;
+						m_skeleton->m_worldTransform.rot = convertBt(m_lastRootRotation);
+
+						for (int i = 0; i < m_skeleton->m_children.m_arrayBufLen; ++i)
 						{
-							updateTransformUpDown(node);
+							auto node = castNiNode(m_skeleton->m_children.m_data[i]);
+							if (node)
+							{
+								updateTransformUpDown(node);
+							}
 						}
 					}
 				}
-				else
+			}
+			else if (SkyrimPhysicsWorld::get()->m_unclampedResets)
+			{
+				float limit = SkyrimPhysicsWorld::get()->m_unclampedResetAngle * timeStep;
+				
+				if (rotAngle < -limit || rotAngle > limit)
 				{
 					timeStep = RESET_PHYSICS;
 					updateTransformUpDown(m_skeleton);
@@ -142,7 +151,7 @@ namespace hdt
 			bone->m_rigToLocal = defaultBoneInfo.m_centerOfMassTransform.inverse();
 			bone->m_marginMultipler = defaultBoneInfo.m_marginMultipler;
 			bone->m_gravityFactor = defaultBoneInfo.m_gravityFactor;
-			bone->readTransform(0);
+			bone->readTransform(RESET_PHYSICS);
 
 			m_mesh->m_bones.push_back(bone);
 		}
@@ -672,7 +681,7 @@ namespace hdt
 		b->m_gravityFactor = cinfo.m_gravityFactor;
 		//b->m_collisionFilter = cinfo.m_collisionFilter;
 
-		b->readTransform(0);
+		b->readTransform(RESET_PHYSICS);
 
 		m_mesh->m_bones.push_back(b);
 	}
@@ -1121,7 +1130,7 @@ namespace hdt
 				bodyA->m_rigToLocal = defaultBoneInfo.m_centerOfMassTransform.inverse();
 				bodyA->m_marginMultipler = defaultBoneInfo.m_marginMultipler;
 				bodyA->m_gravityFactor = defaultBoneInfo.m_gravityFactor;
-				bodyA->readTransform(0);
+				bodyA->readTransform(RESET_PHYSICS);
 				m_mesh->m_bones.push_back(bodyA);
 			}
 			else
@@ -1142,7 +1151,7 @@ namespace hdt
 				bodyB->m_rigToLocal = defaultBoneInfo.m_centerOfMassTransform.inverse();
 				bodyB->m_marginMultipler = defaultBoneInfo.m_marginMultipler;
 				bodyB->m_gravityFactor = defaultBoneInfo.m_gravityFactor;
-				bodyB->readTransform(0);
+				bodyB->readTransform(RESET_PHYSICS);
 				m_mesh->m_bones.push_back(bodyB);
 			}
 			else

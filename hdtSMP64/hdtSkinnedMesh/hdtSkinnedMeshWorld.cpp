@@ -66,7 +66,7 @@ namespace hdt
 		for (int i = 0; i < system->m_constraints.size(); ++i)
 			addConstraint(system->m_constraints[i]->m_constraint, true);
 		
-		system->readTransform(0);
+		system->readTransform(-10.0);
 		system->m_world = this;
 	}
 

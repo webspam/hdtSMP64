@@ -31,6 +31,7 @@ namespace hdt
 		virtual void performDiscreteCollisionDetection();
 		virtual void solveConstraints(btContactSolverInfo& solverInfo);
 
+	public:
 		std::vector<Ref<SkinnedMeshSystem>> m_systems;
 
 		btVector3 m_windSpeed;
