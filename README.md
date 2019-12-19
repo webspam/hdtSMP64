@@ -13,7 +13,7 @@ High Heels plugin has been removed, this repository only contains HDT-SMP.
 + reset system on loading screens so there's no brief physics glitches when loading between areas
 + better pause logic based on reading pause state from menumanager, fixing issues with added menus that don't pause the game (quickloot, VR)
 + add options for how to handle large rotations
-+ filter skeletons to only attach to XPMSE "human" skeletons, fixes SMP breaking lurker skeleton and potentially some other things
++ hard-code a skeleton exception for the BenthicLurker skeleton because it is made incorrectly
 + add a debug command to print some stats to console
 + removed dependency on hdtSSEFramework and removed it from the repository
 + rename plugin hdtSMP64 to differentiate from the old version that depends on Framework, and because we can support VR, not just SSE
@@ -46,6 +46,23 @@ replace unk840 with
 EventDispatcher<TESMoveAttachDetachEvent>    		unk840;					//  840 - sink offset 0C8
 ```
 
+NiObjects.h around line 207:
+
+replace 
+
+```cpp
+	float		unkF8;				// 0F8
+	UInt32		unkFC;				// 0FC
+```
+
+with
+
+```cpp
+	TESObjectREFR* m_owner; // 0F8
+```
+
+You will need to add a forward declaration or include for TESObjectREFR in NiObjects.h as well.
+
 ## Credits
 
 hydrogensaysHDT - Creating this plugin
@@ -53,4 +70,5 @@ hydrogensaysHDT - Creating this plugin
 aers - that's me :)
 
 ousnius - some fixes, and "consulting"
+
 

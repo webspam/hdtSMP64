@@ -1,6 +1,9 @@
+#include "skse64/GameReferences.h"
+
 #include "ArmorManager.h"
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
+#include "skse64/GameRTTI.h"
 
 namespace hdt
 {
@@ -39,11 +42,19 @@ namespace hdt
 		
 		if (!npc) return;
 
-		if (!npc->GetExtraData("XPMSE")) return;
-		
-		NiStringExtraData* species = ni_cast(npc->GetExtraData("species"), NiStringExtraData);
-
-		if (!species || strcmp(species->m_pString, "human") != 0) return;
+		// TODO: replace this with a generic skeleton fixing configuration option
+		// hardcode an exception for lurker skeletons because they are made incorrectly
+		if (e.skeleton->m_owner && e.skeleton->m_owner->baseForm)
+		{
+			auto npcForm = DYNAMIC_CAST(e.skeleton->m_owner->baseForm, TESForm, TESNPC);
+			if (npcForm && npcForm->race.race)
+			{
+				if (!strcmp(npcForm->race.race->models[0].GetModelName(), "Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
+				{
+					npc = findNode(e.skeleton, "NPC Root [Root]");
+				}
+			}
+		}
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
