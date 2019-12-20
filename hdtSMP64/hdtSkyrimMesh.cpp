@@ -44,6 +44,12 @@ namespace hdt
 	static constexpr float PI = 3.1415926535897932384626433832795f;
 	void SkyrimMesh::readTransform(float timeStep)
 	{
+		if (m_reset)
+		{
+			timeStep = RESET_PHYSICS;
+			m_reset = false;
+		}
+		
 		auto newRoot = m_skeleton;
 		while (newRoot->m_parent)newRoot = newRoot->m_parent;
 		if (m_oldRoot != newRoot)
@@ -55,6 +61,23 @@ namespace hdt
 			m_initialized = true;
 		}
 
+		if (timeStep <= RESET_PHYSICS)
+		{
+			updateTransformUpDown(m_skeleton);
+			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
+		}
+
+		SkinnedMeshSystem::readTransform(timeStep);
+		m_oldRoot = newRoot;
+	}
+
+	void SkyrimMesh::clampRotations(float timeStep)
+	{
+		auto newRoot = m_skeleton;
+		while (newRoot->m_parent)newRoot = newRoot->m_parent;
+		if (m_oldRoot != newRoot)
+			timeStep = RESET_PHYSICS;
+		
 		if (timeStep <= RESET_PHYSICS)
 		{
 			updateTransformUpDown(m_skeleton);
@@ -94,7 +117,7 @@ namespace hdt
 			else if (SkyrimPhysicsWorld::get()->m_unclampedResets)
 			{
 				float limit = SkyrimPhysicsWorld::get()->m_unclampedResetAngle * timeStep;
-				
+
 				if (rotAngle < -limit || rotAngle > limit)
 				{
 					timeStep = RESET_PHYSICS;
@@ -104,13 +127,14 @@ namespace hdt
 			}
 		}
 
-		SkinnedMeshSystem::readTransform(timeStep);
-		m_oldRoot = newRoot;
+		if (timeStep <= RESET_PHYSICS)
+			m_reset = true;
+			
 	}
 
-	void SkyrimMesh::writeTransform()
+	void SkyrimMesh::writeTransform(float alpha)
 	{
-		SkinnedMeshSystem::writeTransform();
+		SkinnedMeshSystem::writeTransform(alpha);
 	}
 
 	btEmptyShape SkyrimMeshParser::BoneTemplate::emptyShape[1];

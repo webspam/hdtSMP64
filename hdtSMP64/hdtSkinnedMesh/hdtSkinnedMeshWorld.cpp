@@ -95,23 +95,32 @@ namespace hdt
 	
 	int SkinnedMeshWorld::stepSimulation(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep)
 	{
-		if (timeStep > fixedTimeStep * maxSubSteps)
-			timeStep = fixedTimeStep * maxSubSteps;
+		int numSimulationSubSteps = 0;
+
+		//fixed timestep with interpolation
+		m_fixedTimeStep = fixedTimeStep;
+		m_localTime += timeStep;
+		
+		if (m_localTime >= fixedTimeStep)
+		{
+			numSimulationSubSteps = int(m_localTime / fixedTimeStep);
+			m_localTime = 0;
+		}
+
+		//clamp the number of substeps, to prevent simulation grinding spiralling down to a halt
+		int clampedSimulationSteps = (numSimulationSubSteps > maxSubSteps) ? maxSubSteps : numSimulationSubSteps;
 
 		applyGravity();
 
-		while (timeStep >= fixedTimeStep*1.25f)
-		{
+		for (int i = 0; i < clampedSimulationSteps; i++)
 			internalSingleStepSimulation(fixedTimeStep);
-			timeStep -= fixedTimeStep;
-		}
-		internalSingleStepSimulation(timeStep);
+
 		clearForces();
 
 		_bodies.clear();
 		_shapes.clear();
-
-		return 0;
+		
+		return numSimulationSubSteps;
 	}
 
 	void SkinnedMeshWorld::performDiscreteCollisionDetection()

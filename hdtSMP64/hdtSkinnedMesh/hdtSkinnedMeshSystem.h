@@ -24,7 +24,8 @@ namespace hdt
 		std::vector<Ref<ConstraintGroup>> m_constraintGroups;
 
 		virtual void readTransform(float timeStep);
-		virtual void writeTransform();
+		virtual void clampRotations(float timeStep);
+		virtual void writeTransform(float alpha);
 
 		void internalUpdate();
 		//void internalUpdateCL();

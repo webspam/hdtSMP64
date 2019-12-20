@@ -13,7 +13,6 @@ namespace hdt
 		m_windSpeed.setValue(0, 0, 5 * scaleSkyrim);
 
 		getSolverInfo().m_friction = 0;
-		m_averageInterval = m_timeTick;
 		m_accumulatedInterval = 0;
 	}
 
@@ -56,25 +55,24 @@ namespace hdt
 	void SkyrimPhysicsWorld::doUpdate(float interval)
 	{
 		_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-
-		//ScanHair();
 		
-		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
-		auto tick = std::min(m_averageInterval, m_timeTick);
-
 		m_accumulatedInterval += interval;
-		if (m_accumulatedInterval > tick * 0.25f)
-		{
-			interval = std::min<float>(m_accumulatedInterval, tick * 5);
 
-			readTransform(interval);
+		clampRotations(interval);
+		
+		if (m_accumulatedInterval >= m_fixedTimeStep)
+		{
+			readTransform(m_accumulatedInterval);
 			updateActiveState();
 			auto offset = applyTranslationOffset();
-			stepSimulation(interval, 5, tick);
+			auto count = stepSimulation(m_accumulatedInterval, 10, m_fixedTimeStep);
+			m_accumulatedInterval -= count * m_fixedTimeStep;
 			restoreTranslationOffset(offset);
-			m_accumulatedInterval = 0;
-			writeTransform();
 		}
+
+		auto alpha = m_accumulatedInterval / m_fixedTimeStep;
+		
+		writeTransform(alpha);
 	}
 
 	btVector3 SkyrimPhysicsWorld::applyTranslationOffset()
@@ -218,17 +216,26 @@ namespace hdt
 	{
 		if (!e.frameEnd) return;
 
-		std::lock_guard<decltype(m_lock)> l(m_lock);
-		float interval = *(float*)(RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime);
+		if (m_resetTimer)
+		{
+			m_lastFrame = std::chrono::high_resolution_clock::now();
+			m_resetTimer = false;
+			return;
+		}
 
-		if (interval > FLT_EPSILON && !m_suspended && !m_systems.empty())
+		std::lock_guard<decltype(m_lock)> l(m_lock);
+
+		auto now = std::chrono::high_resolution_clock::now();
+
+		const double interval = std::chrono::duration_cast<std::chrono::microseconds>(now - m_lastFrame).count() * 0.000001;
+
+		m_lastFrame = now;
+		
+		if (interval > FLT_EPSILON && !m_systems.empty() && !m_suspended)
 		{
 			doUpdate(interval);
 		}
-		else if (m_suspended && !m_loading)
-		{
-			writeTransform();
-		}
+
 	}
 
 	void SkyrimPhysicsWorld::onEvent(const ShutdownEvent & e)

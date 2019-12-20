@@ -30,7 +30,7 @@ namespace hdt
 		virtual void onEvent(const ShutdownEvent& e) override;
 
 		inline bool isSuspended() { return m_suspended; }
-		inline void suspend(bool loading = false) { m_suspended = true; m_loading = loading; }
+		inline void suspend(bool loading = false) { m_suspended = true; m_loading = loading; m_resetTimer = true; }
 		inline void resume() {
 			m_suspended = false;
 			if (m_loading)
@@ -43,10 +43,13 @@ namespace hdt
 		btVector3 applyTranslationOffset();
 		void restoreTranslationOffset(const btVector3&);
 
-		float m_timeTick = 1 / 60.f;
+		float m_fixedTimeStep = 1 / 60.0f;
 		bool m_clampRotations = true;
 		bool m_unclampedResets = true;
 		float m_unclampedResetAngle = 120.0f;
+
+		bool m_resetTimer = true;
+		std::chrono::steady_clock::time_point m_lastFrame;
 
 	private:
 
@@ -57,7 +60,6 @@ namespace hdt
 
 		std::atomic_bool m_suspended;
 		std::atomic_bool m_loading;
-		float m_averageInterval;
 		float m_accumulatedInterval;
 	};
 }

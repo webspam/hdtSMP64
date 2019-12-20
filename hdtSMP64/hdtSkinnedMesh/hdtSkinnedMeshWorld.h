@@ -22,7 +22,8 @@ namespace hdt
 	protected:
 
 		inline void readTransform(float timeStep){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->readTransform(timeStep); }
-		inline void writeTransform(){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->writeTransform(); }
+		inline void clampRotations(float timeStep){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->clampRotations(timeStep); }
+		inline void writeTransform(float alpha){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->writeTransform(alpha); }
 		
 		virtual void applyGravity() override;
 

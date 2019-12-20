@@ -19,6 +19,8 @@
 		<groupIterations>16</groupIterations>
 		<groupEnableMLCP>false</groupEnableMLCP>
 		<erp>0.2</erp>
-		<min-fps>60</min-fps>
+		<!-- fixedTimeStep: fixed time step to run physics simulations at regardless of your current framerate. 
+		                    actual time step is 1/value. -->
+		<fixedTimeStep>60</fixedTimeStep>
 	</solver>
 </configs>

@@ -54,11 +54,13 @@ namespace hdt
 		int findBoneIdx(hdt::IDStr name);
 
 		virtual void readTransform(float timeStep);
-		virtual void writeTransform();
+		virtual void clampRotations(float timeStep);
+		virtual void writeTransform(float alpha);
 
 		Ref<NiNode> m_skeleton;
 		Ref<NiNode> m_oldRoot;
 		bool	m_initialized = false;
+		bool    m_reset = false;
 
 		// angular velocity damper
 		btQuaternion m_lastRootRotation;

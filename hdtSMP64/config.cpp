@@ -22,8 +22,8 @@ namespace hdt
 					ConstraintGroup::EnableMLCP = reader.readBool();
 				else if (reader.GetLocalName() == "erp")
 					SkyrimPhysicsWorld::get()->getSolverInfo().m_erp = btClamped(reader.readFloat(), 0.01f, 1.0f);
-				else if (reader.GetLocalName() == "min-fps")
-					SkyrimPhysicsWorld::get()->m_timeTick = 1.0f / (btClamped(reader.readInt(), 1, 300));
+				else if (reader.GetLocalName() == "fixedTimeStep")
+					SkyrimPhysicsWorld::get()->m_fixedTimeStep = 1.0f / (btClamped(reader.readInt(), 1, 300));
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());

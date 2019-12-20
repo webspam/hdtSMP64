@@ -3,6 +3,7 @@
 #include "hdtSkinnedMeshBody.h"
 #include "hdtSkinnedMeshShape.h"
 #include "hdtBoneScaleConstraint.h"
+#include "hdtSSEUtils/NetImmerseUtils.h"
 
 namespace hdt
 {
@@ -18,13 +19,18 @@ namespace hdt
 			i->scaleConstraint();
 	}
 
-	void SkinnedMeshSystem::writeTransform()
+	void SkinnedMeshSystem::clampRotations(float timeStep)
+	{
+		
+	}
+
+	void SkinnedMeshSystem::writeTransform(float alpha)
 	{
 		for (int i = 0; i < m_bones.size(); ++i)
 		{
 			if (m_bones[i]->m_rig.isKinematicObject()) continue;
 
-			m_bones[i]->writeTransform();
+			m_bones[i]->writeTransform(alpha);
 		}
 	}
 

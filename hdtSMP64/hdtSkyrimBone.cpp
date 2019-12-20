@@ -17,6 +17,8 @@ namespace hdt
 
 	void SkyrimBone::readTransform(float timeStep)
 	{
+		m_previousTransform = btQsTransform(m_currentTransform);
+		
 		auto oldScale = m_currentTransform.getScale();
 		m_currentTransform = convertNi(m_node->m_worldTransform);
 		auto newScale = m_currentTransform.getScale();
@@ -46,6 +48,7 @@ namespace hdt
 
 		if (timeStep <= RESET_PHYSICS)
 		{
+			m_previousTransform = btQsTransform(m_currentTransform);
 			m_rig.setWorldTransform(dest);
 			m_rig.setInterpolationWorldTransform(dest);
 			m_rig.setLinearVelocity(btVector3(0, 0, 0));
@@ -88,23 +91,23 @@ namespace hdt
 		//}
 	}
 
-	void SkyrimBone::writeTransform()
+	void SkyrimBone::writeTransform(float alpha)
 	{
 		//if (m_rig.isStaticOrKinematicObject()) return;
 		auto transform = m_rig.getWorldTransform() * m_rigToLocal;
-
+	
 		m_currentTransform.setBasis(transform.getBasis());
-		m_currentTransform.setOrigin(transform.getOrigin());
+		m_currentTransform.setOrigin(transform.getOrigin());		
 
-		m_node->m_worldTransform.rot = convertBt(transform.getBasis());
-		m_node->m_worldTransform.pos = convertBt(transform.getOrigin());
-		m_node->m_worldTransform = m_node->m_worldTransform;
+		m_node->m_worldTransform.rot = convertBt(slerp(m_previousTransform.getBasis(), m_currentTransform.getBasis(), alpha));
+		m_node->m_worldTransform.pos = convertBt(lerp(m_previousTransform.getOrigin(), m_currentTransform.getOrigin(), alpha));
 
-		//auto parentTransform = m_node->m_parent ? m_node->m_parent->unkTransform : NiTransform();
-		//NiTransform invParentTransform;
-		//parentTransform.Invert(invParentTransform);
-		//m_node->m_localTransform = invParentTransform * m_node->unkTransform;
-
-		//updateTransformUpDown(m_node->GetAsNiNode());
+		auto parentTransform = m_node->m_parent ? m_node->m_parent->m_worldTransform : NiTransform();
+		NiTransform invParentTransform;
+		parentTransform.Invert(invParentTransform);
+		
+		m_node->m_localTransform = invParentTransform * m_node->m_worldTransform;
+		
+		updateTransformUpDown(m_node->GetAsNiNode());
 	}
 }
