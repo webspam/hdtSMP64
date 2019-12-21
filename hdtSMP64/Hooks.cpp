@@ -47,15 +47,16 @@ namespace hdt
 		DEFINE_MEMBER_FN_HOOK(onFrame, void, offset::GameLoopFunction);
 
 		void onFrame();
+
+		char unk[0x16];
+		bool gamePaused; // 16
 	};
 
 	void UnkEngine::onFrame()
 	{
-		FrameEvent e;
-		e.frameEnd = false;
-		g_frameEventDispatcher.dispatch(e);
 		CALL_MEMBER_FN(this, onFrame)();
-		e.frameEnd = true;
+		FrameEvent e;
+		e.gamePaused = this->gamePaused;
 		g_frameEventDispatcher.dispatch(e);
 	}
 

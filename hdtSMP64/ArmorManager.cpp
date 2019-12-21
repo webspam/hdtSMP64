@@ -106,8 +106,6 @@ namespace hdt
 
 	void ArmorManager::onEvent(const FrameEvent & e)
 	{
-		if (!e.frameEnd) return;
-
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
 

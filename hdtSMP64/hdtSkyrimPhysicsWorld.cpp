@@ -1,6 +1,7 @@
 #include "hdtSkyrimPhysicsWorld.h"
 #include <ppl.h>
 #include "Offsets.h"
+#include "skse64/GameMenus.h"
 
 namespace hdt
 {
@@ -216,7 +217,12 @@ namespace hdt
 
 	void SkyrimPhysicsWorld::onEvent(const FrameEvent & e)
 	{
-		if (!e.frameEnd) return;
+		auto mm = MenuManager::GetSingleton();
+		
+		if ((e.gamePaused || mm->IsGamePaused()) && !m_suspended)
+			suspend();
+		else if (!(e.gamePaused || mm->IsGamePaused()) && m_suspended)
+			resume();
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		float interval = *(float*)(RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime);

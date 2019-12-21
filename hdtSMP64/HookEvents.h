@@ -16,7 +16,7 @@ namespace hdt
 	
 	struct FrameEvent
 	{
-		bool frameEnd;
+		bool gamePaused;
 	};
 
 	struct ShutdownEvent

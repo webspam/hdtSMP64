@@ -27,17 +27,6 @@ namespace hdt
 		virtual EventResult ReceiveEvent(MenuOpenCloseEvent* evn, EventDispatcher<MenuOpenCloseEvent>* dispatcher) override
 		{
 			auto mm = MenuManager::GetSingleton();
-
-			if (mm->IsGamePaused() && !SkyrimPhysicsWorld::get()->isSuspended())
-			{
-				_DMESSAGE("game pause detected, suspending physics world");
-				SkyrimPhysicsWorld::get()->suspend();
-			}
-			else if (!mm->IsGamePaused() && SkyrimPhysicsWorld::get()->isSuspended())
-			{
-				_DMESSAGE("game unpause detected, resuming physics world");
-				SkyrimPhysicsWorld::get()->resume();
-			}
 			
 			if (evn && evn->opening && !strcmp(evn->menuName.data, "Loading Menu"))
 			{
