@@ -3,6 +3,7 @@
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 #include "../hdtSSEUtils/FrameworkUtils.h"
 #include <skse64\skse64\GameStreams.h>
+#include "skse64/GameReferences.h"
 #include "XmlReader.h"
 
 #include <d3d11.h>
@@ -60,7 +61,7 @@ namespace hdt
 			updateTransformUpDown(m_skeleton);
 			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 		}
-		else
+		else if (m_skeleton->m_parent == (*g_thePlayer)->GetNiNode() && !((*g_thePlayer)->actorState.IsWeaponDrawn()))
 		{
 			btQuaternion newRot = convertNi(m_skeleton->m_worldTransform.rot);
 			btVector3 rotAxis;

@@ -61,19 +61,26 @@ namespace hdt
 		return ret;
 	}
 
-	void updateTransformUpDown(NiNode * node)
+	void updateTransformUpDown(NiAVObject * obj)
 	{
-		if (!node) return;
+		if (!obj) return;
 
-		NiAVObject::ControllerUpdateContext ctx;
-		ctx.delta = 0.f;
-		ctx.flags = NiAVObject::ControllerUpdateContext::kDirty;
-		node->UpdateWorldData(&ctx);
+		NiAVObject::ControllerUpdateContext ctx =
+		{	0.f,
+			NiAVObject::ControllerUpdateContext::kDirty
+		};
+		
+		obj->UpdateWorldData(&ctx);
 
-		for (int i = 0; i < node->m_children.m_arrayBufLen; ++i)
+		auto node = castNiNode(obj);
+
+		if (node)
 		{
-			auto child = castNiNode(node->m_children.m_data[i]);
-			if (child) updateTransformUpDown(child);
+			for (int i = 0; i < node->m_children.m_arrayBufLen; ++i)
+			{
+				auto child = node->m_children.m_data[i];
+				if (child) updateTransformUpDown(child);
+			}
 		}
 	}
 }
