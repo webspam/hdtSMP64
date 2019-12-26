@@ -23,6 +23,7 @@ namespace hdt
 		std::vector<Ref<BoneScaleConstraint>> m_constraints;
 		std::vector<Ref<ConstraintGroup>> m_constraintGroups;
 
+		virtual void resetTransformsToOriginal();
 		virtual void readTransform(float timeStep);
 		virtual void writeTransform();
 

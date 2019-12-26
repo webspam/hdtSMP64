@@ -70,6 +70,6 @@ namespace hdt
 	std::string readAllFile(const char* path);
 	std::string readAllFile2(const char* path);
 
-	void updateTransformUpDown(NiAVObject* obj);
+	void updateTransformUpDown(NiAVObject* obj, bool dirty);
 }
 

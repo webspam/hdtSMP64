@@ -61,13 +61,13 @@ namespace hdt
 		return ret;
 	}
 
-	void updateTransformUpDown(NiAVObject * obj)
+	void updateTransformUpDown(NiAVObject * obj, bool dirty)
 	{
 		if (!obj) return;
 
 		NiAVObject::ControllerUpdateContext ctx =
-		{	0.f,
-			NiAVObject::ControllerUpdateContext::kDirty
+		{ 0.f,
+			dirty ? NiAVObject::ControllerUpdateContext::kDirty : NiAVObject::ControllerUpdateContext::kNone
 		};
 		
 		obj->UpdateWorldData(&ctx);
@@ -79,7 +79,7 @@ namespace hdt
 			for (int i = 0; i < node->m_children.m_arrayBufLen; ++i)
 			{
 				auto child = node->m_children.m_data[i];
-				if (child) updateTransformUpDown(child);
+				if (child) updateTransformUpDown(child, dirty);
 			}
 		}
 	}

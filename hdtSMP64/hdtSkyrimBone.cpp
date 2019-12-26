@@ -15,6 +15,12 @@ namespace hdt
 			++m_depth;
 	}
 
+	void SkyrimBone::resetTransformToOriginal()
+	{
+		m_node->m_localTransform = convertBt(m_origTransform);
+		updateTransformUpDown(m_node, false);
+	}
+
 	void SkyrimBone::readTransform(float timeStep)
 	{
 		auto oldScale = m_currentTransform.getScale();
@@ -46,6 +52,7 @@ namespace hdt
 
 		if (timeStep <= RESET_PHYSICS)
 		{
+			m_origTransform = convertNi(m_node->m_localTransform);
 			m_rig.setWorldTransform(dest);
 			m_rig.setInterpolationWorldTransform(dest);
 			m_rig.setLinearVelocity(btVector3(0, 0, 0));

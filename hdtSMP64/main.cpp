@@ -213,6 +213,24 @@ namespace hdt
 
 	bool SMPDebug_Execute(const ObScriptParam* paramInfo, ScriptData* scriptData, TESObjectREFR* thisObj, TESObjectREFR* containingObj, Script* scriptObj, ScriptLocals* locals, double& result, UInt32& opcodeOffsetPtr)
 	{
+		char buffer[MAX_PATH];
+		memset(buffer, 0, MAX_PATH);
+		char buffer2[MAX_PATH];
+		memset(buffer2, 0, MAX_PATH);
+
+		if (!ObjScript_ExtractArgs(paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals, buffer, buffer2))
+		{
+			return false;
+		}
+
+		if (_strnicmp(buffer, "reset", MAX_PATH) == 0)
+		{
+			Console_Print("running smp reset");
+			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
+			SkyrimPhysicsWorld::get()->resetSystems();
+			return true;
+		}
+		
 		auto skeletons = ArmorManager::instance()->getSkeletons();
 
 		size_t activeSkeletons = 0;
@@ -317,12 +335,19 @@ extern "C"
 		}
 		if (hijackedCommand)
 		{
+			static ObScriptParam params[1];
+			params[0].typeID = ObScriptParam::kType_String;
+			params[0].typeStr = "String (optional)";
+			params[0].isOptional = 1;
+			
 			ObScriptCommand cmd = *hijackedCommand;
+			
 			cmd.longName = "SMPDebug";
 			cmd.shortName = "smp";
-			cmd.helpText = "smp";
+			cmd.helpText = "smp <reset>";
 			cmd.needsParent = 0;
-			cmd.numParams = 0;
+			cmd.numParams = 1;
+			cmd.params = params;
 			cmd.execute = hdt::SMPDebug_Execute;
 			cmd.flags = 0;
 			SafeWriteBuf(reinterpret_cast<uintptr_t>(hijackedCommand), &cmd, sizeof(cmd));

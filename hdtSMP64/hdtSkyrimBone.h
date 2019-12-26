@@ -11,6 +11,7 @@ namespace hdt
 
 		SkyrimBone(IDStr name, NiNode* node, btRigidBody::btRigidBodyConstructionInfo& ci);
 
+		virtual void resetTransformToOriginal();
 		virtual void readTransform(float timeStep);
 		virtual void writeTransform();
 

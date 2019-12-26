@@ -24,6 +24,7 @@ namespace hdt
 		virtual void removeSkinnedMeshSystem(SkinnedMeshSystem* system) override;
 		void removeSystemByNode(void* root);
 
+		void resetTransformsToOriginal();
 		void resetSystems();
 
 		virtual void onEvent(const FrameEvent& e) override;

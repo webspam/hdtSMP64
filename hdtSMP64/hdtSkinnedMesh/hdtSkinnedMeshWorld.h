@@ -21,6 +21,7 @@ namespace hdt
 		
 	protected:
 
+		inline void resetTransformsToOriginal() { for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->resetTransformsToOriginal(); }
 		inline void readTransform(float timeStep){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->readTransform(timeStep); }
 		inline void writeTransform(){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->writeTransform(); }
 		

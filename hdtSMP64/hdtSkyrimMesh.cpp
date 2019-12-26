@@ -58,12 +58,12 @@ namespace hdt
 
 		if (timeStep <= RESET_PHYSICS)
 		{
-			updateTransformUpDown(m_skeleton);
+			updateTransformUpDown(m_skeleton, true);
 			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 		}
 		else if (m_skeleton->m_parent == (*g_thePlayer)->GetNiNode())
 		{
-			if (!PlayerCamera::GetSingleton()->unk162)
+			if (!PlayerCamera::GetSingleton()->unk162) // isWeaponSheathed or potentially isCameraFree
 			{
 				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 			}
@@ -90,7 +90,7 @@ namespace hdt
 							auto node = castNiNode(m_skeleton->m_children.m_data[i]);
 							if (node)
 							{
-								updateTransformUpDown(node);
+								updateTransformUpDown(node, true);
 							}
 						}
 					}
@@ -102,7 +102,7 @@ namespace hdt
 					if (rotAngle < -limit || rotAngle > limit)
 					{
 						timeStep = RESET_PHYSICS;
-						updateTransformUpDown(m_skeleton);
+						updateTransformUpDown(m_skeleton, true);
 						m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 					}
 				}
@@ -183,7 +183,7 @@ namespace hdt
 		m_skeleton = skeleton;
 		m_model = model;
 		m_filePath = path;
-		updateTransformUpDown(m_skeleton);
+		updateTransformUpDown(m_skeleton, true);
 
 		XMLReader reader((uint8_t*)loaded.data(), loaded.size());
 		m_reader = &reader;
