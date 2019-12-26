@@ -61,20 +61,24 @@ namespace hdt
 			updateTransformUpDown(m_skeleton);
 			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 		}
-		else if (m_skeleton->m_parent == (*g_thePlayer)->GetNiNode() && !((*g_thePlayer)->actorState.IsWeaponDrawn()))
+		else if (m_skeleton->m_parent == (*g_thePlayer)->GetNiNode())
 		{
-			btQuaternion newRot = convertNi(m_skeleton->m_worldTransform.rot);
-			btVector3 rotAxis;
-			float rotAngle;
-			btTransformUtil::calculateDiffAxisAngleQuaternion(m_lastRootRotation, newRot, rotAxis, rotAngle);
-
-			if (SkyrimPhysicsWorld::get()->m_clampRotations)
+			if (!PlayerCamera::GetSingleton()->unk162)
 			{
-				float limit = 10.f * timeStep;
+				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
+			}
+			else
+			{
+				btQuaternion newRot = convertNi(m_skeleton->m_worldTransform.rot);
+				btVector3 rotAxis;
+				float rotAngle;
+				btTransformUtil::calculateDiffAxisAngleQuaternion(m_lastRootRotation, newRot, rotAxis, rotAngle);
 
-				if (rotAngle < -limit || rotAngle > limit)
+				if (SkyrimPhysicsWorld::get()->m_clampRotations)
 				{
-					if (SkyrimPhysicsWorld::get()->m_clampRotations)
+					float limit = 10.f * timeStep;
+
+					if (rotAngle < -limit || rotAngle > limit)
 					{
 						rotAngle = btClamped(rotAngle, -limit, limit);
 						btQuaternion clampedRot(rotAxis, rotAngle);
@@ -91,16 +95,16 @@ namespace hdt
 						}
 					}
 				}
-			}
-			else if (SkyrimPhysicsWorld::get()->m_unclampedResets)
-			{
-				float limit = SkyrimPhysicsWorld::get()->m_unclampedResetAngle * timeStep;
-				
-				if (rotAngle < -limit || rotAngle > limit)
+				else if (SkyrimPhysicsWorld::get()->m_unclampedResets)
 				{
-					timeStep = RESET_PHYSICS;
-					updateTransformUpDown(m_skeleton);
-					m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
+					float limit = SkyrimPhysicsWorld::get()->m_unclampedResetAngle * timeStep;
+
+					if (rotAngle < -limit || rotAngle > limit)
+					{
+						timeStep = RESET_PHYSICS;
+						updateTransformUpDown(m_skeleton);
+						m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
+					}
 				}
 			}
 		}
