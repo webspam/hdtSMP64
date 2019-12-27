@@ -6,6 +6,7 @@
 #include "HookEvents.h"
 
 #include <atomic>
+#include "ArmorManager.h"
 
 namespace hdt
 {
@@ -36,6 +37,7 @@ namespace hdt
 			m_suspended = false;
 			if (m_loading)
 			{
+				ArmorManager::instance()->reloadMeshes();
 				resetSystems();
 				m_loading = false;
 			}

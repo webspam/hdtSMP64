@@ -62,6 +62,8 @@ namespace hdt
 		virtual void onEvent(const FrameEvent& e) override;
 		virtual void onEvent(const ShutdownEvent&) override;
 
+		void reloadMeshes();
+
 		std::vector<Skeleton> getSkeletons() const;
 
 	};

@@ -70,8 +70,7 @@ namespace hdt
 			if (iter != skeleton.armors.end())
 			{
 				iter->armorWorn = e.attachedNode;
-				std::unordered_map<IDStr, IDStr> renameMap;
-				iter->renameMap.swap(renameMap);
+				std::unordered_map<IDStr, IDStr> renameMap = iter->renameMap;
 
 				if (!isFirstPersonSkeleton(e.skeleton))
 				{
@@ -104,6 +103,37 @@ namespace hdt
 		}
 	}
 
+	void ArmorManager::reloadMeshes()
+	{
+		const FrameEvent e
+		{
+			false
+		};
+		
+		onEvent(e);
+		
+		for (auto& i : m_skeletons)
+		{
+			for (auto& j : i.armors)
+			{
+				if (j.physics && j.physics->m_world)
+					j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+				
+				j.physics = nullptr;
+
+				std::unordered_map<IDStr, IDStr> renameMap = j.renameMap;
+
+				auto mesh = SkyrimMeshParser().createMesh(i.npc, j.armorWorn, j.physicsFile, std::move(renameMap));
+
+				if (mesh)
+				{
+					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(mesh);
+					j.physics = mesh;
+				}
+			}
+		}
+	}
+	
 	void ArmorManager::onEvent(const FrameEvent & e)
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);

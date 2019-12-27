@@ -28,12 +28,12 @@ namespace hdt
 		{
 			auto mm = MenuManager::GetSingleton();
 			
-			if (evn && evn->opening && !strcmp(evn->menuName.data, "Loading Menu"))
+			if (evn && evn->opening && (!strcmp(evn->menuName.data, "Loading Menu") || !strcmp(evn->menuName.data, "RaceSex Menu")))
 			{
-				_DMESSAGE("loading menu detected, scheduling physics reset on world un-suspend");
+				_DMESSAGE("loading menu/racesexmenu detected, scheduling physics reset on world un-suspend");
 				SkyrimPhysicsWorld::get()->suspend(true);
 			}
-
+		
 			return kEvent_Continue;
 		}
 	} g_freezeEventHandler;
@@ -230,6 +230,16 @@ namespace hdt
 			SkyrimPhysicsWorld::get()->resetSystems();
 			return true;
 		}
+
+		if (_strnicmp(buffer, "meshreload", MAX_PATH) == 0)
+		{
+			Console_Print("running smp mesh reload");
+			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
+			ArmorManager::instance()->reloadMeshes();
+			SkyrimPhysicsWorld::get()->resetSystems();
+			return true;
+		}
+
 		
 		auto skeletons = ArmorManager::instance()->getSkeletons();
 
@@ -247,7 +257,9 @@ namespace hdt
 				armors++;
 
 				if (armor.physics && armor.physics->m_world)
+				{
 					activeArmors++;
+				}
 			}
 		}
 
