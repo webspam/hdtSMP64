@@ -262,4 +262,14 @@ namespace hdt
 
 		m_systems.clear();
 	}
+
+	EventResult SkyrimPhysicsWorld::ReceiveEvent(SKSECameraEvent* evn, EventDispatcher<SKSECameraEvent>* dispatcher)
+	{
+		if (evn && evn->oldState && evn->newState)
+			if (evn->oldState->stateId == 0 && evn->newState->stateId == 9)
+			{
+				m_resetPc = 3;
+			}
+		return kEvent_Continue;
+	}
 }

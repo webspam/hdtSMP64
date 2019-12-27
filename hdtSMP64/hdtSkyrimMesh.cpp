@@ -63,7 +63,14 @@ namespace hdt
 		}
 		else if (m_skeleton->m_parent == (*g_thePlayer)->GetNiNode())
 		{
-			if (!PlayerCamera::GetSingleton()->unk162) // isWeaponSheathed or potentially isCameraFree
+			if (SkyrimPhysicsWorld::get()->m_resetPc > 0)
+			{
+				timeStep = RESET_PHYSICS;
+				updateTransformUpDown(m_skeleton, true);
+				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
+				SkyrimPhysicsWorld::get()->m_resetPc -= 1;
+			}
+			else if (!PlayerCamera::GetSingleton()->unk162 || PlayerCamera::GetSingleton()->cameraState->stateId == 0) // isWeaponSheathed or potentially isCameraFree || cameraState is first person
 			{
 				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 			}

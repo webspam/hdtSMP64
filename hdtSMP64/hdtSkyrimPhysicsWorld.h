@@ -7,12 +7,13 @@
 
 #include <atomic>
 #include "ArmorManager.h"
+#include "skse64/PapyrusEvents.h"
 
 namespace hdt
 {
 	constexpr float RESET_PHYSICS = -10.0f;
 
-	class SkyrimPhysicsWorld : public SkinnedMeshWorld, public IEventListener<FrameEvent>, public IEventListener<ShutdownEvent>
+	class SkyrimPhysicsWorld : public SkinnedMeshWorld, public IEventListener<FrameEvent>, public IEventListener<ShutdownEvent>, public BSTEventSink<SKSECameraEvent>
 	{
 	public:
 
@@ -30,6 +31,8 @@ namespace hdt
 
 		virtual void onEvent(const FrameEvent& e) override;
 		virtual void onEvent(const ShutdownEvent& e) override;
+
+		virtual	EventResult		ReceiveEvent(SKSECameraEvent* evn, EventDispatcher<SKSECameraEvent>* dispatcher) override;
 
 		inline bool isSuspended() { return m_suspended; }
 		inline void suspend(bool loading = false) { m_suspended = true; m_loading = loading; }
@@ -50,6 +53,7 @@ namespace hdt
 		bool m_clampRotations = true;
 		bool m_unclampedResets = true;
 		float m_unclampedResetAngle = 120.0f;
+		uint8_t m_resetPc;
 
 	private:
 

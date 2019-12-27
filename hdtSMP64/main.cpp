@@ -227,19 +227,10 @@ namespace hdt
 		{
 			Console_Print("running smp reset");
 			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
-			SkyrimPhysicsWorld::get()->resetSystems();
-			return true;
-		}
-
-		if (_strnicmp(buffer, "meshreload", MAX_PATH) == 0)
-		{
-			Console_Print("running smp mesh reload");
-			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
 			ArmorManager::instance()->reloadMeshes();
 			SkyrimPhysicsWorld::get()->resetSystems();
 			return true;
 		}
-
 		
 		auto skeletons = ArmorManager::instance()->getSkeletons();
 
@@ -318,6 +309,11 @@ extern "C"
 		const auto messageInterface = reinterpret_cast<SKSEMessagingInterface*>(skse->QueryInterface(kInterface_Messaging));
 		if (messageInterface)
 		{
+			const auto cameraDispatcher = static_cast<EventDispatcher<SKSECameraEvent>*>(messageInterface->GetEventDispatcher(SKSEMessagingInterface::kDispatcher_CameraEvent));
+
+			if (cameraDispatcher)
+				cameraDispatcher->AddEventSink(hdt::SkyrimPhysicsWorld::get());
+
 			messageInterface->RegisterListener(skse->GetPluginHandle(), "SKSE", [](SKSEMessagingInterface::Message* msg)
 				{
 					if (msg && msg->type == SKSEMessagingInterface::kMessage_InputLoaded)
