@@ -3,6 +3,8 @@
 #include "Offsets.h"
 #include "skse64/GameMenus.h"
 
+#include "tracy/Tracy.hpp"
+
 namespace hdt
 {
 	static const float* timeStamp = (float*)0x12E355C;
@@ -236,11 +238,17 @@ namespace hdt
 
 		if (interval > FLT_EPSILON && !m_suspended && !m_systems.empty())
 		{
-			doUpdate(interval);
+			{
+				ZoneScopedNC("HDT-SMP Update", tracy::Color::Purple);
+				doUpdate(interval);
+			}
 		}
 		else if (m_suspended && !m_loading)
 		{
-			writeTransform();
+			{
+				ZoneScopedNC("HDT-SMP Update - No Process", tracy::Color::Purple)
+				writeTransform();
+			}
 		}
 	}
 

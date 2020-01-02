@@ -15,6 +15,9 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="tracy">
+      <UniqueIdentifier>{bbc8db09-6deb-4715-aa46-8c90e7ce574e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -128,6 +131,9 @@
     <ClInclude Include="EventDebugLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\profiler\skse64\profiler\lib\tracy\Tracy.hpp">
+      <Filter>tracy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ArmorManager.cpp">
@@ -228,6 +234,9 @@
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\profiler\skse64\profiler\lib\tracy\TracyClientDLL.cpp">
+      <Filter>tracy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
