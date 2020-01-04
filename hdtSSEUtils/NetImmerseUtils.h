@@ -52,6 +52,7 @@ namespace hdt
 
 	inline NiNode* castNiNode(NiAVObject* obj) { return obj ? obj->GetAsNiNode() : nullptr; }
 	inline BSTriShape* castBSTriShape(NiAVObject* obj) { return obj ? obj->GetAsBSTriShape() : nullptr; }
+	inline BSDynamicTriShape* castBSDynamicTriShape(NiAVObject* obj) { return obj ? obj->GetAsBSDynamicTriShape() : nullptr; }
 
 	NiNode* addParentToNode(NiNode* node, const char* name);
 

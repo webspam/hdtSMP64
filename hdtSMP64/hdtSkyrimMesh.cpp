@@ -730,10 +730,11 @@ namespace hdt
 	Ref<SkyrimShape> SkyrimMeshParser::generateMeshBody(const std::string& name)
 	{
 		//Warning("Skinned Mesh currently not supported");
-		auto* g = castBSTriShape(findObject(m_model, name.c_str()));
-		if (!g)
+		auto* triShape = castBSTriShape(findObject(m_model, name.c_str()));
+		auto* dynamicShape = castBSDynamicTriShape(findObject(m_model, name.c_str()));
+		if (!triShape)
 		{
-			Warning("%s is not a BSTriShape or doesn't exist, skipped", name.c_str());
+			Warning("%s is not a BSTriShape/BSDynamicTriShape or doesn't exist, skipped", name.c_str());
 			m_reader->skipCurrentElement();
 			return 0;
 		}
@@ -741,7 +742,7 @@ namespace hdt
 		Ref<SkyrimShape> body = new SkyrimShape;
 		body->m_name = name;
 
-		if (!g->m_spSkinInstance)
+		if (!triShape->m_spSkinInstance)
 		{
 			//auto bone = m_mesh->findBone(name);
 			//if (!bone)
@@ -762,7 +763,7 @@ namespace hdt
 		}
 		else
 		{
-			NiSkinInstance* skinInstance = g->m_spSkinInstance;
+			NiSkinInstance* skinInstance = triShape->m_spSkinInstance;
 			NiSkinData* skinData = skinInstance->m_spSkinData;
 			for (int boneIdx = 0; boneIdx < skinData->m_uiBones; ++boneIdx)
 			{
@@ -781,7 +782,7 @@ namespace hdt
 				body->addBone(bone, convertNi(boneData->m_kSkinToBone), boundingSphere);
 			}
 
-			NiSkinPartition* skinPartition = g->m_spSkinInstance->m_spSkinPartition;
+			NiSkinPartition* skinPartition = triShape->m_spSkinInstance->m_spSkinPartition;
 			body->m_vertices.resize(skinPartition->vertexCount);
 
 			// vertices data are all the same in every partitions
@@ -790,6 +791,9 @@ namespace hdt
 			auto vSize = NiSkinPartition::GetVertexSize(partition->vertexDesc);
 
 			auto vertexBlock = partition->shapeData->m_RawVertexData;
+			UInt8* dynamicVData = nullptr;
+			if (dynamicShape)
+				dynamicVData = (UInt8*)dynamicShape->pDynamicData;
 
 			uint8_t boneOffset = 0;
 
@@ -805,10 +809,15 @@ namespace hdt
 				boneOffset += 4;
 			if (vFlags & VF_COLORS)
 				boneOffset += 4;
-
+			
 			for (int j = 0; j < skinPartition->vertexCount; ++j)
 			{
-				NiPoint3 * vertexPos = reinterpret_cast<NiPoint3*>(&vertexBlock[j * vSize]);
+				NiPoint3* vertexPos;
+				
+				if (dynamicShape)
+					vertexPos = reinterpret_cast<NiPoint3*>(&dynamicVData[j * 16]);
+				else
+					vertexPos = reinterpret_cast<NiPoint3*>(&vertexBlock[j * vSize]);
 
 				body->m_vertices[j].m_skinPos = convertNi(*vertexPos);
 
