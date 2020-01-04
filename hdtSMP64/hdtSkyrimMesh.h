@@ -13,39 +13,11 @@ namespace hdt
 	class SkyrimMesh : public SkinnedMeshSystem
 	{
 	public:
-		// TODO: refactor
-		struct VertexUVSkinned
+		struct BoneData
 		{
-			NiPoint3 pos;
-			uint32_t unk0c;
-			uint16_t uv[2];
 			uint16_t boneWeights[4];
 			uint8_t boneIndices[4];
 		};
-
-		struct VertexUVNormalTangentSkinned
-		{
-			NiPoint3 pos;
-			uint32_t unk0c;
-			uint16_t uv[2];
-			uint32_t unk14;
-			uint32_t unk18;
-			uint16_t boneWeights[4];
-			uint8_t boneIndices[4];
-		};
-
-		struct VertexUVNormalTangentSkinnedColors
-		{
-			NiPoint3 pos;
-			uint32_t unk0c;
-			uint16_t uv[2];
-			uint32_t unk14;
-			uint32_t unk18;
-			uint32_t colors;
-			uint16_t boneWeights[4];
-			uint8_t boneIndices[4];
-		};
-		
 
 		SkyrimMesh(NiNode* skeleton);
 

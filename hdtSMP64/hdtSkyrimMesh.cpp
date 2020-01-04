@@ -786,59 +786,41 @@ namespace hdt
 
 			// vertices data are all the same in every partitions
 			auto partition = skinPartition->m_pkPartitions;
-			auto vf = partition->vertexDesc;
-			if (NiSkinPartition::GetVertexSize(vf) == sizeof(SkyrimMesh::VertexUVSkinned) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED))
+			auto vFlags = NiSkinPartition::GetVertexFlags(partition->vertexDesc);
+			auto vSize = NiSkinPartition::GetVertexSize(partition->vertexDesc);
+
+			auto vertexBlock = partition->shapeData->m_RawVertexData;
+
+			uint8_t boneOffset = 0;
+
+			if (vFlags & VF_VERTEX)
+				boneOffset += 16;
+			if (vFlags & VF_UV)
+				boneOffset += 4;
+			if (vFlags & VF_UV_2)
+				boneOffset += 4;
+			if (vFlags & VF_NORMAL)
+				boneOffset += 4;
+			if (vFlags & VF_TANGENT)
+				boneOffset += 4;
+			if (vFlags & VF_COLORS)
+				boneOffset += 4;
+
+			for (int j = 0; j < skinPartition->vertexCount; ++j)
 			{
-				auto vertices = reinterpret_cast<SkyrimMesh::VertexUVSkinned*>(partition->shapeData->m_RawVertexData);
-				for (int j = 0; j < skinPartition->vertexCount; ++j)
+				NiPoint3 * vertexPos = reinterpret_cast<NiPoint3*>(&vertexBlock[j * vSize]);
+
+				body->m_vertices[j].m_skinPos = convertNi(*vertexPos);
+
+				SkyrimMesh::BoneData* boneData = reinterpret_cast<SkyrimMesh::BoneData*>(&vertexBlock[j * vSize + boneOffset]);
+
+				for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
 				{
-					body->m_vertices[j].m_skinPos = convertNi(vertices[j].pos);
-					for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
-					{
-						auto localBoneIndex = vertices[j].boneIndices[k];
-						assert(localBoneIndex < body->m_skinnedBones.size());
-						body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
-						float32(&body->m_vertices[j].m_weight[k], vertices[j].boneWeights[k]);
-					}
+					auto localBoneIndex = boneData->boneIndices[k];
+					assert(localBoneIndex < body->m_skinnedBones.size());
+					body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
+					float32(&body->m_vertices[j].m_weight[k], boneData->boneWeights[k]);
 				}
-			}
-			else if (NiSkinPartition::GetVertexSize(vf) == sizeof(SkyrimMesh::VertexUVNormalTangentSkinned) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL))
-			{
-				auto vertices = reinterpret_cast<SkyrimMesh::VertexUVNormalTangentSkinned*>(partition->shapeData->m_RawVertexData);
-				for (int j = 0; j < skinPartition->vertexCount; ++j)
-				{
-					body->m_vertices[j].m_skinPos = convertNi(vertices[j].pos);
-					for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
-					{
-						auto localBoneIndex = vertices[j].boneIndices[k];
-						assert(localBoneIndex < body->m_skinnedBones.size());
-						body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
-						float32(&body->m_vertices[j].m_weight[k], vertices[j].boneWeights[k]);
-					}
-				}
-			}
-			else if (NiSkinPartition::GetVertexSize(vf) == sizeof(SkyrimMesh::VertexUVNormalTangentSkinnedColors) && NiSkinPartition::GetVertexFlags(vf) == (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL | VF_COLORS))
-			{
-				auto vertices = reinterpret_cast<SkyrimMesh::VertexUVNormalTangentSkinnedColors*>(partition->shapeData->m_RawVertexData);
-				for (int j = 0; j < skinPartition->vertexCount; ++j)
-				{
-					body->m_vertices[j].m_skinPos = convertNi(vertices[j].pos);
-					for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
-					{
-						auto localBoneIndex = vertices[j].boneIndices[k];
-						assert(localBoneIndex < body->m_skinnedBones.size());
-						body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
-						float32(&body->m_vertices[j].m_weight[k], vertices[j].boneWeights[k]);
-					}
-				}
-			}
-			else
-			{
-				Warning("Shape %s  has unsupport vertex format 0x%016llx flag:%x size:%d", name.c_str(), vf, NiSkinPartition::GetVertexFlags(vf), NiSkinPartition::GetVertexSize(vf));
-				Warning("support format size:%d flag:%x ", sizeof(SkyrimMesh::VertexUVSkinned), (VF_VERTEX | VF_UV | VF_SKINNED));
-				Warning("support format size:%d flag:%x ", sizeof(SkyrimMesh::VertexUVNormalTangentSkinned), (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL));
-				Warning("support format size:%d flag:%x ", sizeof(SkyrimMesh::VertexUVNormalTangentSkinnedColors), (VF_VERTEX | VF_UV | VF_SKINNED | VF_TANGENT | VF_NORMAL | VF_COLORS));
-				return nullptr;
 			}
 		}
 
