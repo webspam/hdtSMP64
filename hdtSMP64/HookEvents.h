@@ -3,9 +3,25 @@
 #include "skse64/NiObjects.h"
 
 #include "EventDispatcherImpl.h"
+#include "skse64/NiNodes.h"
 
 namespace hdt
 {
+	struct SkinAllHeadGeometryEvent
+	{
+		NiNode* skeleton = nullptr;
+		BSFaceGenNiNode* headNode = nullptr;
+		bool hasSkinned = false;
+	};
+
+	struct SkinSingleHeadGeometryEvent
+	{
+		NiNode* skeleton = nullptr;
+		BSFaceGenNiNode* headNode = nullptr;
+		BSGeometry* geometry = nullptr;
+		bool hasSkinned = false;
+	};
+	
 	struct ArmorAttachEvent
 	{
 		NiNode*		armorModel = nullptr;
@@ -26,4 +42,6 @@ namespace hdt
 	extern EventDispatcherImpl<FrameEvent>			g_frameEventDispatcher;
 	extern EventDispatcherImpl<ShutdownEvent>		g_shutdownEventDispatcher;
 	extern EventDispatcherImpl<ArmorAttachEvent>	g_armorAttachEventDispatcher;
+	extern EventDispatcherImpl<SkinAllHeadGeometryEvent> g_skinAllHeadGeometryEventDispatcher;
+	extern EventDispatcherImpl<SkinSingleHeadGeometryEvent> g_skinSingleHeadGeometryEventDispatcher;
 }

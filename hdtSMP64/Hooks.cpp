@@ -1,13 +1,114 @@
 #include <detours.h>
 
+#include "skse64/GameForms.h"
+#include "skse64/GameReferences.h"
 #include "skse64/NiObjects.h"
+#include "skse64/NiGeometry.h"
+#include "skse64/NiExtraData.h"
 
 #include "Hooks.h"
 #include "HookEvents.h"
 #include "Offsets.h"
+#include "skse64/NiNodes.h"
+#include "skse64/GameRTTI.h"
+#include "skse64_common/SafeWrite.h"
 
 namespace hdt
 {
+	class BSFaceGenNiNodeEx : BSFaceGenNiNode
+	{
+		MEMBER_FN_PREFIX(BSFaceGenNiNodeEx);
+
+	public:
+		DEFINE_MEMBER_FN_HOOK(SkinAllGeometry, void, offset::BSFaceGenNiNode_SkinAllGeometry, NiNode* a_skeleton, char a_unk);
+		DEFINE_MEMBER_FN_HOOK(SkinSingleGeometry, void, offset::BSFaceGenNiNode_SkinSingleGeometry, NiNode* a_skeleton, BSGeometry* a_geometry, char a_unk);
+
+		void SkinSingleGeometry(NiNode * a_skeleton, BSGeometry* a_geometry, char a_unk)
+		{
+			const char* name = "";
+
+			if (a_skeleton->m_owner && a_skeleton->m_owner->baseForm)
+			{
+				auto bname = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESFullName);
+				if (bname)
+					name = bname->GetName();
+			}
+
+			_MESSAGE("SkinSingleGeometry %s %d - %s, %s", a_skeleton->m_name, a_skeleton->m_children.m_size, a_geometry->m_name, name);
+
+			SkinSingleHeadGeometryEvent e;
+			e.skeleton = a_skeleton;
+			e.geometry = a_geometry;
+			e.headNode = this;
+			g_skinSingleHeadGeometryEventDispatcher.dispatch(e);
+			CALL_MEMBER_FN(this, SkinSingleGeometry)(a_skeleton, a_geometry, a_unk);
+			e.hasSkinned = true;
+			g_skinSingleHeadGeometryEventDispatcher.dispatch(e);
+		}
+
+		void SkinAllGeometry(NiNode * a_skeleton, char a_unk)
+		{
+			const char* name = "";
+			
+			if (a_skeleton->m_owner && a_skeleton->m_owner->baseForm)
+			{
+			 	auto bname = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESFullName);
+			 	if (bname)
+			 		name = bname->GetName();
+			}
+			
+			_MESSAGE("SkinAllGeometry %s %d, %s", a_skeleton->m_name, a_skeleton->m_children.m_size, name);
+			
+			SkinAllHeadGeometryEvent e;
+			e.skeleton = a_skeleton;
+			e.headNode = this;
+			g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+			CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
+			e.hasSkinned = true;
+			g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+			// for (int i = 0; i < this->m_children.m_arrayBufLen; i++)
+			// {
+			// 	if (!this->m_children.m_data[i])
+			// 		continue;
+			//
+			// 	auto geo = this->m_children.m_data[i]->GetAsBSDynamicTriShape();
+			//
+			// 	if (geo)
+			// 	{
+			// 		auto fmd = (BSFaceGenModelExtraData*)geo->GetExtraData("FMD");
+			// 		if (fmd)
+			// 		{
+			// 			if (fmd->m_model && fmd->m_model->unk10)
+			// 			{
+			// 				if (fmd->m_model->unk10->unk08)
+			// 				{
+			// 					_MESSAGE("unk08 %s", fmd->m_model->unk10->unk08->m_name);
+			// 					if (fmd->m_model->unk10->unk08->m_parent)
+			// 						_MESSAGE("unk08 parent %s", fmd->m_model->unk10->unk08->m_parent->m_name);
+			// 				}
+			// 		
+			// 			}
+			// 		}
+			// 	}
+			// }
+		}
+	};
+
+	void hookFaceGen()
+	{
+		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinSingleGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
+		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinAllGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
+
+		RelocAddr<uintptr_t> addr(offset::BSFaceGenNiNode_SkinSingleGeometry_bug);
+		SafeWrite8(addr.GetUIntPtr(), 0x7);
+	}
+
+	void unhookFaceGen()
+	{
+		DetourDetach((void**)BSFaceGenNiNodeEx::_SkinSingleGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
+		DetourDetach((void**)BSFaceGenNiNodeEx::_SkinAllGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
+	}
+	
 	struct Unk001CB0E0
 	{
 		MEMBER_FN_PREFIX(Unk001CB0E0);
@@ -85,6 +186,7 @@ namespace hdt
 		DetourTransactionBegin();
 		hookEngine();
 		hookArmor();
+		hookFaceGen();
 		DetourTransactionCommit();
 	}
 
@@ -94,6 +196,7 @@ namespace hdt
 		DetourTransactionBegin();
 		unhookEngine();
 		unhookArmor();
+		unhookFaceGen();
 		DetourTransactionCommit();
 	}
 }

@@ -15,6 +15,13 @@ namespace hdt
 		// E8 ? ? ? ? 48 8B E8 FF C7 
 		constexpr std::uintptr_t ArmorAttachFunction = 0x001CAFB0;
 
+		// BSFaceGenNiNode last vfunc
+		constexpr std::uintptr_t BSFaceGenNiNode_SkinAllGeometry = 0x003D87B0;
+		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry = 0x003D8840;
+		// .text:00000001403D88D4                 cmp     ebx, 8
+		// patch 8 -> 7
+		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry_bug = BSFaceGenNiNode_SkinSingleGeometry + 0x96;
+		
 		// Hooks.cpp
 		// function responsible for majority of main game thread loop
 		// E8 ? ? ? ? 84 DB 74 24 

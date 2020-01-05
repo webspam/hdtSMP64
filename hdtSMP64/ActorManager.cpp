@@ -178,7 +178,56 @@ namespace hdt
 		m_shutdown = true;
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		
-		m_skeletons.clear();
+		m_skeletons.clear();		
+	}
+
+	void ActorManager::onEvent(const SkinSingleHeadGeometryEvent& e)
+	{
+		auto npc = findNode(e.skeleton, "NPC");
+
+		if (!npc) return;
+
+		std::lock_guard<decltype(m_lock)> l(m_lock);
+		if (m_shutdown) return;
+
+		auto& skeleton = getSkeletonData(e.skeleton);
+		skeleton.npc = npc;
+
+		if (skeleton.head.isFullSkinning)
+			return;
+
+		if (e.hasSkinned)
+		{
+			skeleton.scanHead();
+		}
+		else
+		{
+			skeleton.updateHead(e.headNode, e.geometry);
+		}
+	}
+
+	void ActorManager::onEvent(const SkinAllHeadGeometryEvent& e)
+	{
+		// auto npc = findNode(e.skeleton, "NPC");
+		//
+		// if (!npc) return;
+		//
+		// std::lock_guard<decltype(m_lock)> l(m_lock);
+		// if (m_shutdown) return;
+		//
+		// auto& skeleton = getSkeletonData(e.skeleton);
+		// skeleton.npc = npc;
+		//
+		// if (e.hasSkinned)
+		// {
+		// 	skeleton.scanHead();
+		// 	skeleton.head.isFullSkinning = false;
+		// }
+		// else
+		// {
+		// 	skeleton.updateHead(e.headNode);
+		// 	skeleton.head.isFullSkinning = true;
+		// }
 	}
 
 	std::vector<ActorManager::Skeleton> ActorManager::getSkeletons() const
@@ -301,4 +350,220 @@ namespace hdt
 		return skeleton->m_parent && skeleton->m_parent->m_parent && skeleton->m_parent->m_parent->m_parent;
 	}
 
+
+	void ActorManager::Skeleton::doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map, std::unordered_map<IDStr, uint8_t>& countMap)
+	{
+		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
+		{
+			auto srcChild = castNiNode(src->m_children.m_data[i]);
+			if (!srcChild) continue;
+
+			if (!srcChild->m_name)
+			{
+				doHeadSkeletonMerge(dst, srcChild, prefix, map, countMap);
+				continue;
+			}
+
+			auto dstChild = findNode(dst, srcChild->m_name);
+			if (dstChild)
+			{
+				doHeadSkeletonMerge(dstChild, srcChild, prefix, map, countMap);
+			}
+			else
+			{
+				dst->AttachChild(cloneHeadNodeTree(srcChild, prefix, map, countMap), false);
+			}
+		}
+	}
+
+	NiNode* ActorManager::Skeleton::cloneHeadNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map, std::unordered_map<IDStr, uint8_t>& countMap)
+	{
+		NiCloningProcess c;
+		auto ret = (NiNode*)src->CreateClone(c);
+		src->ProcessClone(&c);
+
+		renameHeadTree(src, prefix, map, countMap);
+		renameHeadTree(ret, prefix, map, countMap);
+
+		return ret;
+	}
+
+	void ActorManager::Skeleton::renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map, std::unordered_map<IDStr, uint8_t>& countMap)
+	{
+		if (root->m_name)
+		{
+			std::string newName(prefix->cstr(), prefix->size());
+			newName += root->m_name;
+			if (map.insert(std::make_pair<IDStr, IDStr>(root->m_name, newName)).second)
+			{
+				_DMESSAGE("Rename Bone %s -> %s", root->m_name, newName.c_str());
+				countMap.insert(std::make_pair<IDStr, uint8_t>(root->m_name, 1));
+			}
+			setNiNodeName(root, newName.c_str());
+		}
+
+		for (int i = 0; i < root->m_children.m_arrayBufLen; ++i)
+		{
+			auto child = castNiNode(root->m_children.m_data[i]);
+			if (child)
+				renameHeadTree(child, prefix, map, countMap);
+		}
+	}
+
+	void ActorManager::Skeleton::scanHead()
+	{
+	}
+
+	void ActorManager::Skeleton::updateHead(BSFaceGenNiNode* headNode, BSGeometry * geometry)
+	{
+		if (this->head.headNode && this->head.headNode != headNode)
+		{
+			_MESSAGE("completely new head attached to skeleton, clearing tracking");
+			for(auto & headPart : this->head.headParts)
+			{
+				if (headPart.physics)
+					SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
+				headPart.physics = nullptr;
+				for (auto& entry : this->head.renameMap)
+				{
+					auto obj = findObject(headPart.baseNode, entry.second->cstr());
+					if (obj)
+					{
+						auto node = obj->GetAsNiNode();
+						if (node)
+						{
+							_MESSAGE("node %s found rename back to %s", node->m_name, entry.first->cstr());
+							setNiNodeName(node, entry.first->cstr());
+						}
+					}
+				}
+				headPart.headPart = nullptr;
+				headPart.baseNode = nullptr;
+			}
+
+			this->head.headParts.clear();
+
+			if (npc)
+				doSkeletonClean(npc, this->head.prefix);
+
+			this->head.prefix = nullptr;
+			this->head.headNode = nullptr;
+			this->head.renameMap.clear();
+			this->head.nodeUseCount.clear();
+		}
+
+		// clean swapped out headparts
+		for (auto& headPart : this->head.headParts)
+		{
+			if (!headPart.headPart->m_parent)
+			{
+				_MESSAGE("headpart %s disconnected", headPart.headPart->m_name);
+
+				auto renameIt = this->head.renameMap.begin();
+				
+				while (renameIt != this->head.renameMap.end())
+				{
+					bool erase = false;
+					
+					auto obj = findObject(headPart.baseNode, renameIt->second->cstr());
+					if (obj)
+					{
+						auto node = obj->GetAsNiNode();
+						if (node)
+						{
+							_MESSAGE("node %s found rename back to %s", node->m_name, renameIt->first->cstr());
+							setNiNodeName(node, renameIt->first->cstr());
+							auto findNode = this->head.nodeUseCount.find(renameIt->first);
+							if (findNode != this->head.nodeUseCount.end())
+							{
+								findNode->second -= 1;
+								_MESSAGE("decrementing use count by 1, it is now %d", findNode->second);
+								if (findNode->second <= 0)
+								{
+									_MESSAGE("node no longer in use, cleaning from skeleton");
+									auto removeObj = findObject(npc, renameIt->second->cstr());
+									if (removeObj)
+									{
+										_MESSAGE("found node %s, removing", removeObj->m_name);
+										auto parent = removeObj->m_parent;
+										if (parent)
+										{
+											parent->RemoveChild(removeObj);
+											removeObj->DecRef();
+										}
+									}
+									this->head.nodeUseCount.erase(findNode);
+									erase = true;
+								}
+							}
+						}						
+					}
+					
+					if (erase)
+						renameIt = this->head.renameMap.erase(renameIt);
+					else
+						++renameIt;
+				}
+
+				headPart.headPart = nullptr;
+				headPart.baseNode = nullptr;
+			}
+		}
+
+		head.headParts.erase(std::remove_if(head.headParts.begin(), head.headParts.end(), [](Head::HeadPart& i) { return !i.headPart; }), head.headParts.end());		
+
+		this->head.headNode = headNode;
+		this->head.prefix = generatePrefix(headNode);
+
+		auto it = std::find_if(this->head.headParts.begin(), this->head.headParts.end(),
+			[geometry](const Head::HeadPart & p)
+		{
+				return p.headPart == geometry;
+		});
+
+		if (it != this->head.headParts.end())
+		{
+			_MESSAGE("geometry is already added as head part");
+			return;
+		}
+
+		this->head.headParts.push_back(Head::HeadPart());
+
+		head.headParts.back().headPart = geometry;
+		head.headParts.back().physics = nullptr;
+
+		if (skeleton->m_owner && skeleton->m_owner->formID == 0x14) // player character
+		{
+			auto fmd = (BSFaceGenModelExtraData*)geometry->GetExtraData("FMD");
+			if (fmd && fmd->m_model && fmd->m_model->unk10 && fmd->m_model->unk10->unk08)
+			{
+				const auto facePartRootNode = fmd->m_model->unk10->unk08->GetAsNiNode();
+				if (facePartRootNode)
+				{
+					_MESSAGE("geometry %s found root node %s", geometry->m_name, facePartRootNode->m_name);
+					head.headParts.back().baseNode = facePartRootNode;
+					for (auto &entry : this->head.renameMap)
+					{
+						auto obj = findObject(facePartRootNode, entry.first->cstr());
+						if (obj)
+						{
+							auto node = obj->GetAsNiNode();
+							if (node)
+							{
+								_MESSAGE("node %s found rename to %s", node->m_name, entry.second->cstr());
+								setNiNodeName(node, entry.second->cstr());
+								auto findNode = this->head.nodeUseCount.find(entry.first);
+								if (findNode != this->head.nodeUseCount.end())
+								{
+									findNode->second += 1;
+									_MESSAGE("incrementing use count by 1, it is now %d", findNode->second);
+								}
+							}
+						}
+					}
+					doHeadSkeletonMerge(npc, facePartRootNode, this->head.prefix, this->head.renameMap, this->head.nodeUseCount);
+				}
+			}
+		}	
+	}
 }
