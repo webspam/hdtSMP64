@@ -5,7 +5,7 @@
 #include "skse64_common/skse_version.h"
 #include "skse64_common/SafeWrite.h"
 
-#include "ArmorManager.h"
+#include "ActorManager.h"
 #include "config.h"
 #include "EventDebugLogger.h"
 #include "hdtSkyrimPhysicsWorld.h"
@@ -227,12 +227,12 @@ namespace hdt
 		{
 			Console_Print("running smp reset");
 			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
-			ArmorManager::instance()->reloadMeshes();
+			ActorManager::instance()->reloadMeshes();
 			SkyrimPhysicsWorld::get()->resetSystems();
 			return true;
 		}
 		
-		auto skeletons = ArmorManager::instance()->getSkeletons();
+		auto skeletons = ActorManager::instance()->getSkeletons();
 
 		size_t activeSkeletons = 0;
 		size_t armors = 0;
@@ -259,10 +259,8 @@ namespace hdt
 		Console_Print("[HDT-SMP] tracked armors: %d", armors);
 		Console_Print("[HDT-SMP] active armors: %d", activeArmors);
 
-#ifdef DEBUG
 		if (thisObj)
 			DumpNodeChildren(thisObj->GetNiRootNode(0));
-#endif
 
 		return true;
 	}
@@ -298,11 +296,11 @@ extern "C"
 
 	bool SKSEPlugin_Load(const SKSEInterface* skse)
 	{
-		hdt::g_frameEventDispatcher.addListener(hdt::ArmorManager::instance());
+		hdt::g_frameEventDispatcher.addListener(hdt::ActorManager::instance());
 		hdt::g_frameEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
-		hdt::g_shutdownEventDispatcher.addListener(hdt::ArmorManager::instance());
+		hdt::g_shutdownEventDispatcher.addListener(hdt::ActorManager::instance());
 		hdt::g_shutdownEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
-		hdt::g_armorAttachEventDispatcher.addListener(hdt::ArmorManager::instance());
+		hdt::g_armorAttachEventDispatcher.addListener(hdt::ActorManager::instance());
 
 		hdt::hookAll();
 

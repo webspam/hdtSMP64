@@ -1,4 +1,4 @@
-#include "hdtSkyrimMesh.h"
+#include "hdtSkyrimSystem.h"
 #include "hdtSkinnedMesh\hdtSkinnedMeshShape.h"
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 #include "../hdtSSEUtils/FrameworkUtils.h"
@@ -12,7 +12,7 @@
 
 namespace hdt
 {
-	SkinnedMeshBone* SkyrimMesh::findBone(IDStr name)
+	SkinnedMeshBone* SkyrimSystem::findBone(IDStr name)
 	{
 		for (auto i : m_bones)
 			if (i->m_name == name)
@@ -20,7 +20,7 @@ namespace hdt
 		return 0;
 	}
 
-	SkinnedMeshBody* SkyrimMesh::findBody(IDStr name)
+	SkinnedMeshBody* SkyrimSystem::findBody(IDStr name)
 	{
 		for (auto i : m_meshes)
 			if (i->m_name == name)
@@ -28,7 +28,7 @@ namespace hdt
 		return 0;
 	}
 
-	int SkyrimMesh::findBoneIdx(IDStr name)
+	int SkyrimSystem::findBoneIdx(IDStr name)
 	{
 		for (int i = 0; i < m_bones.size(); ++i)
 			if (m_bones[i]->m_name == name)
@@ -36,14 +36,14 @@ namespace hdt
 		return -1;
 	}
 
-	SkyrimMesh::SkyrimMesh(NiNode* skeleton)
+	SkyrimSystem::SkyrimSystem(NiNode* skeleton)
 		: m_skeleton(skeleton), m_oldRoot(0)
 	{
 		m_oldRoot = m_skeleton;
 	}
 
 	static constexpr float PI = 3.1415926535897932384626433832795f;
-	void SkyrimMesh::readTransform(float timeStep)
+	void SkyrimSystem::readTransform(float timeStep)
 	{
 		auto newRoot = m_skeleton;
 		while (newRoot->m_parent)newRoot = newRoot->m_parent;
@@ -120,7 +120,7 @@ namespace hdt
 		m_oldRoot = newRoot;
 	}
 
-	void SkyrimMesh::writeTransform()
+	void SkyrimSystem::writeTransform()
 	{
 		SkinnedMeshSystem::writeTransform();
 	}
@@ -178,7 +178,7 @@ namespace hdt
 		return name;
 	}
 
-	Ref<SkyrimMesh> SkyrimMeshParser::createMesh(NiNode* skeleton, NiAVObject* model, const std::string& path, std::unordered_map<IDStr, IDStr> renameMap)
+	Ref<SkyrimSystem> SkyrimMeshParser::createMesh(NiNode* skeleton, NiAVObject* model, const std::string& path, std::unordered_map<IDStr, IDStr> renameMap)
 	{
 		if (path.empty()) return nullptr;
 		auto loaded = readAllFile(path.c_str());
@@ -199,7 +199,7 @@ namespace hdt
 		if (m_reader->GetName() != "system")
 			return nullptr;
 
-		m_mesh = new SkyrimMesh(skeleton);
+		m_mesh = new SkyrimSystem(skeleton);
 
 		// Store original locale
 		char saved_locale[32];
@@ -727,7 +727,7 @@ namespace hdt
 		*((uint32_t*)out) = t1;
 	};
 
-	Ref<SkyrimShape> SkyrimMeshParser::generateMeshBody(const std::string& name)
+	Ref<SkyrimBody> SkyrimMeshParser::generateMeshBody(const std::string& name)
 	{
 		//Warning("Skinned Mesh currently not supported");
 		auto* triShape = castBSTriShape(findObject(m_model, name.c_str()));
@@ -739,7 +739,7 @@ namespace hdt
 			return 0;
 		}
 
-		Ref<SkyrimShape> body = new SkyrimShape;
+		Ref<SkyrimBody> body = new SkyrimBody;
 		body->m_name = name;
 
 		if (!triShape->m_spSkinInstance)
@@ -821,7 +821,7 @@ namespace hdt
 
 				body->m_vertices[j].m_skinPos = convertNi(*vertexPos);
 
-				SkyrimMesh::BoneData* boneData = reinterpret_cast<SkyrimMesh::BoneData*>(&vertexBlock[j * vSize + boneOffset]);
+				SkyrimSystem::BoneData* boneData = reinterpret_cast<SkyrimSystem::BoneData*>(&vertexBlock[j * vSize + boneOffset]);
 
 				for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
 				{
@@ -839,7 +839,7 @@ namespace hdt
 		return body;
 	}
 
-	Ref<SkyrimShape> SkyrimMeshParser::readPerVertexShape()
+	Ref<SkyrimBody> SkyrimMeshParser::readPerVertexShape()
 	{
 		auto name = m_reader->getAttribute("name");
 
@@ -864,15 +864,15 @@ namespace hdt
 				{
 					auto str = m_reader->readText();
 					if (str == "public")
-						body->m_shared = SkyrimShape::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SHARED_PUBLIC;
 					else if (str == "internal")
-						body->m_shared = SkyrimShape::SHARED_INTERNAL;
+						body->m_shared = SkyrimBody::SHARED_INTERNAL;
 					else if (str == "private")
-						body->m_shared = SkyrimShape::SHARED_PRIVATE;
+						body->m_shared = SkyrimBody::SHARED_PRIVATE;
 					else
 					{
 						Warning("unknown shared value, use default value \"public\"");
-						body->m_shared = SkyrimShape::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SHARED_PUBLIC;
 					}
 				}
 				else if (name == "tag")
@@ -925,7 +925,7 @@ namespace hdt
 		return body;
 	}
 
-	Ref<SkyrimShape> SkyrimMeshParser::readPerTriangleShape()
+	Ref<SkyrimBody> SkyrimMeshParser::readPerTriangleShape()
 	{
 		auto name = m_reader->getAttribute("name");
 
@@ -966,15 +966,15 @@ namespace hdt
 				{
 					auto str = m_reader->readText();
 					if (str == "public")
-						body->m_shared = SkyrimShape::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SHARED_PUBLIC;
 					else if (str == "internal")
-						body->m_shared = SkyrimShape::SHARED_INTERNAL;
+						body->m_shared = SkyrimBody::SHARED_INTERNAL;
 					else if (str == "private")
-						body->m_shared = SkyrimShape::SHARED_PRIVATE;
+						body->m_shared = SkyrimBody::SHARED_PRIVATE;
 					else
 					{
 						Warning("unknown shared value, use default value \"public\"");
-						body->m_shared = SkyrimShape::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SHARED_PUBLIC;
 					}
 				}
 				else if (name == "prenetration" || name == "penetration")

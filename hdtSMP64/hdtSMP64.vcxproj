@@ -139,7 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ArmorManager.h" />
+    <ClInclude Include="ActorManager.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="EventDebugLogger.h" />
     <ClInclude Include="EventDispatcherImpl.h" />
@@ -166,9 +166,9 @@
     <ClInclude Include="hdtSkinnedMesh\hdtStiffSpringConstraint.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtVertex.h" />
     <ClInclude Include="hdtSkyrimBone.h" />
-    <ClInclude Include="hdtSkyrimMesh.h" />
+    <ClInclude Include="hdtSkyrimSystem.h" />
     <ClInclude Include="hdtSkyrimPhysicsWorld.h" />
-    <ClInclude Include="hdtSkyrimShape.h" />
+    <ClInclude Include="hdtSkyrimBody.h" />
     <ClInclude Include="HookEvents.h" />
     <ClInclude Include="Hooks.h" />
     <ClInclude Include="IEventDispatcher.h" />
@@ -178,7 +178,7 @@
     <ClInclude Include="XmlReader.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ArmorManager.cpp" />
+    <ClCompile Include="ActorManager.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="EventDebugLogger.cpp" />
     <ClCompile Include="EventDispatcherImpl.cpp" />
@@ -203,9 +203,9 @@
     <ClCompile Include="hdtSkinnedMesh\hdtStiffSpringConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtVertex.cpp" />
     <ClCompile Include="hdtSkyrimBone.cpp" />
-    <ClCompile Include="hdtSkyrimMesh.cpp" />
+    <ClCompile Include="hdtSkyrimSystem.cpp" />
     <ClCompile Include="hdtSkyrimPhysicsWorld.cpp" />
-    <ClCompile Include="hdtSkyrimShape.cpp" />
+    <ClCompile Include="hdtSkyrimBody.cpp" />
     <ClCompile Include="HookEvents.cpp" />
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="IEventDispatcher.cpp" />

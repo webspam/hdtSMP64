@@ -20,9 +20,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArmorManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hdtSkinnedMesh\hdtAABB.h">
       <Filter>hdtSkinnedMesh</Filter>
     </ClInclude>
@@ -89,13 +86,7 @@
     <ClInclude Include="hdtSkyrimBone.h">
       <Filter>hdtSkyrimProxy</Filter>
     </ClInclude>
-    <ClInclude Include="hdtSkyrimMesh.h">
-      <Filter>hdtSkyrimProxy</Filter>
-    </ClInclude>
     <ClInclude Include="hdtSkyrimPhysicsWorld.h">
-      <Filter>hdtSkyrimProxy</Filter>
-    </ClInclude>
-    <ClInclude Include="hdtSkyrimShape.h">
       <Filter>hdtSkyrimProxy</Filter>
     </ClInclude>
     <ClInclude Include="XmlReader.h">
@@ -128,11 +119,17 @@
     <ClInclude Include="EventDebugLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ActorManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hdtSkyrimSystem.h">
+      <Filter>hdtSkyrimProxy</Filter>
+    </ClInclude>
+    <ClInclude Include="hdtSkyrimBody.h">
+      <Filter>hdtSkyrimProxy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ArmorManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
       <Filter>hdtSkinnedMesh</Filter>
     </ClCompile>
@@ -193,13 +190,7 @@
     <ClCompile Include="hdtSkyrimBone.cpp">
       <Filter>hdtSkyrimProxy</Filter>
     </ClCompile>
-    <ClCompile Include="hdtSkyrimMesh.cpp">
-      <Filter>hdtSkyrimProxy</Filter>
-    </ClCompile>
     <ClCompile Include="hdtSkyrimPhysicsWorld.cpp">
-      <Filter>hdtSkyrimProxy</Filter>
-    </ClCompile>
-    <ClCompile Include="hdtSkyrimShape.cpp">
       <Filter>hdtSkyrimProxy</Filter>
     </ClCompile>
     <ClCompile Include="XmlReader.cpp">
@@ -228,6 +219,15 @@
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ActorManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hdtSkyrimSystem.cpp">
+      <Filter>hdtSkyrimProxy</Filter>
+    </ClCompile>
+    <ClCompile Include="hdtSkyrimBody.cpp">
+      <Filter>hdtSkyrimProxy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,22 +1,22 @@
-#include "hdtSkyrimShape.h"
-#include "hdtSkyrimMesh.h"
+#include "hdtSkyrimBody.h"
+#include "hdtSkyrimSystem.h"
 
 namespace hdt
 {
-	SkyrimShape::SkyrimShape()
+	SkyrimBody::SkyrimBody()
 	{
 		m_mesh = 0;
 		m_shared = SHARED_PUBLIC;
 	}
 
 
-	SkyrimShape::~SkyrimShape()
+	SkyrimBody::~SkyrimBody()
 	{
 	}
 
-	bool SkyrimShape::canCollideWith(const SkinnedMeshBody* rhs) const
+	bool SkyrimBody::canCollideWith(const SkinnedMeshBody* rhs) const
 	{
-		auto body = (SkyrimShape*)rhs;
+		auto body = (SkyrimBody*)rhs;
 		if (m_disabled || body->m_disabled)
 			return false;
 
@@ -39,7 +39,7 @@ namespace hdt
 		return SkinnedMeshBody::canCollideWith(rhs);
 	}
 
-	void SkyrimShape::internalUpdate()
+	void SkyrimBody::internalUpdate()
 	{
 		if (m_disabled) return;
 		SkinnedMeshBody::internalUpdate();

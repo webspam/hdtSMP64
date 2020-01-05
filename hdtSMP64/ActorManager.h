@@ -3,7 +3,7 @@
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 #include "../hdtSSEUtils/FrameworkUtils.h"
 
-#include "hdtSkyrimMesh.h"
+#include "hdtSkyrimSystem.h"
 
 #include "IEventListener.h"
 #include "HookEvents.h"
@@ -12,7 +12,7 @@
 
 namespace hdt
 {
-	class ArmorManager
+	class ActorManager
 		: public IEventListener<ArmorAttachEvent>
 		, public IEventListener<FrameEvent>
 		, public IEventListener<ShutdownEvent>
@@ -25,7 +25,7 @@ namespace hdt
 			Ref<NiAVObject>						armorWorn;
 			std::unordered_map<IDStr, IDStr>	renameMap;
 			std::string							physicsFile;
-			Ref<SkyrimMesh>						physics;
+			Ref<SkyrimSystem>						physics;
 		};
 
 		struct Skeleton
@@ -52,10 +52,10 @@ namespace hdt
 		Skeleton& getSkeletonData(NiNode* skeleton);
 
 	public:
-		ArmorManager();
-		~ArmorManager();
+		ActorManager();
+		~ActorManager();
 
-		static ArmorManager* instance();
+		static ActorManager* instance();
 		static IDStr generatePrefix(NiAVObject* armor);
 
 		virtual void onEvent(const ArmorAttachEvent& e) override;

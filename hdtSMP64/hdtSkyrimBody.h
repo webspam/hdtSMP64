@@ -6,12 +6,12 @@
 
 namespace hdt
 {
-	class SkyrimMesh;
-	class SkyrimShape : public SkinnedMeshBody
+	class SkyrimSystem;
+	class SkyrimBody : public SkinnedMeshBody
 	{
 	public:
-		SkyrimShape();
-		~SkyrimShape();
+		SkyrimBody();
+		~SkyrimBody();
 
 		enum SharedType
 		{
@@ -20,7 +20,7 @@ namespace hdt
 			SHARED_PRIVATE,
 		};
 
-		SkyrimMesh*	m_mesh;
+		SkyrimSystem*	m_mesh;
 		SharedType		m_shared;
 		bool			m_disabled = false;
 		int				m_disablePriority = 0;

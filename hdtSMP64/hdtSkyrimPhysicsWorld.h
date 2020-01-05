@@ -1,12 +1,12 @@
 #pragma once
 
-#include "hdtSkyrimMesh.h"
+#include "hdtSkyrimSystem.h"
 #include "hdtSkinnedMesh\hdtSkinnedMeshWorld.h"
 #include "IEventListener.h"
 #include "HookEvents.h"
 
 #include <atomic>
-#include "ArmorManager.h"
+#include "ActorManager.h"
 #include "skse64/PapyrusEvents.h"
 
 namespace hdt
@@ -40,7 +40,7 @@ namespace hdt
 			m_suspended = false;
 			if (m_loading)
 			{
-				ArmorManager::instance()->reloadMeshes();
+				ActorManager::instance()->reloadMeshes();
 				resetSystems();
 				m_loading = false;
 			}

@@ -1,28 +1,28 @@
 #include "skse64/GameReferences.h"
 
-#include "ArmorManager.h"
+#include "ActorManager.h"
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
 #include "skse64/GameRTTI.h"
 
 namespace hdt
 {
-	ArmorManager::ArmorManager()
+	ActorManager::ActorManager()
 	{
 	}
 
 
-	ArmorManager::~ArmorManager()
+	ActorManager::~ActorManager()
 	{
 	}
 
-	ArmorManager * ArmorManager::instance()
+	ActorManager * ActorManager::instance()
 	{
-		static ArmorManager s;
+		static ActorManager s;
 		return &s;
 	}
 
-	IDStr ArmorManager::generatePrefix(NiAVObject * armor)
+	IDStr ActorManager::generatePrefix(NiAVObject * armor)
 	{
 		char buffer[128];
 		sprintf_s(buffer, "hdtSSEPhysics_AutoRename_%016llX ", (uintptr_t)armor);
@@ -36,7 +36,7 @@ namespace hdt
 		return false;
 	}
 
-	void ArmorManager::onEvent(const ArmorAttachEvent & e)
+	void ActorManager::onEvent(const ArmorAttachEvent & e)
 	{
 		auto npc = findNode(e.skeleton, "NPC");
 		
@@ -103,7 +103,7 @@ namespace hdt
 		}
 	}
 
-	void ArmorManager::reloadMeshes()
+	void ActorManager::reloadMeshes()
 	{
 		const FrameEvent e
 		{
@@ -134,7 +134,7 @@ namespace hdt
 		}
 	}
 	
-	void ArmorManager::onEvent(const FrameEvent & e)
+	void ActorManager::onEvent(const FrameEvent & e)
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
@@ -173,7 +173,7 @@ namespace hdt
 			i.cleanArmor();
 	}
 
-	void ArmorManager::onEvent(const ShutdownEvent &)
+	void ActorManager::onEvent(const ShutdownEvent &)
 	{
 		m_shutdown = true;
 		std::lock_guard<decltype(m_lock)> l(m_lock);
@@ -181,12 +181,12 @@ namespace hdt
 		m_skeletons.clear();
 	}
 
-	std::vector<ArmorManager::Skeleton> ArmorManager::getSkeletons() const
+	std::vector<ActorManager::Skeleton> ActorManager::getSkeletons() const
 	{
 		return m_skeletons;
 	}
 
-	ArmorManager::Skeleton& ArmorManager::getSkeletonData(NiNode * skeleton)
+	ActorManager::Skeleton& ActorManager::getSkeletonData(NiNode * skeleton)
 	{
 		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i) {
 			return i.skeleton == skeleton;
@@ -198,7 +198,7 @@ namespace hdt
 		return m_skeletons.back();
 	}
 
-	void ArmorManager::Skeleton::doSkeletonMerge(NiNode * dst, NiNode * src, IString * prefix, std::unordered_map<IDStr, IDStr>& map)
+	void ActorManager::Skeleton::doSkeletonMerge(NiNode * dst, NiNode * src, IString * prefix, std::unordered_map<IDStr, IDStr>& map)
 	{
 		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
 		{
@@ -223,7 +223,7 @@ namespace hdt
 		}
 	}
 
-	NiNode * ArmorManager::Skeleton::cloneNodeTree(NiNode * src, IString * prefix, std::unordered_map<IDStr, IDStr>& map)
+	NiNode * ActorManager::Skeleton::cloneNodeTree(NiNode * src, IString * prefix, std::unordered_map<IDStr, IDStr>& map)
 	{
 		NiCloningProcess c;
 		auto ret = (NiNode*)src->CreateClone(c);
@@ -235,7 +235,7 @@ namespace hdt
 		return ret;
 	}
 
-	void ArmorManager::Skeleton::renameTree(NiNode* root, IString * prefix, std::unordered_map<IDStr, IDStr>& map)
+	void ActorManager::Skeleton::renameTree(NiNode* root, IString * prefix, std::unordered_map<IDStr, IDStr>& map)
 	{
 		if (root->m_name)
 		{
@@ -254,7 +254,7 @@ namespace hdt
 		}
 	}
 	
-	void ArmorManager::Skeleton::doSkeletonClean(NiNode * dst, IString * prefix)
+	void ActorManager::Skeleton::doSkeletonClean(NiNode * dst, IString * prefix)
 	{
 		for (int i = dst->m_children.m_arrayBufLen - 1; i >= 0; --i)
 		{
@@ -272,7 +272,7 @@ namespace hdt
 		}
 	}
 
-	void ArmorManager::Skeleton::cleanArmor()
+	void ActorManager::Skeleton::cleanArmor()
 	{
 		for (auto& i : armors)
 		{
@@ -287,13 +287,13 @@ namespace hdt
 		armors.erase(std::remove_if(armors.begin(), armors.end(), [](Armor& i) { return !i.prefix; }), armors.end());
 	}
 
-	void ArmorManager::Skeleton::clear()
+	void ActorManager::Skeleton::clear()
 	{
 		SkyrimPhysicsWorld::get()->removeSystemByNode(npc);
 		armors.clear();
 	}
 
-	bool ArmorManager::Skeleton::isActiveInScene() const
+	bool ActorManager::Skeleton::isActiveInScene() const
 	{
 		// TODO: do this better
 		// when entering/exiting an interior NPCs are detached from the scene but not unloaded, so we need to check two levels up 

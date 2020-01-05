@@ -126,7 +126,7 @@ namespace hdt
 		struct Group
 		{
 			std::unordered_set<hdt::IDStr> tags;
-			std::unordered_map<hdt::IDStr, std::vector<SkyrimShape*>> list;
+			std::unordered_map<hdt::IDStr, std::vector<SkyrimBody*>> list;
 		};
 
 		std::unordered_map<NiNode*, Group> maps;
@@ -134,11 +134,11 @@ namespace hdt
 		hdt::IDStr invalidString;
 		for (auto& i : m_systems)
 		{
-			auto system = static_cast<SkyrimMesh*>(i());
+			auto system = static_cast<SkyrimSystem*>(i());
 			auto& map = maps[system->m_skeleton];
 			for (auto& j : i->m_meshes)
 			{
-				auto shape = static_cast<SkyrimShape*>(j());
+				auto shape = static_cast<SkyrimBody*>(j());
 				if (!shape) continue;
 
 				if (shape->m_disableTag == invalidString)
@@ -164,7 +164,7 @@ namespace hdt
 				}
 				else if (j.second.size())
 				{
-					std::sort(j.second.begin(), j.second.end(), [](SkyrimShape* a, SkyrimShape* b) {
+					std::sort(j.second.begin(), j.second.end(), [](SkyrimBody* a, SkyrimBody* b) {
 						if (a->m_disablePriority != b->m_disablePriority)
 							return a->m_disablePriority > b->m_disablePriority;
 						return a < b;
@@ -181,7 +181,7 @@ namespace hdt
 	void SkyrimPhysicsWorld::addSkinnedMeshSystem(hdt::SkinnedMeshSystem* system)
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);
-		auto s = dynamic_cast<SkyrimMesh*>(system);
+		auto s = dynamic_cast<SkyrimSystem*>(system);
 		if (!s) return;
 
 		s->m_initialized = false;
@@ -201,7 +201,7 @@ namespace hdt
 
 		for (int i = 0; i < m_systems.size(); )
 		{
-			Ref<SkyrimMesh> s = m_systems[i].cast<SkyrimMesh>();
+			Ref<SkyrimSystem> s = m_systems[i].cast<SkyrimSystem>();
 			if (s && s->m_skeleton == root)
 				hdt::SkinnedMeshWorld::removeSkinnedMeshSystem(s);
 			else ++i;

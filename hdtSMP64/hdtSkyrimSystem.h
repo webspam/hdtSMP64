@@ -2,7 +2,7 @@
 
 #include "hdtConvertNi.h"
 #include "hdtSkyrimBone.h"
-#include "hdtSkyrimShape.h"
+#include "hdtSkyrimBody.h"
 #include "hdtSkinnedMesh\hdtSkinnedMeshSystem.h"
 #include "hdtSkinnedMesh\hdtGeneric6DofConstraint.h"
 #include "hdtSkinnedMesh\hdtStiffSpringConstraint.h"
@@ -10,7 +10,7 @@
 
 namespace hdt
 {
-	class SkyrimMesh : public SkinnedMeshSystem
+	class SkyrimSystem : public SkinnedMeshSystem
 	{
 	public:
 		struct BoneData
@@ -19,7 +19,7 @@ namespace hdt
 			uint8_t boneIndices[4];
 		};
 
-		SkyrimMesh(NiNode* skeleton);
+		SkyrimSystem(NiNode* skeleton);
 
 		SkinnedMeshBone* findBone(IDStr name);
 		SkinnedMeshBody* findBody(IDStr name);
@@ -41,13 +41,13 @@ namespace hdt
 	{
 	public:
 		SkyrimMeshParser();
-		Ref<SkyrimMesh> createMesh(NiNode* skeleton, NiAVObject* model, const std::string& filepath, std::unordered_map<IDStr, IDStr> renameMap);
+		Ref<SkyrimSystem> createMesh(NiNode* skeleton, NiAVObject* model, const std::string& filepath, std::unordered_map<IDStr, IDStr> renameMap);
 
 	protected:
 
 		IDStr getRenamedBone(IDStr name);
 
-		Ref<SkyrimMesh> m_mesh;
+		Ref<SkyrimSystem> m_mesh;
 		NiNode* m_skeleton;
 		NiAVObject* m_model;
 		XMLReader* m_reader;
@@ -136,7 +136,7 @@ namespace hdt
 		std::unordered_map<IDStr, ConeTwistConstraintTemplate> m_coneTwistConstraintTemplates;
 		std::unordered_map<IDStr, std::shared_ptr<btCollisionShape>> m_shapes;
 
-		Ref<SkyrimShape> generateMeshBody(const std::string& name);
+		Ref<SkyrimBody> generateMeshBody(const std::string& name);
 
 		void readFrameLerp(btTransform& tr);
 		void readBoneTemplate(BoneTemplate& dest);
@@ -150,8 +150,8 @@ namespace hdt
 		const ConeTwistConstraintTemplate& getConeTwistConstraintTemplate(const IDStr& name);
 
 		void readBone();
-		Ref<SkyrimShape> readPerVertexShape();
-		Ref<SkyrimShape> readPerTriangleShape();
+		Ref<SkyrimBody> readPerVertexShape();
+		Ref<SkyrimBody> readPerTriangleShape();
 		Ref<Generic6DofConstraint> readGenericConstraint();
 		Ref<StiffSpringConstraint> readStiffSpringConstraint();
 		Ref<ConeTwistConstraint> readConeTwistConstraint();
