@@ -412,6 +412,37 @@ namespace hdt
 
 	void ActorManager::Skeleton::scanHead()
 	{
+		if (!this->head.headNode)
+		{
+			_MESSAGE("actor has no head node");
+			return;
+		}
+
+		for (auto& headPart : this->head.headParts)
+		{
+			// always regen physics for all head parts
+			if (headPart.physics)
+				SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
+			headPart.physics = nullptr;
+
+			if (headPart.physicsFile.empty())
+			{
+				_MESSAGE("no physics file for headpart %s", headPart.headPart->m_name);
+				continue;
+			}
+			
+			std::unordered_map<IDStr, IDStr> renameMap = this->head.renameMap;
+
+			_MESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name, headPart.physicsFile.c_str());
+			auto system = SkyrimMeshParser().createMesh(npc, this->head.headNode, headPart.physicsFile, std::move(renameMap));
+
+			if (system)
+			{
+				_MESSAGE("success");
+				SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
+				headPart.physics = system;
+			}
+		}
 	}
 
 	void ActorManager::Skeleton::updateHead(BSFaceGenNiNode* headNode, BSGeometry * geometry)
@@ -507,6 +538,9 @@ namespace hdt
 
 				headPart.headPart = nullptr;
 				headPart.baseNode = nullptr;
+				if (headPart.physics)
+					SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
+				headPart.physics = nullptr;
 			}
 		}
 
@@ -562,6 +596,7 @@ namespace hdt
 						}
 					}
 					doHeadSkeletonMerge(npc, facePartRootNode, this->head.prefix, this->head.renameMap, this->head.nodeUseCount);
+					head.headParts.back().physicsFile = scanBBP(facePartRootNode);
 				}
 			}
 		}	
