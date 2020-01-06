@@ -13,6 +13,7 @@
 #include "HookEvents.h"
 
 #include <shlobj_core.h>
+#include "skse64/GameRTTI.h"
 
 namespace hdt
 {
@@ -211,6 +212,60 @@ namespace hdt
 		}
 	}
 
+	void SMPDebug_PrintDetailed()
+	{
+		auto skeletons = ActorManager::instance()->getSkeletons();
+		
+		for (auto skeleton : skeletons)
+		{
+			TESObjectREFR* skelOwner = nullptr;
+			TESFullName* ownerName = nullptr;
+			
+			if (skeleton.skeleton->m_owner)
+			{
+				skelOwner = skeleton.skeleton->m_owner;
+				if (skelOwner->baseForm)
+					ownerName = DYNAMIC_CAST(skelOwner->baseForm, TESForm, TESFullName);
+			}
+
+			Console_Print("[HDT-SMP] %s skeleton - owner %s (refr formid %08x, base formid %08x)",
+				skeleton.isActiveInScene() ? "active" : "inactive",
+				ownerName ? ownerName->GetName() : "unk_name",
+				skelOwner ? skelOwner->formID : 0x00000000,
+				skelOwner && skelOwner->baseForm ? skelOwner->baseForm->formID : 0x00000000
+				);
+
+			for (auto armor : skeleton.armors)
+			{
+				Console_Print("[HDT-SMP] -- tracked armor addon %s, %s",
+					armor.armorWorn->m_name,
+					armor.physics ? armor.physics->m_world ? "has active physics system" : "has inactive physics system" : "has no physics system");
+
+				if (armor.physics)
+				{
+					for (auto mesh : armor.physics->m_meshes)
+						Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
+				}
+			}
+
+			if (skeleton.head.headNode)
+			{
+				for (auto headPart : skeleton.head.headParts)
+				{
+					Console_Print("[HDT-SMP] -- tracked headpart %s, %s",
+						headPart.headPart->m_name,
+						headPart.physics ? headPart.physics->m_world ? "has active physics system" : "has inactive physics system" : "has no physics system");
+
+					if (headPart.physics)
+					{
+						for (auto mesh : headPart.physics->m_meshes)
+							Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
+					}
+				}
+			}
+		}
+	}
+	
 	bool SMPDebug_Execute(const ObScriptParam* paramInfo, ScriptData* scriptData, TESObjectREFR* thisObj, TESObjectREFR* containingObj, Script* scriptObj, ScriptLocals* locals, double& result, UInt32& opcodeOffsetPtr)
 	{
 		char buffer[MAX_PATH];
@@ -225,10 +280,29 @@ namespace hdt
 
 		if (_strnicmp(buffer, "reset", MAX_PATH) == 0)
 		{
-			Console_Print("running smp reset");
+			Console_Print("running full smp reset");
 			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
 			ActorManager::instance()->reloadMeshes();
 			SkyrimPhysicsWorld::get()->resetSystems();
+			return true;
+		}
+		if (_strnicmp(buffer, "dumptree", MAX_PATH) == 0)
+		{
+			if (thisObj)
+			{
+				Console_Print("dumping targeted reference's node tree");
+				DumpNodeChildren(thisObj->GetNiRootNode(0));
+			}
+			else
+			{
+				Console_Print("error: you must target a reference to dump their node tree");
+			}
+
+			return true;
+		}
+		if (_strnicmp(buffer, "detail", MAX_PATH) == 0)
+		{
+			SMPDebug_PrintDetailed();
 			return true;
 		}
 		
@@ -236,7 +310,10 @@ namespace hdt
 
 		size_t activeSkeletons = 0;
 		size_t armors = 0;
+		size_t headParts = 0;
 		size_t activeArmors = 0;
+		size_t activeHeadParts = 0;
+		size_t activeCollisionMeshes = 0;
 
 		for (auto skeleton : skeletons)
 		{
@@ -250,17 +327,34 @@ namespace hdt
 				if (armor.physics && armor.physics->m_world)
 				{
 					activeArmors++;
+
+					activeCollisionMeshes += armor.physics->m_meshes.size();
+				}
+			}
+
+			if (skeleton.head.headNode)
+			{
+				for (const auto headpart : skeleton.head.headParts)
+				{
+					headParts++;
+
+					if (headpart.physics && headpart.physics->m_world)
+					{
+						activeHeadParts++;
+
+						activeCollisionMeshes += headpart.physics->m_meshes.size();
+					}
 				}
 			}
 		}
 
 		Console_Print("[HDT-SMP] tracked skeletons: %d", skeletons.size());
 		Console_Print("[HDT-SMP] active skeletons: %d", activeSkeletons);
-		Console_Print("[HDT-SMP] tracked armors: %d", armors);
-		Console_Print("[HDT-SMP] active armors: %d", activeArmors);
-
-		if (thisObj)
-			DumpNodeChildren(thisObj->GetNiRootNode(0));
+		Console_Print("[HDT-SMP] tracked armor addons: %d", armors);
+		Console_Print("[HDT-SMP] tracked head parts: %d", headParts);
+		Console_Print("[HDT-SMP] active armor addons: %d", activeArmors);
+		Console_Print("[HDT-SMP] active head parts: %d", activeHeadParts);
+		Console_Print("[HDT-SMP] active collision meshes: %d", activeCollisionMeshes);
 
 		return true;
 	}
