@@ -56,6 +56,7 @@ namespace hdt
 			Head head;
 
 			void cleanArmor();
+			void cleanHead();
 			void clear();
 
 			bool isActiveInScene() const;

@@ -155,6 +155,13 @@ namespace hdt
 						if (j.physics && j.physics->m_world)
 							j.physics->m_world->removeSkinnedMeshSystem(j.physics);
 					}
+
+					for (auto& j : i.head.headParts)
+					{
+						if (j.physics && j.physics->m_world)
+							j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+					}
+
 				}
 			}
 			else
@@ -165,12 +172,21 @@ namespace hdt
 					if (j.physics && !j.physics->m_world)
 						world->addSkinnedMeshSystem(j.physics);
 				}
+
+				for (auto& j : i.head.headParts)
+				{
+					if (j.physics && j.physics->m_world)
+						world->addSkinnedMeshSystem(j.physics);
+				}
 			}
 		}
 		m_skeletons.erase(std::remove_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& i) { return !i.skeleton; }), m_skeletons.end());
 
 		for (auto& i : m_skeletons)
+		{
 			i.cleanArmor();
+			i.cleanHead();
+		}
 	}
 
 	void ActorManager::onEvent(const ShutdownEvent &)
@@ -330,6 +346,71 @@ namespace hdt
 		}
 
 		armors.erase(std::remove_if(armors.begin(), armors.end(), [](Armor& i) { return !i.prefix; }), armors.end());
+	}
+
+	void ActorManager::Skeleton::cleanHead()
+	{
+		for (auto& headPart : head.headParts)
+		{
+			if (!headPart.headPart->m_parent)
+			{
+				_DMESSAGE("headpart %s disconnected", headPart.headPart->m_name);
+
+				auto renameIt = this->head.renameMap.begin();
+
+				while (renameIt != this->head.renameMap.end())
+				{
+					bool erase = false;
+
+					auto obj = findObject(headPart.baseNode, renameIt->second->cstr());
+					if (obj)
+					{
+						auto node = obj->GetAsNiNode();
+						if (node)
+						{
+							_DMESSAGE("node %s found rename back to %s", node->m_name, renameIt->first->cstr());
+							setNiNodeName(node, renameIt->first->cstr());
+							auto findNode = this->head.nodeUseCount.find(renameIt->first);
+							if (findNode != this->head.nodeUseCount.end())
+							{
+								findNode->second -= 1;
+								_DMESSAGE("decrementing use count by 1, it is now %d", findNode->second);
+								if (findNode->second <= 0)
+								{
+									_DMESSAGE("node no longer in use, cleaning from skeleton");
+									auto removeObj = findObject(npc, renameIt->second->cstr());
+									if (removeObj)
+									{
+										_DMESSAGE("found node %s, removing", removeObj->m_name);
+										auto parent = removeObj->m_parent;
+										if (parent)
+										{
+											parent->RemoveChild(removeObj);
+											removeObj->DecRef();
+										}
+									}
+									this->head.nodeUseCount.erase(findNode);
+									erase = true;
+								}
+							}
+						}
+					}
+
+					if (erase)
+						renameIt = this->head.renameMap.erase(renameIt);
+					else
+						++renameIt;
+				}
+
+				headPart.headPart = nullptr;
+				headPart.baseNode = nullptr;
+				if (headPart.physics)
+					SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
+				headPart.physics = nullptr;
+			}
+		}
+
+		head.headParts.erase(std::remove_if(head.headParts.begin(), head.headParts.end(), [](Head::HeadPart& i) { return !i.headPart; }), head.headParts.end());
 	}
 
 	void ActorManager::Skeleton::clear()
@@ -495,67 +576,7 @@ namespace hdt
 		}
 
 		// clean swapped out headparts
-		for (auto& headPart : this->head.headParts)
-		{
-			if (!headPart.headPart->m_parent)
-			{
-				_DMESSAGE("headpart %s disconnected", headPart.headPart->m_name);
-
-				auto renameIt = this->head.renameMap.begin();
-				
-				while (renameIt != this->head.renameMap.end())
-				{
-					bool erase = false;
-					
-					auto obj = findObject(headPart.baseNode, renameIt->second->cstr());
-					if (obj)
-					{
-						auto node = obj->GetAsNiNode();
-						if (node)
-						{
-							_DMESSAGE("node %s found rename back to %s", node->m_name, renameIt->first->cstr());
-							setNiNodeName(node, renameIt->first->cstr());
-							auto findNode = this->head.nodeUseCount.find(renameIt->first);
-							if (findNode != this->head.nodeUseCount.end())
-							{
-								findNode->second -= 1;
-								_DMESSAGE("decrementing use count by 1, it is now %d", findNode->second);
-								if (findNode->second <= 0)
-								{
-									_DMESSAGE("node no longer in use, cleaning from skeleton");
-									auto removeObj = findObject(npc, renameIt->second->cstr());
-									if (removeObj)
-									{
-										_DMESSAGE("found node %s, removing", removeObj->m_name);
-										auto parent = removeObj->m_parent;
-										if (parent)
-										{
-											parent->RemoveChild(removeObj);
-											removeObj->DecRef();
-										}
-									}
-									this->head.nodeUseCount.erase(findNode);
-									erase = true;
-								}
-							}
-						}						
-					}
-					
-					if (erase)
-						renameIt = this->head.renameMap.erase(renameIt);
-					else
-						++renameIt;
-				}
-
-				headPart.headPart = nullptr;
-				headPart.baseNode = nullptr;
-				if (headPart.physics)
-					SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
-				headPart.physics = nullptr;
-			}
-		}
-
-		head.headParts.erase(std::remove_if(head.headParts.begin(), head.headParts.end(), [](Head::HeadPart& i) { return !i.headPart; }), head.headParts.end());		
+		cleanHead();
 
 		this->head.headNode = headNode;
 		this->head.prefix = generatePrefix(headNode);
