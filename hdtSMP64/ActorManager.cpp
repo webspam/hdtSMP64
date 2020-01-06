@@ -141,7 +141,7 @@ namespace hdt
 
 				std::unordered_map<IDStr, IDStr> renameMap = i.head.renameMap;
 
-				auto mesh = SkyrimMeshParser().createMesh(i.npc, headPart.baseNode, headPart.physicsFile, std::move(renameMap));
+				auto mesh = SkyrimMeshParser().createMesh(i.npc, i.head.headNode, headPart.physicsFile, std::move(renameMap));
 
 				if (mesh)
 				{
@@ -193,7 +193,7 @@ namespace hdt
 
 				for (auto& j : i.head.headParts)
 				{
-					if (j.physics && j.physics->m_world)
+					if (j.physics && !j.physics->m_world)
 						world->addSkinnedMeshSystem(j.physics);
 				}
 			}
