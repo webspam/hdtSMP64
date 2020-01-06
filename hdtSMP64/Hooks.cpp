@@ -66,31 +66,6 @@ namespace hdt
 			CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
 			e.hasSkinned = true;
 			g_skinAllHeadGeometryEventDispatcher.dispatch(e);
-			// for (int i = 0; i < this->m_children.m_arrayBufLen; i++)
-			// {
-			// 	if (!this->m_children.m_data[i])
-			// 		continue;
-			//
-			// 	auto geo = this->m_children.m_data[i]->GetAsBSDynamicTriShape();
-			//
-			// 	if (geo)
-			// 	{
-			// 		auto fmd = (BSFaceGenModelExtraData*)geo->GetExtraData("FMD");
-			// 		if (fmd)
-			// 		{
-			// 			if (fmd->m_model && fmd->m_model->unk10)
-			// 			{
-			// 				if (fmd->m_model->unk10->unk08)
-			// 				{
-			// 					_MESSAGE("unk08 %s", fmd->m_model->unk10->unk08->m_name);
-			// 					if (fmd->m_model->unk10->unk08->m_parent)
-			// 						_MESSAGE("unk08 parent %s", fmd->m_model->unk10->unk08->m_parent->m_name);
-			// 				}
-			// 		
-			// 			}
-			// 		}
-			// 	}
-			// }
 		}
 	};
 

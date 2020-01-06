@@ -193,14 +193,11 @@ namespace hdt
 		auto& skeleton = getSkeletonData(e.skeleton);
 		skeleton.npc = npc;
 
-		if (skeleton.head.isFullSkinning)
-			return;
-
-		if (e.hasSkinned)
+		if (e.hasSkinned && !skeleton.head.isFullSkinning)
 		{
 			skeleton.scanHead();
 		}
-		else
+		else if (!e.hasSkinned)
 		{
 			skeleton.updateHead(e.headNode, e.geometry);
 		}
@@ -208,26 +205,25 @@ namespace hdt
 
 	void ActorManager::onEvent(const SkinAllHeadGeometryEvent& e)
 	{
-		// auto npc = findNode(e.skeleton, "NPC");
-		//
-		// if (!npc) return;
-		//
-		// std::lock_guard<decltype(m_lock)> l(m_lock);
-		// if (m_shutdown) return;
-		//
-		// auto& skeleton = getSkeletonData(e.skeleton);
-		// skeleton.npc = npc;
-		//
-		// if (e.hasSkinned)
-		// {
-		// 	skeleton.scanHead();
-		// 	skeleton.head.isFullSkinning = false;
-		// }
-		// else
-		// {
-		// 	skeleton.updateHead(e.headNode);
-		// 	skeleton.head.isFullSkinning = true;
-		// }
+		auto npc = findNode(e.skeleton, "NPC");
+		
+		if (!npc) return;
+		
+		std::lock_guard<decltype(m_lock)> l(m_lock);
+		if (m_shutdown) return;
+		
+		auto& skeleton = getSkeletonData(e.skeleton);
+		skeleton.npc = npc;
+		
+		if (e.hasSkinned)
+		{
+			skeleton.scanHead();
+			skeleton.head.isFullSkinning = false;
+		}
+		else
+		{
+			skeleton.head.isFullSkinning = true;
+		}
 	}
 
 	std::vector<ActorManager::Skeleton> ActorManager::getSkeletons() const
@@ -364,6 +360,12 @@ namespace hdt
 				continue;
 			}
 
+			if (!strcmp(srcChild->m_name, "BSFaceGenNiNodeSkinned"))
+			{
+				_DMESSAGE("skipping facegen ninode in skeleton merge");
+				continue;
+			}
+
 			auto dstChild = findNode(dst, srcChild->m_name);
 			if (dstChild)
 			{
@@ -414,9 +416,11 @@ namespace hdt
 	{
 		if (!this->head.headNode)
 		{
-			_MESSAGE("actor has no head node");
+			_DMESSAGE("actor has no head node");
 			return;
 		}
+
+		std::unordered_set<std::string> physicsDupes;
 
 		for (auto& headPart : this->head.headParts)
 		{
@@ -427,18 +431,25 @@ namespace hdt
 
 			if (headPart.physicsFile.empty())
 			{
-				_MESSAGE("no physics file for headpart %s", headPart.headPart->m_name);
+				_DMESSAGE("no physics file for headpart %s", headPart.headPart->m_name);
+				continue;
+			}
+
+			if (physicsDupes.count(headPart.physicsFile))
+			{
+				_DMESSAGE("previous head part generated physics system for file %s, skipping", headPart.physicsFile.c_str());
 				continue;
 			}
 			
 			std::unordered_map<IDStr, IDStr> renameMap = this->head.renameMap;
 
-			_MESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name, headPart.physicsFile.c_str());
+			_DMESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name, headPart.physicsFile.c_str());
+			physicsDupes.insert(headPart.physicsFile);
 			auto system = SkyrimMeshParser().createMesh(npc, this->head.headNode, headPart.physicsFile, std::move(renameMap));
 
 			if (system)
 			{
-				_MESSAGE("success");
+				_DMESSAGE("success");
 				SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
 				headPart.physics = system;
 			}
@@ -449,7 +460,7 @@ namespace hdt
 	{
 		if (this->head.headNode && this->head.headNode != headNode)
 		{
-			_MESSAGE("completely new head attached to skeleton, clearing tracking");
+			_DMESSAGE("completely new head attached to skeleton, clearing tracking");
 			for(auto & headPart : this->head.headParts)
 			{
 				if (headPart.physics)
@@ -463,7 +474,7 @@ namespace hdt
 						auto node = obj->GetAsNiNode();
 						if (node)
 						{
-							_MESSAGE("node %s found rename back to %s", node->m_name, entry.first->cstr());
+							_DMESSAGE("node %s found rename back to %s", node->m_name, entry.first->cstr());
 							setNiNodeName(node, entry.first->cstr());
 						}
 					}
@@ -488,7 +499,7 @@ namespace hdt
 		{
 			if (!headPart.headPart->m_parent)
 			{
-				_MESSAGE("headpart %s disconnected", headPart.headPart->m_name);
+				_DMESSAGE("headpart %s disconnected", headPart.headPart->m_name);
 
 				auto renameIt = this->head.renameMap.begin();
 				
@@ -502,20 +513,20 @@ namespace hdt
 						auto node = obj->GetAsNiNode();
 						if (node)
 						{
-							_MESSAGE("node %s found rename back to %s", node->m_name, renameIt->first->cstr());
+							_DMESSAGE("node %s found rename back to %s", node->m_name, renameIt->first->cstr());
 							setNiNodeName(node, renameIt->first->cstr());
 							auto findNode = this->head.nodeUseCount.find(renameIt->first);
 							if (findNode != this->head.nodeUseCount.end())
 							{
 								findNode->second -= 1;
-								_MESSAGE("decrementing use count by 1, it is now %d", findNode->second);
+								_DMESSAGE("decrementing use count by 1, it is now %d", findNode->second);
 								if (findNode->second <= 0)
 								{
-									_MESSAGE("node no longer in use, cleaning from skeleton");
+									_DMESSAGE("node no longer in use, cleaning from skeleton");
 									auto removeObj = findObject(npc, renameIt->second->cstr());
 									if (removeObj)
 									{
-										_MESSAGE("found node %s, removing", removeObj->m_name);
+										_DMESSAGE("found node %s, removing", removeObj->m_name);
 										auto parent = removeObj->m_parent;
 										if (parent)
 										{
@@ -557,7 +568,7 @@ namespace hdt
 
 		if (it != this->head.headParts.end())
 		{
-			_MESSAGE("geometry is already added as head part");
+			_DMESSAGE("geometry is already added as head part");
 			return;
 		}
 
@@ -574,7 +585,7 @@ namespace hdt
 				const auto facePartRootNode = fmd->m_model->unk10->unk08->GetAsNiNode();
 				if (facePartRootNode)
 				{
-					_MESSAGE("geometry %s found root node %s", geometry->m_name, facePartRootNode->m_name);
+					_DMESSAGE("geometry %s found root node %s", geometry->m_name, facePartRootNode->m_name);
 					head.headParts.back().baseNode = facePartRootNode;
 					for (auto &entry : this->head.renameMap)
 					{
@@ -584,13 +595,13 @@ namespace hdt
 							auto node = obj->GetAsNiNode();
 							if (node)
 							{
-								_MESSAGE("node %s found rename to %s", node->m_name, entry.second->cstr());
+								_DMESSAGE("node %s found rename to %s", node->m_name, entry.second->cstr());
 								setNiNodeName(node, entry.second->cstr());
 								auto findNode = this->head.nodeUseCount.find(entry.first);
 								if (findNode != this->head.nodeUseCount.end())
 								{
 									findNode->second += 1;
-									_MESSAGE("incrementing use count by 1, it is now %d", findNode->second);
+									_DMESSAGE("incrementing use count by 1, it is now %d", findNode->second);
 								}
 							}
 						}
@@ -599,6 +610,49 @@ namespace hdt
 					head.headParts.back().physicsFile = scanBBP(facePartRootNode);
 				}
 			}
-		}	
+		}
+		else
+		{
+			// NPC - find base node via bone unskinned bone pointers
+			_DMESSAGE("trying to find NPC facegeom root node via unskinned bone pointers");
+			if (geometry->m_spSkinInstance && geometry->m_spSkinInstance->m_spSkinData)
+			{
+				for (int i = 0; i < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; i++)
+				{
+					auto node = geometry->m_spSkinInstance->m_ppkBones[i];
+					while (node->m_parent)
+						node = node->m_parent;
+					// facegeom root is a fadenode
+					auto fadeNode = node->GetAsBSFadeNode();
+					if (fadeNode)
+					{
+						_DMESSAGE("geometry %s found root node %s", geometry->m_name, fadeNode->m_name);
+						head.headParts.back().baseNode = fadeNode;
+						for (auto& entry : this->head.renameMap)
+						{
+							auto obj = findObject(fadeNode, entry.first->cstr());
+							if (obj)
+							{
+								auto node = obj->GetAsNiNode();
+								if (node)
+								{
+									_DMESSAGE("node %s found rename to %s", node->m_name, entry.second->cstr());
+									setNiNodeName(node, entry.second->cstr());
+									auto findNode = this->head.nodeUseCount.find(entry.first);
+									if (findNode != this->head.nodeUseCount.end())
+									{
+										findNode->second += 1;
+										_DMESSAGE("incrementing use count by 1, it is now %d", findNode->second);
+									}
+								}
+							}
+						}
+						doHeadSkeletonMerge(npc, fadeNode, this->head.prefix, this->head.renameMap, this->head.nodeUseCount);
+						head.headParts.back().physicsFile = scanBBP(fadeNode);
+						break;
+					}					
+				}
+			}
+		}
 	}
 }
