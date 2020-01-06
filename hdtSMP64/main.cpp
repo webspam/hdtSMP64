@@ -34,6 +34,12 @@ namespace hdt
 				_DMESSAGE("loading menu/racesexmenu detected, scheduling physics reset on world un-suspend");
 				SkyrimPhysicsWorld::get()->suspend(true);
 			}
+
+			if (evn && !evn->opening && !strcmp(evn->menuName.data, "RaceSex Menu"))
+			{
+				_DMESSAGE("racemenu closed, reloading meshes");
+				ActorManager::instance()->reloadMeshes();
+			}
 		
 			return kEvent_Continue;
 		}

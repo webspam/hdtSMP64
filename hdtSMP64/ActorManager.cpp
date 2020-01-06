@@ -131,6 +131,24 @@ namespace hdt
 					j.physics = mesh;
 				}
 			}
+
+			for (auto& headPart : i.head.headParts)
+			{
+				if (headPart.physics && headPart.physics->m_world)
+					headPart.physics->m_world->removeSkinnedMeshSystem(headPart.physics);
+
+				headPart.physics = nullptr;
+
+				std::unordered_map<IDStr, IDStr> renameMap = i.head.renameMap;
+
+				auto mesh = SkyrimMeshParser().createMesh(i.npc, headPart.baseNode, headPart.physicsFile, std::move(renameMap));
+
+				if (mesh)
+				{
+					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(mesh);
+					headPart.physics = mesh;
+				}
+			}
 		}
 	}
 	

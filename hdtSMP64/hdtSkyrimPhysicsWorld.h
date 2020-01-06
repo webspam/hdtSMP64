@@ -40,7 +40,6 @@ namespace hdt
 			m_suspended = false;
 			if (m_loading)
 			{
-				ActorManager::instance()->reloadMeshes();
 				resetSystems();
 				m_loading = false;
 			}
