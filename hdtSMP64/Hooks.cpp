@@ -20,14 +20,16 @@ namespace hdt
 		MEMBER_FN_PREFIX(BSFaceGenNiNodeEx);
 
 	public:
-		DEFINE_MEMBER_FN_HOOK(SkinAllGeometry, void, offset::BSFaceGenNiNode_SkinAllGeometry, NiNode* a_skeleton, char a_unk);
-		DEFINE_MEMBER_FN_HOOK(SkinSingleGeometry, void, offset::BSFaceGenNiNode_SkinSingleGeometry, NiNode* a_skeleton, BSGeometry* a_geometry, char a_unk);
+		DEFINE_MEMBER_FN_HOOK(SkinAllGeometry, void, offset::BSFaceGenNiNode_SkinAllGeometry, NiNode* a_skeleton,
+		                      char a_unk);
+		DEFINE_MEMBER_FN_HOOK(SkinSingleGeometry, void, offset::BSFaceGenNiNode_SkinSingleGeometry, NiNode* a_skeleton,
+		                      BSGeometry* a_geometry, char a_unk);
 
-		void SkinSingleGeometry(NiNode * a_skeleton, BSGeometry* a_geometry, char a_unk)
+		void SkinSingleGeometry(NiNode* a_skeleton, BSGeometry* a_geometry, char a_unk)
 		{
 			const char* name = "";
 			uint32_t formId = 0x0;
-			
+
 			if (a_skeleton->m_owner && a_skeleton->m_owner->baseForm)
 			{
 				auto bname = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESFullName);
@@ -39,8 +41,11 @@ namespace hdt
 				if (bnpc && bnpc->nextTemplate)
 					formId = bnpc->nextTemplate->formID;
 			}
-			
-			_MESSAGE("SkinSingleGeometry %s %d - %s, %s, (formid %08x base form %08x head template form %08x)", a_skeleton->m_name, a_skeleton->m_children.m_size, a_geometry->m_name, name, a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0, a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
+
+			_MESSAGE("SkinSingleGeometry %s %d - %s, %s, (formid %08x base form %08x head template form %08x)",
+			         a_skeleton->m_name, a_skeleton->m_children.m_size, a_geometry->m_name, name,
+			         a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0,
+			         a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
 
 			SkinSingleHeadGeometryEvent e;
 			e.skeleton = a_skeleton;
@@ -52,7 +57,7 @@ namespace hdt
 			g_skinSingleHeadGeometryEventDispatcher.dispatch(e);
 		}
 
-		void SkinAllGeometry(NiNode * a_skeleton, char a_unk)
+		void SkinAllGeometry(NiNode* a_skeleton, char a_unk)
 		{
 			const char* name = "";
 			uint32_t formId = 0x0;
@@ -68,9 +73,12 @@ namespace hdt
 				if (bnpc && bnpc->nextTemplate)
 					formId = bnpc->nextTemplate->formID;
 			}
-			
-			_MESSAGE("SkinAllGeometry %s %d, %s, (formid %08x base form %08x head template form %08x)", a_skeleton->m_name, a_skeleton->m_children.m_size, name, a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0, a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
-			
+
+			_MESSAGE("SkinAllGeometry %s %d, %s, (formid %08x base form %08x head template form %08x)",
+			         a_skeleton->m_name, a_skeleton->m_children.m_size, name,
+			         a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0,
+			         a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
+
 			SkinAllHeadGeometryEvent e;
 			e.skeleton = a_skeleton;
 			e.headNode = this;
@@ -83,8 +91,10 @@ namespace hdt
 
 	void hookFaceGen()
 	{
-		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinSingleGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
-		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinAllGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
+		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinSingleGeometry_GetPtrAddr(),
+		             (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
+		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinAllGeometry_GetPtrAddr(),
+		             (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
 
 		RelocAddr<uintptr_t> addr(offset::BSFaceGenNiNode_SkinSingleGeometry_bug);
 		SafeWrite8(addr.GetUIntPtr(), 0x7);
@@ -92,15 +102,19 @@ namespace hdt
 
 	void unhookFaceGen()
 	{
-		DetourDetach((void**)BSFaceGenNiNodeEx::_SkinSingleGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
-		DetourDetach((void**)BSFaceGenNiNodeEx::_SkinAllGeometry_GetPtrAddr(), (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
+		DetourDetach((void**)BSFaceGenNiNodeEx::_SkinSingleGeometry_GetPtrAddr(),
+		             (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
+		DetourDetach((void**)BSFaceGenNiNodeEx::_SkinAllGeometry_GetPtrAddr(),
+		             (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
 	}
-	
+
 	struct Unk001CB0E0
 	{
 		MEMBER_FN_PREFIX(Unk001CB0E0);
 
-		DEFINE_MEMBER_FN_HOOK(unk001CB0E0, NiAVObject*, offset::ArmorAttachFunction, NiNode* armor, NiNode* skeleton, void* unk3, char unk4, char unk5, void* unk6);
+		DEFINE_MEMBER_FN_HOOK(unk001CB0E0, NiAVObject*, offset::ArmorAttachFunction, NiNode* armor, NiNode* skeleton,
+		                      void* unk3, char unk4, char unk5, void* unk6);
+
 		NiAVObject* unk001CB0E0(NiNode* armor, NiNode* skeleton, void* unk3, char unk4, char unk5, void* unk6)
 		{
 			ArmorAttachEvent event;
@@ -149,6 +163,7 @@ namespace hdt
 	}
 
 	auto oldShutdown = (void (*)(bool))(RelocationManager::s_baseAddr + offset::GameShutdownFunction);
+
 	void shutdown(bool arg0)
 	{
 		g_shutdownEventDispatcher.dispatch(ShutdownEvent());
@@ -158,13 +173,13 @@ namespace hdt
 	void hookEngine()
 	{
 		DetourAttach((void**)UnkEngine::_onFrame_GetPtrAddr(), (void*)GetFnAddr(&UnkEngine::onFrame));
-		DetourAttach((void**)&oldShutdown, (void*)shutdown);
+		DetourAttach((void**)&oldShutdown, static_cast<void*>(shutdown));
 	}
 
 	void unhookEngine()
 	{
 		DetourDetach((void**)UnkEngine::_onFrame_GetPtrAddr(), (void*)GetFnAddr(&UnkEngine::onFrame));
-		DetourDetach((void**)&oldShutdown, (void*)shutdown);
+		DetourDetach((void**)&oldShutdown, static_cast<void*>(shutdown));
 	}
 
 	void hookAll()

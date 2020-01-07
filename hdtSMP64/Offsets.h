@@ -21,7 +21,7 @@ namespace hdt
 		// .text:00000001403D88D4                 cmp     ebx, 8
 		// patch 8 -> 7
 		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry_bug = BSFaceGenNiNode_SkinSingleGeometry + 0x96;
-		
+
 		// Hooks.cpp
 		// function responsible for majority of main game thread loop
 		// E8 ? ? ? ? 84 DB 74 24 

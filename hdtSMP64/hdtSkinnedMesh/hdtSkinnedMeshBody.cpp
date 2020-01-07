@@ -159,7 +159,8 @@ __kernel void updateVertices(
 		return ret;
 	}
 
-	int SkinnedMeshBody::addBone(SkinnedMeshBone * bone, const btQsTransform & verticesToBone, const BoundingSphere& boundingSphere)
+	int SkinnedMeshBody::addBone(SkinnedMeshBone* bone, const btQsTransform& verticesToBone,
+	                             const BoundingSphere& boundingSphere)
 	{
 		m_skinnedBones.push_back(SkinnedBone());
 		auto& v = m_skinnedBones.back();
@@ -176,7 +177,7 @@ __kernel void updateVertices(
 
 		m_shape->clipColliders();
 		m_vpos.resize(m_vertices.size());
-		
+
 		m_isKinematic = true;
 		for (auto& i : m_skinnedBones)
 		{
@@ -184,7 +185,7 @@ __kernel void updateVertices(
 			if (!i.isKinematic)
 				m_isKinematic = false;
 		}
-		
+
 		m_shape->finishBuild();
 
 		bool* flags = new bool[m_vertices.size()];
@@ -221,13 +222,10 @@ __kernel void updateVertices(
 					return false;
 			return true;
 		}
-		else
-		{
-			for (auto& i : body->m_tags)
-				if (m_canCollideWithTags.find(i) != m_canCollideWithTags.end())
-					return true;
-			return false;
-		}
+		for (auto& i : body->m_tags)
+			if (m_canCollideWithTags.find(i) != m_canCollideWithTags.end())
+				return true;
+		return false;
 	}
 
 	void SkinnedMeshBody::updateBoundingSphereAabb()
@@ -245,7 +243,7 @@ __kernel void updateVertices(
 			internalUpdate();
 	}
 
-	bool SkinnedMeshBody::isBoundingSphereCollided(SkinnedMeshBody * rhs)
+	bool SkinnedMeshBody::isBoundingSphereCollided(SkinnedMeshBody* rhs)
 	{
 		if (canCollideWith(rhs) && rhs->canCollideWith(this))
 		{

@@ -7,12 +7,12 @@ namespace hdt
 {
 	class StiffSpringConstraint
 		: public BoneScaleConstraint
-		, public btTypedConstraint
+		  , public btTypedConstraint
 	{
 	public:
 		StiffSpringConstraint(SkinnedMeshBone* a, SkinnedMeshBone* b);
 
-		virtual void scaleConstraint();
+		void scaleConstraint() override;
 
 		float m_minDistance;
 		float m_maxDistance;
@@ -25,16 +25,17 @@ namespace hdt
 		float m_oldDiff;
 
 		///internal method used by the constraint solver, don't use them directly
-		virtual void getInfo1(btConstraintInfo1* info);
+		void getInfo1(btConstraintInfo1* info) override;
 		///internal method used by the constraint solver, don't use them directly
-		virtual void getInfo2(btConstraintInfo2* info);
+		void getInfo2(btConstraintInfo2* info) override;
 
 		///override the default global value of a parameter (such as ERP or CFM), optionally provide the axis (0..5). 
 		///If no axis is provided, it uses the default axis for this constraint.
-		virtual	void	setParam(int num, btScalar value, int axis = -1){};
+		void setParam(int num, btScalar value, int axis = -1) override
+		{
+		};
 
 		///return the local value of parameter
-		virtual	btScalar getParam(int num, int axis = -1) const{ return 0; };
+		btScalar getParam(int num, int axis = -1) const override { return 0; };
 	};
-
 }

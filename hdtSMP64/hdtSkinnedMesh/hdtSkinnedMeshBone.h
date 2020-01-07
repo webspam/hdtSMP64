@@ -25,8 +25,8 @@ namespace hdt
 		btQsTransform m_currentTransform;
 		btQsTransform m_origTransform;
 
-		std::vector<IDStr>	m_canCollideWithBone;
-		std::vector<IDStr>	m_noCollideWithBone;
+		std::vector<IDStr> m_canCollideWithBone;
+		std::vector<IDStr> m_noCollideWithBone;
 
 		virtual void resetTransformToOriginal() = 0;
 		virtual void readTransform(float timeStep) = 0;

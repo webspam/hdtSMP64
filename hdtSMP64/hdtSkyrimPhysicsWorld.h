@@ -1,7 +1,7 @@
 #pragma once
 
 #include "hdtSkyrimSystem.h"
-#include "hdtSkinnedMesh\hdtSkinnedMeshWorld.h"
+#include "hdtSkinnedMesh/hdtSkinnedMeshWorld.h"
 #include "IEventListener.h"
 #include "HookEvents.h"
 
@@ -13,7 +13,8 @@ namespace hdt
 {
 	constexpr float RESET_PHYSICS = -10.0f;
 
-	class SkyrimPhysicsWorld : public SkinnedMeshWorld, public IEventListener<FrameEvent>, public IEventListener<ShutdownEvent>, public BSTEventSink<SKSECameraEvent>
+	class SkyrimPhysicsWorld : public SkinnedMeshWorld, public IEventListener<FrameEvent>,
+	                           public IEventListener<ShutdownEvent>, public BSTEventSink<SKSECameraEvent>
 	{
 	public:
 
@@ -22,21 +23,28 @@ namespace hdt
 		void doUpdate(float delta);
 		void updateActiveState();
 
-		virtual void addSkinnedMeshSystem(SkinnedMeshSystem* system) override;
-		virtual void removeSkinnedMeshSystem(SkinnedMeshSystem* system) override;
+		void addSkinnedMeshSystem(SkinnedMeshSystem* system) override;
+		void removeSkinnedMeshSystem(SkinnedMeshSystem* system) override;
 		void removeSystemByNode(void* root);
 
 		void resetTransformsToOriginal();
 		void resetSystems();
 
-		virtual void onEvent(const FrameEvent& e) override;
-		virtual void onEvent(const ShutdownEvent& e) override;
+		void onEvent(const FrameEvent& e) override;
+		void onEvent(const ShutdownEvent& e) override;
 
-		virtual	EventResult		ReceiveEvent(SKSECameraEvent* evn, EventDispatcher<SKSECameraEvent>* dispatcher) override;
+		EventResult ReceiveEvent(SKSECameraEvent* evn, EventDispatcher<SKSECameraEvent>* dispatcher) override;
 
-		inline bool isSuspended() { return m_suspended; }
-		inline void suspend(bool loading = false) { m_suspended = true; m_loading = loading; }
-		inline void resume() {
+		bool isSuspended() { return m_suspended; }
+
+		void suspend(bool loading = false)
+		{
+			m_suspended = true;
+			m_loading = loading;
+		}
+
+		void resume()
+		{
 			m_suspended = false;
 			if (m_loading)
 			{

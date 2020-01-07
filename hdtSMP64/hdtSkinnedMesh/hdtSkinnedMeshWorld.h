@@ -10,27 +10,36 @@ namespace hdt
 
 		SkinnedMeshWorld();
 		~SkinnedMeshWorld();
-		
+
 		virtual void addSkinnedMeshSystem(SkinnedMeshSystem* system);
 		virtual void removeSkinnedMeshSystem(SkinnedMeshSystem* system);
-		
-		virtual int stepSimulation(btScalar timeStep, int maxSubSteps = 1, btScalar fixedTimeStep = btScalar(1.) / btScalar(60.));
 
-		btVector3& getWind(){ return m_windSpeed; }
+		int stepSimulation(btScalar timeStep, int maxSubSteps = 1,
+		                   btScalar fixedTimeStep = btScalar(1.) / btScalar(60.)) override;
+
+		btVector3& getWind() { return m_windSpeed; }
 		const btVector3& getWind() const { return m_windSpeed; }
-		
+
 	protected:
 
-		inline void resetTransformsToOriginal() { for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->resetTransformsToOriginal(); }
-		inline void readTransform(float timeStep){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->readTransform(timeStep); }
-		inline void writeTransform(){ for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->writeTransform(); }
-		
-		virtual void applyGravity() override;
+		void resetTransformsToOriginal()
+		{
+			for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->resetTransformsToOriginal();
+		}
 
-		virtual void predictUnconstraintMotion(btScalar timeStep);
-		virtual void integrateTransforms(btScalar timeStep);
-		virtual void performDiscreteCollisionDetection();
-		virtual void solveConstraints(btContactSolverInfo& solverInfo);
+		void readTransform(float timeStep)
+		{
+			for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->readTransform(timeStep);
+		}
+
+		void writeTransform() { for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->writeTransform(); }
+
+		void applyGravity() override;
+
+		void predictUnconstraintMotion(btScalar timeStep) override;
+		void integrateTransforms(btScalar timeStep) override;
+		void performDiscreteCollisionDetection() override;
+		void solveConstraints(btContactSolverInfo& solverInfo) override;
 
 	public:
 		std::vector<Ref<SkinnedMeshSystem>> m_systems;
@@ -42,5 +51,4 @@ namespace hdt
 
 		GroupConstraintSolver m_constraintSolver;
 	};
-
 }

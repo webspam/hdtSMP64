@@ -3,7 +3,7 @@
 
 namespace hdt
 {
-	static const _CRT_ALIGN(16) U8 interleaveBits[16] = { 0, 1, 8, 9, 64, 65, 72, 73 };
+	static const _CRT_ALIGN(16) U8 interleaveBits[16] = {0, 1, 8, 9, 64, 65, 72, 73};
 
 	void ColliderTree::insertCollider(const std::vector<U32>& keys, const Collider& c)
 	{
@@ -11,7 +11,8 @@ namespace hdt
 		for (int i = 0; i < keys.size() && i < 4; ++i)
 		{
 			auto key = keys[i];
-			auto f = std::find_if(p->children.begin(), p->children.end(), [=](const ColliderTree& n){ return n.key == key; });
+			auto f = std::find_if(p->children.begin(), p->children.end(),
+			                      [=](const ColliderTree& n) { return n.key == key; });
 			if (f == p->children.end())
 			{
 				p->children.push_back(ColliderTree(key));
@@ -73,7 +74,8 @@ namespace hdt
 			i.clipCollider(func);
 
 		colliders.erase(std::remove_if(colliders.begin(), colliders.end(), func), colliders.end());
-		children.erase(std::remove_if(children.begin(), children.end(), [](const ColliderTree& n)->bool{ return n.empty(); }), children.end());
+		children.erase(std::remove_if(children.begin(), children.end(),
+		                              [](const ColliderTree& n)-> bool { return n.empty(); }), children.end());
 	}
 
 	void ColliderTree::updateKinematic(const std::function<float(const Collider*)>& func)
@@ -91,8 +93,14 @@ namespace hdt
 			k &= i.isKinematic;
 		}
 
-		std::sort(colliders.begin(), colliders.end(), [](const Collider& a, const Collider& b){ return a.flexible > b.flexible; });
-		std::sort(children.begin(), children.end(), [](const ColliderTree& a, const ColliderTree& b){ return a.isKinematic < b.isKinematic; });
+		std::sort(colliders.begin(), colliders.end(), [](const Collider& a, const Collider& b)
+		{
+			return a.flexible > b.flexible;
+		});
+		std::sort(children.begin(), children.end(), [](const ColliderTree& a, const ColliderTree& b)
+		{
+			return a.isKinematic < b.isKinematic;
+		});
 
 		isKinematic = k;
 
@@ -116,7 +124,7 @@ namespace hdt
 	{
 		if (numCollider)
 		{
-			register Aabb aabb = *this->aabb;;
+			register Aabb aabb = *this->aabb;
 			auto aabbEnd = this->aabb + numCollider;
 			for (auto i = this->aabb + 1; i < aabbEnd; ++i)
 				aabb.merge(*i);
@@ -145,8 +153,10 @@ namespace hdt
 		for (auto& i : children)
 			i.optimize();
 
-		children.erase(std::remove_if(children.begin(), children.end(), [](const ColliderTree& n){ return n.empty(); }), children.end());
-		
+		children.erase(
+			std::remove_if(children.begin(), children.end(), [](const ColliderTree& n) { return n.empty(); }),
+			children.end());
+
 		while (children.size() == 1 && children[0].colliders.empty())
 		{
 			vectorA16<ColliderTree> temp;
@@ -164,7 +174,7 @@ namespace hdt
 		}
 	}
 
-	bool ColliderTree::collapseCollideL(ColliderTree * r)
+	bool ColliderTree::collapseCollideL(ColliderTree* r)
 	{
 		if (isKinematic && r->isKinematic)
 			return false;
@@ -192,7 +202,7 @@ namespace hdt
 		return false;
 	}
 
-	bool ColliderTree::collapseCollideR(ColliderTree * r)
+	bool ColliderTree::collapseCollideR(ColliderTree* r)
 	{
 		if (isKinematic && r->isKinematic)
 			return false;

@@ -11,7 +11,7 @@ namespace hdt
 		for (int i = 0; i < m_bones.size(); ++i)
 			m_bones[i]->resetTransformToOriginal();
 	}
-	
+
 	void SkinnedMeshSystem::readTransform(float timeStep)
 	{
 		for (int i = 0; i < m_bones.size(); ++i)
@@ -42,7 +42,7 @@ namespace hdt
 		for (auto& i : m_meshes)
 			i->updateBoundingSphereAabb();
 	}
-	
+
 	//void SkinnedMeshSystem::internalUpdateCL()
 	//{
 	//	for (auto& i : m_bones)

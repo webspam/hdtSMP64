@@ -7,13 +7,14 @@ namespace hdt
 {
 	class Generic6DofConstraint
 		: public BoneScaleConstraint
-		, public btGeneric6DofSpring2Constraint
+		  , public btGeneric6DofSpring2Constraint
 	{
 	public:
 
-		virtual void scaleConstraint();
+		void scaleConstraint() override;
 
-		Generic6DofConstraint(SkinnedMeshBone* a, SkinnedMeshBone* b, const btTransform& frameInA, const btTransform& frameInB);
+		Generic6DofConstraint(SkinnedMeshBone* a, SkinnedMeshBone* b, const btTransform& frameInA,
+		                      const btTransform& frameInB);
 
 		//void internalUpdateSprings(btConstraintInfo2* info);
 		//virtual void getInfo2(btConstraintInfo2* info);
@@ -25,5 +26,4 @@ namespace hdt
 		//btVector3 m_oldAngularDiff;
 		//btVector3 m_linearBounce;
 	};
-
 }

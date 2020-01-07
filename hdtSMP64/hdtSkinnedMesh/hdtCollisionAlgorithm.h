@@ -26,13 +26,15 @@ namespace hdt
 	bool checkSphereSphere(const btVector3& a, const btVector3& b, float ra, float rb, CollisionResult& res);
 	bool checkSphereTriangle(const btVector3& s, float r, const CheckTriangle& tri, CollisionResult& res);
 	bool checkTriangleSphere(const btVector3& s, float r, const CheckTriangle& tri, CollisionResult& res);
-	bool checkSphereTriangle(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri, CollisionResult& res);
-	bool checkTriangleSphere(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri, CollisionResult& res);
+	bool checkSphereTriangle(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri,
+	                         CollisionResult& res);
+	bool checkTriangleSphere(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri,
+	                         CollisionResult& res);
 
-	static inline btVector3	BaryCoord(const btVector3& a,
-		const btVector3& b,
-		const btVector3& c,
-		const btVector3& p)
+	static inline btVector3 BaryCoord(const btVector3& a,
+	                                  const btVector3& b,
+	                                  const btVector3& c,
+	                                  const btVector3& p)
 	{
 		auto xmm3 = a - p;
 		auto xmm4 = b - p;
@@ -50,5 +52,4 @@ namespace hdt
 		xmm1 = _mm_dp_ps(xmm1, xmm0, 0x77);
 		return _mm_div_ps(xmm0, xmm1);
 	}
-
 }

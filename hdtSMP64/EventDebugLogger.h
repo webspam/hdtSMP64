@@ -7,15 +7,17 @@
 
 namespace hdt
 {
-	class EventDebugLogger 
+	class EventDebugLogger
 		: public IEventListener<ArmorAttachEvent>
-		, public BSTEventSink<TESCellAttachDetachEvent>
-		, public BSTEventSink<TESMoveAttachDetachEvent>
+		  , public BSTEventSink<TESCellAttachDetachEvent>
+		  , public BSTEventSink<TESMoveAttachDetachEvent>
 	{
 	protected:
-		virtual EventResult ReceiveEvent(TESCellAttachDetachEvent* evn, EventDispatcher<TESCellAttachDetachEvent>* dispatcher) override;
-		virtual EventResult ReceiveEvent(TESMoveAttachDetachEvent* evn, EventDispatcher<TESMoveAttachDetachEvent>* dispatcher) override;
+		EventResult ReceiveEvent(TESCellAttachDetachEvent* evn,
+		                         EventDispatcher<TESCellAttachDetachEvent>* dispatcher) override;
+		EventResult ReceiveEvent(TESMoveAttachDetachEvent* evn,
+		                         EventDispatcher<TESMoveAttachDetachEvent>* dispatcher) override;
 
-		virtual void onEvent(const ArmorAttachEvent&) override;
+		void onEvent(const ArmorAttachEvent&) override;
 	};
 }

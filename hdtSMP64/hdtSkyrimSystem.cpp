@@ -1,8 +1,8 @@
 #include "hdtSkyrimSystem.h"
-#include "hdtSkinnedMesh\hdtSkinnedMeshShape.h"
+#include "hdtSkinnedMesh/hdtSkinnedMeshShape.h"
 #include "../hdtSSEUtils/NetImmerseUtils.h"
 #include "../hdtSSEUtils/FrameworkUtils.h"
-#include <skse64\skse64\GameStreams.h>
+#include <skse64/skse64/GameStreams.h>
 #include "skse64/GameReferences.h"
 #include "XmlReader.h"
 
@@ -17,7 +17,7 @@ namespace hdt
 		for (auto i : m_bones)
 			if (i->m_name == name)
 				return i;
-		return 0;
+		return nullptr;
 	}
 
 	SkinnedMeshBody* SkyrimSystem::findBody(IDStr name)
@@ -25,7 +25,7 @@ namespace hdt
 		for (auto i : m_meshes)
 			if (i->m_name == name)
 				return i;
-		return 0;
+		return nullptr;
 	}
 
 	int SkyrimSystem::findBoneIdx(IDStr name)
@@ -37,12 +37,13 @@ namespace hdt
 	}
 
 	SkyrimSystem::SkyrimSystem(NiNode* skeleton)
-		: m_skeleton(skeleton), m_oldRoot(0)
+		: m_skeleton(skeleton), m_oldRoot(nullptr)
 	{
 		m_oldRoot = m_skeleton;
 	}
 
 	static constexpr float PI = 3.1415926535897932384626433832795f;
+
 	void SkyrimSystem::readTransform(float timeStep)
 	{
 		auto newRoot = m_skeleton;
@@ -70,7 +71,8 @@ namespace hdt
 				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 				SkyrimPhysicsWorld::get()->m_resetPc -= 1;
 			}
-			else if (!PlayerCamera::GetSingleton()->unk162 || PlayerCamera::GetSingleton()->cameraState->stateId == 0) // isWeaponSheathed or potentially isCameraFree || cameraState is first person
+			else if (!PlayerCamera::GetSingleton()->unk162 || PlayerCamera::GetSingleton()->cameraState->stateId == 0)
+				// isWeaponSheathed or potentially isCameraFree || cameraState is first person
 			{
 				m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 			}
@@ -131,12 +133,15 @@ namespace hdt
 	{
 	}
 
-	template<typename ... Args> void SkyrimMeshParser::Error(const char* fmt, Args ... args)
+	template <typename ... Args>
+	void SkyrimMeshParser::Error(const char* fmt, Args ... args)
 	{
 		std::string newfmt = std::string("%s(%d,%d):") + fmt;
 		_ERROR(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
 	}
-	template<typename ... Args> void SkyrimMeshParser::Warning(const char* fmt, Args ... args)
+
+	template <typename ... Args>
+	void SkyrimMeshParser::Warning(const char* fmt, Args ... args)
 	{
 		std::string newfmt = std::string("%s(%d,%d):") + fmt;
 		_WARNING(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
@@ -178,7 +183,8 @@ namespace hdt
 		return name;
 	}
 
-	Ref<SkyrimSystem> SkyrimMeshParser::createMesh(NiNode* skeleton, NiAVObject* model, const std::string& path, std::unordered_map<IDStr, IDStr> renameMap)
+	Ref<SkyrimSystem> SkyrimMeshParser::createMesh(NiNode* skeleton, NiAVObject* model, const std::string& path,
+	                                               std::unordered_map<IDStr, IDStr> renameMap)
 	{
 		if (path.empty()) return nullptr;
 		auto loaded = readAllFile(path.c_str());
@@ -254,17 +260,17 @@ namespace hdt
 					else if (name == "generic-constraint")
 					{
 						auto constraint = readGenericConstraint();
-						if (constraint)	m_mesh->m_constraints.push_back(constraint);
+						if (constraint) m_mesh->m_constraints.push_back(constraint);
 					}
 					else if (name == "stiffspring-constraint")
 					{
 						auto constraint = readStiffSpringConstraint();
-						if (constraint)	m_mesh->m_constraints.push_back(constraint);
+						if (constraint) m_mesh->m_constraints.push_back(constraint);
 					}
 					else if (name == "conetwist-constraint")
 					{
 						auto constraint = readConeTwistConstraint();
-						if (constraint)	m_mesh->m_constraints.push_back(constraint);
+						if (constraint) m_mesh->m_constraints.push_back(constraint);
 					}
 					else if (name == "generic-constraint-default")
 					{
@@ -310,7 +316,7 @@ namespace hdt
 					break;
 			}
 		}
-		catch (const std::string & err)
+		catch (const std::string& err)
 		{
 			Error("xml parse error - %s", err.c_str());
 			return nullptr;
@@ -327,9 +333,10 @@ namespace hdt
 
 		m_mesh->m_skeleton = m_skeleton;
 		m_mesh->m_shapeRefs.swap(m_shapeRefs);
-		std::sort(m_mesh->m_bones.begin(), m_mesh->m_bones.end(), [](SkinnedMeshBone* a, SkinnedMeshBone* b) {
+		std::sort(m_mesh->m_bones.begin(), m_mesh->m_bones.end(), [](SkinnedMeshBone* a, SkinnedMeshBone* b)
+		{
 			return static_cast<SkyrimBone*>(a)->m_depth < static_cast<SkyrimBone*>(b)->m_depth;
-			});
+		});
 
 		return m_mesh->valid() ? m_mesh : nullptr;
 	}
@@ -347,17 +354,17 @@ namespace hdt
 				if (name == "generic-constraint")
 				{
 					auto constraint = readGenericConstraint();
-					if (constraint)	ret->m_constraints.push_back(constraint);
+					if (constraint) ret->m_constraints.push_back(constraint);
 				}
 				else if (name == "stiffspring-constraint")
 				{
 					auto constraint = readStiffSpringConstraint();
-					if (constraint)	ret->m_constraints.push_back(constraint);
+					if (constraint) ret->m_constraints.push_back(constraint);
 				}
 				else if (name == "conetwist-constraint")
 				{
 					auto constraint = readConeTwistConstraint();
-					if (constraint)	ret->m_constraints.push_back(constraint);
+					if (constraint) ret->m_constraints.push_back(constraint);
 				}
 				else if (name == "generic-constraint-default")
 				{
@@ -478,13 +485,10 @@ namespace hdt
 			auto iter = m_shapes.find(shapeName);
 			if (iter != m_shapes.end())
 				return iter->second;
-			else
-			{
-				Warning("unknown shape - %s", shapeName.c_str());
-				return nullptr;
-			}
+			Warning("unknown shape - %s", shapeName.c_str());
+			return nullptr;
 		}
-		else if (typeStr == "box")
+		if (typeStr == "box")
 		{
 			btVector3 halfExtend(0, 0, 0);
 			float margin = 0;
@@ -510,7 +514,7 @@ namespace hdt
 			ret->setMargin(margin);
 			return ret;
 		}
-		else if (typeStr == "sphere")
+		if (typeStr == "sphere")
 		{
 			float radius = 0;
 			while (m_reader->Inspect())
@@ -531,7 +535,7 @@ namespace hdt
 			}
 			return std::make_shared<btSphereShape>(radius);
 		}
-		else if (typeStr == "capsule")
+		if (typeStr == "capsule")
 		{
 			float radius = 0;
 			float height = 0;
@@ -555,7 +559,7 @@ namespace hdt
 			}
 			return std::make_shared<btCapsuleShape>(radius, height);
 		}
-		else if (typeStr == "hull")
+		if (typeStr == "hull")
 		{
 			float margin = 0;
 			auto ret = std::make_shared<btConvexHullShape>();
@@ -580,11 +584,11 @@ namespace hdt
 			ret->recalcLocalAabb();
 			return ret->getNumPoints() ? ret : nullptr;
 		}
-		else if (typeStr == "cylinder")
+		if (typeStr == "cylinder")
 		{
-			float		height = 0;
-			float		radius = 0;
-			float		margin = 0;
+			float height = 0;
+			float radius = 0;
+			float margin = 0;
 			while (m_reader->Inspect())
 			{
 				if (m_reader->GetInspected() == XMLReader::Inspected::StartTag)
@@ -612,9 +616,9 @@ namespace hdt
 				ret->setMargin(margin);
 				return ret;
 			}
-			else return nullptr;
+			return nullptr;
 		}
-		else if (typeStr == "compound")
+		if (typeStr == "compound")
 		{
 			auto ret = std::make_shared<btCompoundShape>();
 			while (m_reader->Inspect())
@@ -658,11 +662,8 @@ namespace hdt
 			}
 			return ret->getNumChildShapes() ? ret : nullptr;
 		}
-		else
-		{
-			Warning("Unknown shape type %s", typeStr.c_str());
-			return nullptr;
-		}
+		Warning("Unknown shape type %s", typeStr.c_str());
+		return nullptr;
 	}
 
 	void SkyrimMeshParser::readBone()
@@ -706,23 +707,24 @@ namespace hdt
 	//  - Does not support infinities or NaN
 	//  - Few, partially pipelinable, non-branching instructions,
 	//  - Core opreations ~6 clock cycles on modern x86-64
-	static void float32(float* __restrict out, const uint16_t in) {
+	static void float32(float* __restrict out, const uint16_t in)
+	{
 		uint32_t t1;
 		uint32_t t2;
 		uint32_t t3;
 
-		t1 = in & 0x7fff;                       // Non-sign bits
-		t2 = in & 0x8000;                       // Sign bit
-		t3 = in & 0x7c00;                       // Exponent
+		t1 = in & 0x7fff; // Non-sign bits
+		t2 = in & 0x8000; // Sign bit
+		t3 = in & 0x7c00; // Exponent
 
-		t1 <<= 13;                              // Align mantissa on MSB
-		t2 <<= 16;                              // Shift sign bit into position
+		t1 <<= 13; // Align mantissa on MSB
+		t2 <<= 16; // Shift sign bit into position
 
-		t1 += 0x38000000;                       // Adjust bias
+		t1 += 0x38000000; // Adjust bias
 
-		t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
+		t1 = (t3 == 0 ? 0 : t1); // Denormals-as-zero
 
-		t1 |= t2;                               // Re-insert sign bit
+		t1 |= t2; // Re-insert sign bit
 
 		*((uint32_t*)out) = t1;
 	};
@@ -736,7 +738,7 @@ namespace hdt
 		{
 			Warning("%s is not a BSTriShape/BSDynamicTriShape or doesn't exist, skipped", name.c_str());
 			m_reader->skipCurrentElement();
-			return 0;
+			return nullptr;
 		}
 
 		Ref<SkyrimBody> body = new SkyrimBody;
@@ -761,75 +763,73 @@ namespace hdt
 			m_reader->skipCurrentElement();
 			return nullptr;
 		}
-		else
+		NiSkinInstance* skinInstance = triShape->m_spSkinInstance;
+		NiSkinData* skinData = skinInstance->m_spSkinData;
+		for (int boneIdx = 0; boneIdx < skinData->m_uiBones; ++boneIdx)
 		{
-			NiSkinInstance* skinInstance = triShape->m_spSkinInstance;
-			NiSkinData* skinData = skinInstance->m_spSkinData;
-			for (int boneIdx = 0; boneIdx < skinData->m_uiBones; ++boneIdx)
+			auto node = skinInstance->m_ppkBones[boneIdx];
+			auto boneData = &skinData->m_pkBoneData[boneIdx];
+			auto boundingSphere = BoundingSphere(convertNi(boneData->m_kBound.pos), boneData->m_kBound.radius);
+			IDStr boneName = node->m_name;
+			auto bone = m_mesh->findBone(boneName);
+			if (!bone)
 			{
-				auto node = skinInstance->m_ppkBones[boneIdx];
-				auto boneData = &skinData->m_pkBoneData[boneIdx];
-				auto boundingSphere = BoundingSphere(convertNi(boneData->m_kBound.pos), boneData->m_kBound.radius);
-				IDStr boneName = node->m_name;
-				auto bone = m_mesh->findBone(boneName);
-				if (!bone)
-				{
-					auto defaultBoneInfo = getBoneTemplate("");
-					bone = new SkyrimBone(boneName, node->GetAsNiNode(), defaultBoneInfo);
-					m_mesh->m_bones.push_back(bone);
-				}
-
-				body->addBone(bone, convertNi(boneData->m_kSkinToBone), boundingSphere);
+				auto defaultBoneInfo = getBoneTemplate("");
+				bone = new SkyrimBone(boneName, node->GetAsNiNode(), defaultBoneInfo);
+				m_mesh->m_bones.push_back(bone);
 			}
 
-			NiSkinPartition* skinPartition = triShape->m_spSkinInstance->m_spSkinPartition;
-			body->m_vertices.resize(skinPartition->vertexCount);
+			body->addBone(bone, convertNi(boneData->m_kSkinToBone), boundingSphere);
+		}
 
-			// vertices data are all the same in every partitions
-			auto partition = skinPartition->m_pkPartitions;
-			auto vFlags = NiSkinPartition::GetVertexFlags(partition->vertexDesc);
-			auto vSize = NiSkinPartition::GetVertexSize(partition->vertexDesc);
+		NiSkinPartition* skinPartition = triShape->m_spSkinInstance->m_spSkinPartition;
+		body->m_vertices.resize(skinPartition->vertexCount);
 
-			auto vertexBlock = partition->shapeData->m_RawVertexData;
-			UInt8* dynamicVData = nullptr;
+		// vertices data are all the same in every partitions
+		auto partition = skinPartition->m_pkPartitions;
+		auto vFlags = NiSkinPartition::GetVertexFlags(partition->vertexDesc);
+		auto vSize = NiSkinPartition::GetVertexSize(partition->vertexDesc);
+
+		auto vertexBlock = partition->shapeData->m_RawVertexData;
+		UInt8* dynamicVData = nullptr;
+		if (dynamicShape)
+			dynamicVData = static_cast<UInt8*>(dynamicShape->pDynamicData);
+
+		uint8_t boneOffset = 0;
+
+		if (vFlags & VF_VERTEX)
+			boneOffset += 16;
+		if (vFlags & VF_UV)
+			boneOffset += 4;
+		if (vFlags & VF_UV_2)
+			boneOffset += 4;
+		if (vFlags & VF_NORMAL)
+			boneOffset += 4;
+		if (vFlags & VF_TANGENT)
+			boneOffset += 4;
+		if (vFlags & VF_COLORS)
+			boneOffset += 4;
+
+		for (int j = 0; j < skinPartition->vertexCount; ++j)
+		{
+			NiPoint3* vertexPos;
+
 			if (dynamicShape)
-				dynamicVData = (UInt8*)dynamicShape->pDynamicData;
+				vertexPos = reinterpret_cast<NiPoint3*>(&dynamicVData[j * 16]);
+			else
+				vertexPos = reinterpret_cast<NiPoint3*>(&vertexBlock[j * vSize]);
 
-			uint8_t boneOffset = 0;
+			body->m_vertices[j].m_skinPos = convertNi(*vertexPos);
 
-			if (vFlags & VF_VERTEX)
-				boneOffset += 16;
-			if (vFlags & VF_UV)
-				boneOffset += 4;
-			if (vFlags & VF_UV_2)
-				boneOffset += 4;
-			if (vFlags & VF_NORMAL)
-				boneOffset += 4;
-			if (vFlags & VF_TANGENT)
-				boneOffset += 4;
-			if (vFlags & VF_COLORS)
-				boneOffset += 4;
-			
-			for (int j = 0; j < skinPartition->vertexCount; ++j)
+			SkyrimSystem::BoneData* boneData = reinterpret_cast<SkyrimSystem::BoneData*>(&vertexBlock[j * vSize +
+				boneOffset]);
+
+			for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
 			{
-				NiPoint3* vertexPos;
-				
-				if (dynamicShape)
-					vertexPos = reinterpret_cast<NiPoint3*>(&dynamicVData[j * 16]);
-				else
-					vertexPos = reinterpret_cast<NiPoint3*>(&vertexBlock[j * vSize]);
-
-				body->m_vertices[j].m_skinPos = convertNi(*vertexPos);
-
-				SkyrimSystem::BoneData* boneData = reinterpret_cast<SkyrimSystem::BoneData*>(&vertexBlock[j * vSize + boneOffset]);
-
-				for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
-				{
-					auto localBoneIndex = boneData->boneIndices[k];
-					assert(localBoneIndex < body->m_skinnedBones.size());
-					body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
-					float32(&body->m_vertices[j].m_weight[k], boneData->boneWeights[k]);
-				}
+				auto localBoneIndex = boneData->boneIndices[k];
+				assert(localBoneIndex < body->m_skinnedBones.size());
+				body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
+				float32(&body->m_vertices[j].m_weight[k], boneData->boneWeights[k]);
 			}
 		}
 
@@ -941,7 +941,8 @@ namespace hdt
 			{
 				auto& partition = skinPartition->m_pkPartitions[i];
 				for (int j = 0; j < partition.m_usTriangles; ++j)
-					shape->addTriangle(partition.m_pusTriList[j * 3], partition.m_pusTriList[j * 3 + 1], partition.m_pusTriList[j * 3 + 2]);
+					shape->addTriangle(partition.m_pusTriList[j * 3], partition.m_pusTriList[j * 3 + 1],
+					                   partition.m_pusTriList[j * 3 + 2]);
 			}
 		}
 		else
@@ -1117,10 +1118,11 @@ namespace hdt
 		}
 	}
 
-	bool SkyrimMeshParser::findBones(const IDStr& bodyAName, const IDStr& bodyBName, SkyrimBone*& bodyA, SkyrimBone*& bodyB)
+	bool SkyrimMeshParser::findBones(const IDStr& bodyAName, const IDStr& bodyBName, SkyrimBone*& bodyA,
+	                                 SkyrimBone*& bodyB)
 	{
-		bodyA = (SkyrimBone*)m_mesh->findBone(bodyAName);
-		bodyB = (SkyrimBone*)m_mesh->findBone(bodyBName);
+		bodyA = static_cast<SkyrimBone*>(m_mesh->findBone(bodyAName));
+		bodyB = static_cast<SkyrimBone*>(m_mesh->findBone(bodyBName));
 
 		if (!bodyA)
 		{
@@ -1191,7 +1193,8 @@ namespace hdt
 		return btQuaternion(axis, angle);
 	}
 
-	void SkyrimMeshParser::calcFrame(FrameType type, const btTransform& frame, const btQsTransform& trA, const btQsTransform& trB, btTransform& frameA, btTransform& frameB)
+	void SkyrimMeshParser::calcFrame(FrameType type, const btTransform& frame, const btQsTransform& trA,
+	                                 const btQsTransform& trB, btTransform& frameA, btTransform& frameB)
 	{
 		btQsTransform frameInWorld;
 		switch (type)
@@ -1207,52 +1210,50 @@ namespace hdt
 			frameA = (trA.inverse() * frameInWorld).asTransform();
 			break;
 		case FrameInLerp:
-		{
-			auto trans = trA.getOrigin().lerp(trB.getOrigin(), frame.getOrigin().x());
-			auto rot = trA.getBasis().slerp(trB.getBasis(), frame.getOrigin().y());
-			frameInWorld = btQsTransform(rot, trans);
-			frameA = (trA.inverse() * frameInWorld).asTransform();
-			frameB = (trB.inverse() * frameInWorld).asTransform();
-			break;
-		}
+			{
+				auto trans = trA.getOrigin().lerp(trB.getOrigin(), frame.getOrigin().x());
+				auto rot = trA.getBasis().slerp(trB.getBasis(), frame.getOrigin().y());
+				frameInWorld = btQsTransform(rot, trans);
+				frameA = (trA.inverse() * frameInWorld).asTransform();
+				frameB = (trB.inverse() * frameInWorld).asTransform();
+				break;
+			}
 		case AWithXPointToB:
-		{
-			btMatrix3x3 matr(trA.getBasis());
-			frameInWorld = trA;
-			auto old = matr.getColumn(0).normalized();
-			auto a2b = (trB.getOrigin() - trA.getOrigin()).normalized();
-			auto q = rotFromAtoB(old, a2b);
-			frameInWorld.getBasis() *= q;
-			frameA = (trA.inverse() * frameInWorld).asTransform();
-			frameB = (trB.inverse() * frameInWorld).asTransform();
-			break;
-		}
+			{
+				btMatrix3x3 matr(trA.getBasis());
+				frameInWorld = trA;
+				auto old = matr.getColumn(0).normalized();
+				auto a2b = (trB.getOrigin() - trA.getOrigin()).normalized();
+				auto q = rotFromAtoB(old, a2b);
+				frameInWorld.getBasis() *= q;
+				frameA = (trA.inverse() * frameInWorld).asTransform();
+				frameB = (trB.inverse() * frameInWorld).asTransform();
+				break;
+			}
 		case AWithYPointToB:
-		{
-			btMatrix3x3 matr(trA.getBasis());
-			frameInWorld = trA;
-			auto old = matr.getColumn(1).normalized();
-			auto a2b = (trB.getOrigin() - trA.getOrigin()).normalized();
-			auto q = rotFromAtoB(old, a2b);
-			frameInWorld.getBasis() *= q;
-			frameA = (trA.inverse() * frameInWorld).asTransform();
-			frameB = (trB.inverse() * frameInWorld).asTransform();
-			break;
-		}
+			{
+				btMatrix3x3 matr(trA.getBasis());
+				frameInWorld = trA;
+				auto old = matr.getColumn(1).normalized();
+				auto a2b = (trB.getOrigin() - trA.getOrigin()).normalized();
+				auto q = rotFromAtoB(old, a2b);
+				frameInWorld.getBasis() *= q;
+				frameA = (trA.inverse() * frameInWorld).asTransform();
+				frameB = (trB.inverse() * frameInWorld).asTransform();
+				break;
+			}
 		case AWithZPointToB:
-		{
-			btMatrix3x3 matr(trA.getBasis());
-			frameInWorld = trA;
-			auto old = matr.getColumn(2).normalized();
-			auto a2b = (trB.getOrigin() - trA.getOrigin()).normalized();
-			auto q = rotFromAtoB(old, a2b);
-			frameInWorld.getBasis() *= q;
-			frameA = (trA.inverse() * frameInWorld).asTransform();
-			frameB = (trB.inverse() * frameInWorld).asTransform();
-			break;
-		}
-
-
+			{
+				btMatrix3x3 matr(trA.getBasis());
+				frameInWorld = trA;
+				auto old = matr.getColumn(2).normalized();
+				auto a2b = (trB.getOrigin() - trA.getOrigin()).normalized();
+				auto q = rotFromAtoB(old, a2b);
+				frameInWorld.getBasis() *= q;
+				frameA = (trA.inverse() * frameInWorld).asTransform();
+				frameB = (trB.inverse() * frameInWorld).asTransform();
+				break;
+			}
 		}
 	}
 
@@ -1262,7 +1263,7 @@ namespace hdt
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
 		auto clsname = m_reader->getAttribute("template", "");
 
-		SkyrimBone* bodyA, * bodyB;
+		SkyrimBone *bodyA, *bodyB;
 		if (!findBones(bodyAName, bodyBName, bodyA, bodyB))
 			return nullptr;
 
@@ -1382,7 +1383,8 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::StiffSpringConstraintTemplate& SkyrimMeshParser::getStiffSpringConstraintTemplate(const IDStr& name)
+	const SkyrimMeshParser::StiffSpringConstraintTemplate& SkyrimMeshParser::getStiffSpringConstraintTemplate(
+		const IDStr& name)
 	{
 		auto iter = m_stiffSpringConstraintTemplates.find(name);
 		if (iter == m_stiffSpringConstraintTemplates.end())
@@ -1390,7 +1392,8 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::ConeTwistConstraintTemplate& SkyrimMeshParser::getConeTwistConstraintTemplate(const IDStr& name)
+	const SkyrimMeshParser::ConeTwistConstraintTemplate& SkyrimMeshParser::getConeTwistConstraintTemplate(
+		const IDStr& name)
 	{
 		auto iter = m_coneTwistConstraintTemplates.find(name);
 		if (iter == m_coneTwistConstraintTemplates.end())
@@ -1404,7 +1407,7 @@ namespace hdt
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
 		auto clsname = m_reader->getAttribute("template", "");
 
-		SkyrimBone* bodyA, * bodyB;
+		SkyrimBone *bodyA, *bodyB;
 		if (!findBones(bodyAName, bodyBName, bodyA, bodyB))
 			return nullptr;
 
@@ -1416,7 +1419,8 @@ namespace hdt
 		constraint->m_maxDistance *= cinfo.maxDistanceFactor;
 		constraint->m_stiffness = cinfo.stiffness;
 		constraint->m_damping = cinfo.damping;
-		constraint->m_equilibriumPoint = constraint->m_minDistance * cinfo.equilibriumFactor + constraint->m_maxDistance * (1 - cinfo.equilibriumFactor);
+		constraint->m_equilibriumPoint = constraint->m_minDistance * cinfo.equilibriumFactor + constraint->m_maxDistance
+			* (1 - cinfo.equilibriumFactor);
 		return constraint;
 	}
 
@@ -1426,7 +1430,7 @@ namespace hdt
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
 		auto clsname = m_reader->getAttribute("template", "");
 
-		SkyrimBone* bodyA = nullptr, * bodyB = nullptr;
+		SkyrimBone *bodyA = nullptr, *bodyB = nullptr;
 		if (!findBones(bodyAName, bodyBName, bodyA, bodyB))
 			return nullptr;
 
@@ -1439,7 +1443,8 @@ namespace hdt
 		calcFrame(cinfo.frameType, cinfo.frame, trA, trB, frameA, frameB);
 
 		Ref<ConeTwistConstraint> constraint = new ConeTwistConstraint(bodyA, bodyB, frameA, frameB);
-		constraint->setLimit(cinfo.swingSpan1, cinfo.swingSpan2, cinfo.twistSpan, cinfo.limitSoftness, cinfo.biasFactor, cinfo.relaxationFactor);
+		constraint->setLimit(cinfo.swingSpan1, cinfo.swingSpan2, cinfo.twistSpan, cinfo.limitSoftness, cinfo.biasFactor,
+		                     cinfo.relaxationFactor);
 		constraint->setAngularOnly(cinfo.angularOnly);
 
 		return constraint;

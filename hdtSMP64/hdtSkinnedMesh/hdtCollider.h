@@ -7,12 +7,15 @@ namespace hdt
 {
 	struct alignas(16) Collider
 	{
-		Collider() { }
+		Collider()
+		{
+		}
+
 		Collider(int i0) { vertex = i0; }
 		Collider(int i0, int i1, int i2) { vertices[0] = i0, vertices[1] = i1, vertices[2] = i2; }
-		Collider(const Collider& rhs){ operator=(rhs); }
+		Collider(const Collider& rhs) { operator=(rhs); }
 
-		inline Collider& operator =(const Collider& rhs)
+		Collider& operator =(const Collider& rhs)
 		{
 			__m128i* dst = (__m128i*)this;
 			__m128i* src = (__m128i*)&rhs;
@@ -20,29 +23,39 @@ namespace hdt
 			_mm_store_si128(dst, xmm0);
 			return *this;
 		}
-		
+
 		union
 		{
-			U32 vertex;				// vertexshape
-			U32 vertices[3];		// triangleshape
+			U32 vertex; // vertexshape
+			U32 vertices[3]; // triangleshape
 		};
-		float  flexible;
+
+		float flexible;
 		//		inline bool operator <(const Collider& rhs){ return aligned < rhs.aligned; }
 	};
-	
+
 	struct alignas(16) ColliderTree
 	{
-		ColliderTree(){ aabbAll.invalidate(); aabbMe.invalidate(); }
-		ColliderTree(U32 k) : key(k){ aabbAll.invalidate(); aabbMe.invalidate(); }
+		ColliderTree()
+		{
+			aabbAll.invalidate();
+			aabbMe.invalidate();
+		}
+
+		ColliderTree(U32 k) : key(k)
+		{
+			aabbAll.invalidate();
+			aabbMe.invalidate();
+		}
 
 		Aabb aabbAll;
 		Aabb aabbMe;
 
 		U32 isKinematic;
 
-		Collider* cbuf = 0;
+		Collider* cbuf = nullptr;
 		Aabb* aabb;
-		U32	numCollider;
+		U32 numCollider;
 		U32 dynCollider;
 
 		U32 dynChild;
@@ -63,12 +76,13 @@ namespace hdt
 		void updateAabb();
 		void optimize();
 
-		inline bool empty() const { return children.empty() && colliders.empty(); }
+		bool empty() const { return children.empty() && colliders.empty(); }
 
 
 		bool collapseCollideL(ColliderTree* r);
 		bool collapseCollideR(ColliderTree* r);
 	};
+
 	/*
 	struct _CRT_ALIGN(16) ColliderTree
 	{
@@ -84,6 +98,4 @@ namespace hdt
 		void updateAabb(const std::function<void(Collider*)>& func);
 		void visitColliders(const std::function<void(Collider*)>& func);
 	};*/
-
 }
-

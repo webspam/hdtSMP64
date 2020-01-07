@@ -8,13 +8,17 @@
 namespace hdt
 {
 	class SkinnedMeshBody;
+
 	class CollisionDispatcher : public btCollisionDispatcher
 	{
 	public:
 
-		CollisionDispatcher(btCollisionConfiguration* collisionConfiguration) :btCollisionDispatcher(collisionConfiguration){}
+		CollisionDispatcher(btCollisionConfiguration* collisionConfiguration) : btCollisionDispatcher(
+			collisionConfiguration)
+		{
+		}
 
-		virtual btPersistentManifold*	getNewManifold(const btCollisionObject* b0, const btCollisionObject* b1)
+		btPersistentManifold* getNewManifold(const btCollisionObject* b0, const btCollisionObject* b1) override
 		{
 			m_lock.lock();
 			auto ret = btCollisionDispatcher::getNewManifold(b0, b1);
@@ -22,19 +26,20 @@ namespace hdt
 			return ret;
 		}
 
-		virtual void releaseManifold(btPersistentManifold* manifold)
+		void releaseManifold(btPersistentManifold* manifold) override
 		{
 			m_lock.lock();
 			btCollisionDispatcher::releaseManifold(manifold);
 			m_lock.unlock();
 		}
 
-		virtual bool needsCollision(const btCollisionObject* body0, const btCollisionObject* body1);
-		virtual void dispatchAllCollisionPairs(btOverlappingPairCache* pairCache, const btDispatcherInfo& dispatchInfo, btDispatcher* dispatcher);
+		bool needsCollision(const btCollisionObject* body0, const btCollisionObject* body1) override;
+		void dispatchAllCollisionPairs(btOverlappingPairCache* pairCache, const btDispatcherInfo& dispatchInfo,
+		                               btDispatcher* dispatcher) override;
 
-		virtual int getNumManifolds() const;
-		virtual	btPersistentManifold**	getInternalManifoldPointer();
-		virtual btPersistentManifold* getManifoldByIndexInternal(int index);
+		int getNumManifolds() const override;
+		btPersistentManifold** getInternalManifoldPointer() override;
+		btPersistentManifold* getManifoldByIndexInternal(int index) override;
 
 		void clearAllManifold();
 

@@ -14,5 +14,5 @@ namespace hdt
 	{
 	public:
 		virtual void onEvent() = 0;
-	};	
+	};
 }

@@ -2,7 +2,8 @@
 #include "hdtSkinnedMeshBody.h"
 #include "hdtSkinnedMeshAlgorithm.h"
 
-#include <LinearMath\btPoolAllocator.h>
+#include <LinearMath/btPoolAllocator.h>
+
 namespace hdt
 {
 	void CollisionDispatcher::clearAllManifold()
@@ -14,7 +15,8 @@ namespace hdt
 			manifold->~btPersistentManifold();
 			if (m_persistentManifoldPoolAllocator->validPtr(manifold))
 				m_persistentManifoldPoolAllocator->freeMemory(manifold);
-			else btAlignedFree(manifold);
+			else
+				btAlignedFree(manifold);
 		}
 		m_manifoldsPtr.clear();
 	}
@@ -37,24 +39,22 @@ namespace hdt
 
 		if (shape0 || shape1)
 		{
-			return ::hdt::needsCollision(shape0, shape1);
+			return hdt::needsCollision(shape0, shape1);
 		}
-		else
+		if (body0->isStaticOrKinematicObject() && body1->isStaticOrKinematicObject())
+			return false;
+		if (body0->checkCollideWith(body1) || body1->checkCollideWith(body0))
 		{
-			if (body0->isStaticOrKinematicObject() && body1->isStaticOrKinematicObject())
-				return false;
-			if (body0->checkCollideWith(body1) || body1->checkCollideWith(body0))
-			{
-				auto rb0 = static_cast<SkinnedMeshBone*>(body0->getUserPointer());
-				auto rb1 = static_cast<SkinnedMeshBone*>(body0->getUserPointer());
+			auto rb0 = static_cast<SkinnedMeshBone*>(body0->getUserPointer());
+			auto rb1 = static_cast<SkinnedMeshBone*>(body0->getUserPointer());
 
-				return rb0->canCollideWith(rb1) && rb1->canCollideWith(rb0);
-			}
-			else return false;
+			return rb0->canCollideWith(rb1) && rb1->canCollideWith(rb0);
 		}
+		else return false;
 	}
 
-	void CollisionDispatcher::dispatchAllCollisionPairs(btOverlappingPairCache* pairCache, const btDispatcherInfo& dispatchInfo, btDispatcher* dispatcher)
+	void CollisionDispatcher::dispatchAllCollisionPairs(btOverlappingPairCache* pairCache,
+	                                                    const btDispatcherInfo& dispatchInfo, btDispatcher* dispatcher)
 	{
 		auto size = pairCache->getNumOverlappingPairs();
 		if (!size) return;
@@ -70,12 +70,14 @@ namespace hdt
 		{
 			auto& pair = pairs[i];
 
-			auto shape0 = dynamic_cast<SkinnedMeshBody*>((btCollisionObject*)pair.m_pProxy0->m_clientObject);
-			auto shape1 = dynamic_cast<SkinnedMeshBody*>((btCollisionObject*)pair.m_pProxy1->m_clientObject);
+			auto shape0 = dynamic_cast<SkinnedMeshBody*>(static_cast<btCollisionObject*>(pair.m_pProxy0->m_clientObject)
+			);
+			auto shape1 = dynamic_cast<SkinnedMeshBody*>(static_cast<btCollisionObject*>(pair.m_pProxy1->m_clientObject)
+			);
 
 			if (shape0 || shape1)
 			{
-				if (::hdt::needsCollision(shape0, shape1) && shape0->isBoundingSphereCollided(shape1))
+				if (hdt::needsCollision(shape0, shape1) && shape0->isBoundingSphereCollided(shape1))
 				{
 					HDT_LOCK_GUARD(l, lock);
 
@@ -96,18 +98,22 @@ namespace hdt
 			else getNearCallback()(pair, *this, dispatchInfo);
 		});
 
-		concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* shape) {
+		concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* shape)
+		{
 			shape->internalUpdate();
 		});
-		
-		concurrency::parallel_for_each(shapes.begin(), shapes.end(), [](PerTriangleShape* shape) {
+
+		concurrency::parallel_for_each(shapes.begin(), shapes.end(), [](PerTriangleShape* shape)
+		{
 			shape->m_verticesCollision->internalUpdate();
 		});
 
-		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(), [&, this](const std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i) {
-			if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
-				SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
-		});
+		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
+		                               [&, this](const std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)
+		                               {
+			                               if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
+				                               SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
+		                               });
 
 		m_pairs.clear();
 	}
@@ -116,13 +122,13 @@ namespace hdt
 	{
 		return m_manifoldsPtr.size();
 	}
-	
+
 	btPersistentManifold* CollisionDispatcher::getManifoldByIndexInternal(int index)
 	{
 		return m_manifoldsPtr[index];
 	}
 
-	btPersistentManifold**	CollisionDispatcher::getInternalManifoldPointer()
+	btPersistentManifold** CollisionDispatcher::getInternalManifoldPointer()
 	{
 		return btCollisionDispatcher::getInternalManifoldPointer();
 	}

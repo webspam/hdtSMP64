@@ -44,9 +44,9 @@ namespace hdt
 	{
 		if (str == "true" || str == "1")
 			return true;
-		else if (str == "false" || str == "0")
+		if (str == "false" || str == "0")
 			return false;
-		else throw std::string("not a boolean");
+		throw std::string("not a boolean");
 	}
 
 	bool XMLReader::Inspect()
@@ -63,9 +63,11 @@ namespace hdt
 	{
 		auto ret = Base::GetInspected();
 		if (ret == Inspected::EmptyElementTag)
+		{
 			if (isEmptyStart) return Inspected::StartTag;
-			else return Inspected::EndTag;
-		else return ret;
+			return Inspected::EndTag;
+		}
+		return ret;
 	}
 
 	void XMLReader::skipCurrentElement()
@@ -78,9 +80,11 @@ namespace hdt
 			switch (GetInspected())
 			{
 			case Inspected::StartTag:
-				++currentDepth; break;
+				++currentDepth;
+				break;
 			case Inspected::EndTag:
-				--currentDepth; break;
+				--currentDepth;
+				break;
 			}
 		}
 	}

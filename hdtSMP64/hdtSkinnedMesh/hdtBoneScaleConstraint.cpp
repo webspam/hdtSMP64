@@ -13,6 +13,7 @@ namespace hdt
 	BoneScaleConstraint::~BoneScaleConstraint()
 	{
 	}
+
 	/*
 	void BoneScaleConstraint::scaleConstraint()
 	{

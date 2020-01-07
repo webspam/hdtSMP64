@@ -2,9 +2,10 @@
 
 namespace hdt
 {
-	Generic6DofConstraint::Generic6DofConstraint(SkinnedMeshBone* a, SkinnedMeshBone* b, const btTransform& frameInA, const btTransform& frameInB)
+	Generic6DofConstraint::Generic6DofConstraint(SkinnedMeshBone* a, SkinnedMeshBone* b, const btTransform& frameInA,
+	                                             const btTransform& frameInB)
 		: BoneScaleConstraint(a, b, static_cast<btTypedConstraint*>(this))
-		, btGeneric6DofSpring2Constraint(a->m_rig, b->m_rig, btTransform::getIdentity(), btTransform::getIdentity(), RO_XYZ)
+		  , btGeneric6DofSpring2Constraint(a->m_rig, b->m_rig, btTransform::getIdentity(), btTransform::getIdentity(), RO_XYZ)
 	{
 		auto fa = a->m_rigToLocal * frameInA;
 		auto fb = b->m_rigToLocal * frameInB;
@@ -54,6 +55,7 @@ namespace hdt
 		m_scaleA = newScaleA;
 		m_scaleB = newScaleB;
 	}
+
 	//
 	//void Generic6DofConstraint::internalUpdateSprings(btConstraintInfo2* info)
 	//{
@@ -184,5 +186,4 @@ namespace hdt
 	//	}
 	//	return row;
 	//}
-
 }

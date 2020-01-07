@@ -1,19 +1,21 @@
 #pragma once
 
-#include "XmlInspector\XmlInspector.hpp"
-#include "XmlInspector\CharactersReader.hpp"
+#include "XmlInspector/XmlInspector.hpp"
+#include "XmlInspector/CharactersReader.hpp"
 
-#include "hdtSkinnedMesh\hdtBulletHelper.h"
+#include "hdtSkinnedMesh/hdtBulletHelper.h"
 
 namespace hdt
 {
 	class XMLReader : public Xml::Inspector<Xml::Encoding::Utf8Writer>
 	{
-		typedef Xml::Inspector<Xml::Encoding::Utf8Writer> Base;
+		typedef Inspector<Xml::Encoding::Utf8Writer> Base;
 		bool isEmptyStart;
 
 	public:
-		XMLReader(BYTE* data, size_t count) : Base(data, data + count) {}
+		XMLReader(BYTE* data, size_t count) : Base(data, data + count)
+		{
+		}
 
 		typedef Xml::Inspected Inspected;
 

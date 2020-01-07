@@ -4,7 +4,7 @@
 namespace hdt
 {
 	SkyrimBone::SkyrimBone(IDStr name, NiNode* node, btRigidBody::btRigidBodyConstructionInfo& ci)
-		: m_node(node), SkinnedMeshBone(name, ci)
+		: SkinnedMeshBone(name, ci), m_node(node)
 	{
 		if (ci.m_mass)
 			m_rig.setCollisionFlags(0);

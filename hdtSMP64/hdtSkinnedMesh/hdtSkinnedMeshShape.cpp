@@ -19,13 +19,14 @@ namespace hdt
 	void SkinnedMeshShape::clipColliders()
 	{
 		auto& v = m_owner->m_vertices;
-		m_tree.clipCollider([&, this](const Collider& n)->bool
+		m_tree.clipCollider([&, this](const Collider& n)-> bool
 		{
 			bool flg = false;
 			for (int i = 0; i < getBonePerCollider() && !flg; ++i)
 			{
 				float weight = getColliderBoneWeight(&n, i);
-				if (weight > FLT_EPSILON && weight > m_owner->m_skinnedBones[getColliderBoneIndex(&n, i)].weightThreshold)
+				if (weight > FLT_EPSILON && weight > m_owner->m_skinnedBones[getColliderBoneIndex(&n, i)].
+					weightThreshold)
 					flg = true;
 			}
 			return !flg;
@@ -173,7 +174,7 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 	PerVertexShape::~PerVertexShape()
 	{
 	}
-	
+
 	void PerVertexShape::finishBuild()
 	{
 		bool hasDynamic = false;
@@ -229,12 +230,13 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 		for (auto& i : m_colliders)
 			flags[i.vertex] = true;
 	}
+
 	void PerVertexShape::remapVertices(UINT* map)
 	{
 		for (auto& i : m_colliders)
 			i.vertex = map[i.vertex];
 	}
-	
+
 	PerTriangleShape::PerTriangleShape(SkinnedMeshBody* body)
 		: SkinnedMeshShape(body)
 	{
@@ -256,7 +258,7 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 	PerTriangleShape::~PerTriangleShape()
 	{
 	}
-	
+
 	void PerTriangleShape::internalUpdate()
 	{
 		auto& vertices = m_owner->m_vpos;
@@ -307,7 +309,7 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 		m_verticesCollision = new PerVertexShape(m_owner);
 		m_verticesCollision->m_shapeProp.margin = m_shapeProp.margin;
 		m_owner->m_shape = this;
-		
+
 		m_verticesCollision->autoGen();
 		m_verticesCollision->clipColliders();
 		m_verticesCollision->finishBuild();
@@ -359,11 +361,11 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 				w.push_back(weight);
 			}
 		}
-		
+
 		for (int i = 0; i < keys.size(); ++i)
 			for (int j = 1; j < keys.size(); ++j)
 			{
-				if (w[j - 1] < w[j] || (w[j - 1] == w[j] && keys[j] < keys[j-1]))
+				if (w[j - 1] < w[j] || (w[j - 1] == w[j] && keys[j] < keys[j - 1]))
 				{
 					std::swap(keys[j], keys[j - 1]);
 					std::swap(w[j], w[j - 1]);

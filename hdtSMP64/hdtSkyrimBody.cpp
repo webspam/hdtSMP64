@@ -5,7 +5,7 @@ namespace hdt
 {
 	SkyrimBody::SkyrimBody()
 	{
-		m_mesh = 0;
+		m_mesh = nullptr;
 		m_shared = SHARED_PUBLIC;
 	}
 
@@ -44,5 +44,4 @@ namespace hdt
 		if (m_disabled) return;
 		SkinnedMeshBody::internalUpdate();
 	}
-
 }

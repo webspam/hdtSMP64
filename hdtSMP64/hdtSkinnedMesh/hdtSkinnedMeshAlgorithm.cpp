@@ -3,15 +3,14 @@
 
 namespace hdt
 {
-
 	SkinnedMeshAlgorithm::SkinnedMeshAlgorithm(const btCollisionAlgorithmConstructionInfo& ci)
 		: btCollisionAlgorithm(ci)
 	{
 	}
-	
+
 	static const CollisionResult zero;
 
-	template<class T0, class T1>
+	template <class T0, class T1>
 	struct CollisionCheck
 	{
 		typedef typename T0::ShapeProp SP0;
@@ -40,7 +39,7 @@ namespace hdt
 		CollisionResult* results;
 
 		bool checkCollide(Collider* a, Collider* b, CollisionResult& res);
-		
+
 		bool addResult(const CollisionResult& res)
 		{
 			int p = numResults.fetch_add(1);
@@ -49,7 +48,7 @@ namespace hdt
 				results[p] = res;
 				return true;
 			}
-			else return false;
+			return false;
 		}
 
 		int operator()()
@@ -169,7 +168,8 @@ namespace hdt
 		}
 	};
 
-	template<> bool CollisionCheck<PerVertexShape, PerVertexShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
+	template <>
+	bool CollisionCheck<PerVertexShape, PerVertexShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
 	{
 		auto s0 = v0[a->vertex];
 		auto r0 = s0.marginMultiplier() * sp0->margin;
@@ -182,7 +182,8 @@ namespace hdt
 		return ret;
 	}
 
-	template<> bool CollisionCheck<PerVertexShape, PerTriangleShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
+	template <>
+	bool CollisionCheck<PerVertexShape, PerTriangleShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
 	{
 		auto s = v0[a->vertex];
 		auto r = s.marginMultiplier() * sp0->margin;
@@ -201,7 +202,8 @@ namespace hdt
 		return ret;
 	}
 
-	template<> bool CollisionCheck<PerTriangleShape, PerVertexShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
+	template <>
+	bool CollisionCheck<PerTriangleShape, PerVertexShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
 	{
 		auto s = v1[b->vertex];
 		auto r = s.marginMultiplier() * sp1->margin;
@@ -220,12 +222,14 @@ namespace hdt
 		return ret;
 	}
 
-	template<class T0, class T1> inline int checkCollide(T0* a, T1* b, CollisionResult* results)
+	template <class T0, class T1>
+	int checkCollide(T0* a, T1* b, CollisionResult* results)
 	{
 		return CollisionCheck<T0, T1>(a, b, results)();
 	}
 
-	void SkinnedMeshAlgorithm::MergeBuffer::doMerge(SkinnedMeshShape* a, SkinnedMeshShape* b, CollisionResult* collision, int count)
+	void SkinnedMeshAlgorithm::MergeBuffer::doMerge(SkinnedMeshShape* a, SkinnedMeshShape* b,
+	                                                CollisionResult* collision, int count)
 	{
 		for (int i = 0; i < count; ++i)
 		{
@@ -247,7 +251,8 @@ namespace hdt
 					int boneIdx1 = b->getColliderBoneIndex(res.colliderB, jb);
 					if (w1 <= b->m_owner->m_skinnedBones[boneIdx1].weightThreshold) continue;
 
-					if (a->m_owner->m_skinnedBones[boneIdx0].isKinematic && b->m_owner->m_skinnedBones[boneIdx1].isKinematic)
+					if (a->m_owner->m_skinnedBones[boneIdx0].isKinematic && b->m_owner->m_skinnedBones[boneIdx1].
+						isKinematic)
 						continue;
 
 					float w = flexible * res.depth;
@@ -261,7 +266,9 @@ namespace hdt
 			}
 		}
 	}
-	void SkinnedMeshAlgorithm::MergeBuffer::apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1, CollisionDispatcher* dispatcher)
+
+	void SkinnedMeshAlgorithm::MergeBuffer::apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
+	                                              CollisionDispatcher* dispatcher)
 	{
 		for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
 		{
@@ -303,14 +310,16 @@ namespace hdt
 		}
 	}
 
-	template<class T0, class T1> void SkinnedMeshAlgorithm::processCollision(T0* shape0, T1* shape1, MergeBuffer& merge, CollisionResult* collision)
+	template <class T0, class T1>
+	void SkinnedMeshAlgorithm::processCollision(T0* shape0, T1* shape1, MergeBuffer& merge, CollisionResult* collision)
 	{
 		int count = std::min(checkCollide(shape0, shape1, collision), MaxCollisionCount);
 		if (count > 0)
 			merge.doMerge(shape0, shape1, collision, count);
 	}
 
-	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1, CollisionDispatcher* dispatcher)
+	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
+	                                            CollisionDispatcher* dispatcher)
 	{
 		MergeBuffer merge;
 		merge.alloc(body0->m_skinnedBones.size(), body1->m_skinnedBones.size());
@@ -318,13 +327,17 @@ namespace hdt
 		auto collision = new CollisionResult[MaxCollisionCount];
 		if (body0->m_shape->asPerTriangleShape() && body1->m_shape->asPerTriangleShape())
 		{
-			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge, collision);
-			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge, collision);
+			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge,
+			                 collision);
+			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge,
+			                 collision);
 		}
 		else if (body0->m_shape->asPerTriangleShape())
-			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge, collision);
+			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge,
+			                 collision);
 		else if (body1->m_shape->asPerTriangleShape())
-			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge, collision);
+			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge,
+			                 collision);
 		else processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), merge, collision);
 
 		delete[] collision;
@@ -332,7 +345,7 @@ namespace hdt
 		merge.release();
 	}
 
-	void SkinnedMeshAlgorithm::registerAlgorithm(btCollisionDispatcher * dispatcher)
+	void SkinnedMeshAlgorithm::registerAlgorithm(btCollisionDispatcher* dispatcher)
 	{
 		static CreateFunc s_gimpact_cf;
 		dispatcher->registerCollisionCreateFunc(CUSTOM_CONCAVE_SHAPE_TYPE, CUSTOM_CONCAVE_SHAPE_TYPE, &s_gimpact_cf);

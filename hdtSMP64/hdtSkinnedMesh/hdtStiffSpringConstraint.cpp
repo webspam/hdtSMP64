@@ -2,10 +2,9 @@
 
 namespace hdt
 {
-
 	StiffSpringConstraint::StiffSpringConstraint(SkinnedMeshBone* a, SkinnedMeshBone* b)
 		: BoneScaleConstraint(a, b, this)
-		, btTypedConstraint(MAX_CONSTRAINT_TYPE, a->m_rig, b->m_rig)
+		  , btTypedConstraint(MAX_CONSTRAINT_TYPE, a->m_rig, b->m_rig)
 	{
 		auto distance = a->m_currentTransform.getOrigin().distance(b->m_currentTransform.getOrigin());
 		m_equilibriumPoint = m_minDistance = m_maxDistance = distance;
@@ -71,7 +70,7 @@ namespace hdt
 		info->m_J2linearAxis[0] = -dir[0];
 		info->m_J2linearAxis[1] = -dir[1];
 		info->m_J2linearAxis[2] = -dir[2];
-		
+
 		int currentLimit;
 		float currentLimitError;
 		if (distance < m_minDistance)
@@ -104,7 +103,8 @@ namespace hdt
 			auto m_targetVelocity = velFactor * force;
 			auto m_maxMotorForce = btFabs(force) / info->fps;
 
-			btScalar mot_fact = getMotorFactor(distance, m_minDistance, m_maxDistance, m_targetVelocity, info->fps * info->erp);
+			btScalar mot_fact = getMotorFactor(distance, m_minDistance, m_maxDistance, m_targetVelocity,
+			                                   info->fps * info->erp);
 			info->m_constraintError[0] = mot_fact * m_targetVelocity * (m_rbA.getInvMass() + m_rbB.getInvMass());
 			info->m_lowerLimit[0] = -m_maxMotorForce;
 			info->m_upperLimit[0] = m_maxMotorForce;
@@ -116,7 +116,8 @@ namespace hdt
 			btScalar k = info->fps * info->erp;
 			info->m_constraintError[0] = k * currentLimitError;
 			if (m_minDistance == m_maxDistance)
-			{   // limited low and high simultaneously
+			{
+				// limited low and high simultaneously
 				info->m_lowerLimit[0] = -SIMD_INFINITY;
 				info->m_upperLimit[0] = SIMD_INFINITY;
 			}

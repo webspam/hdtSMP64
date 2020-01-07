@@ -3,10 +3,10 @@
 #include "hdtConvertNi.h"
 #include "hdtSkyrimBone.h"
 #include "hdtSkyrimBody.h"
-#include "hdtSkinnedMesh\hdtSkinnedMeshSystem.h"
-#include "hdtSkinnedMesh\hdtGeneric6DofConstraint.h"
-#include "hdtSkinnedMesh\hdtStiffSpringConstraint.h"
-#include "hdtSkinnedMesh\hdtConeTwistConstraint.h"
+#include "hdtSkinnedMesh/hdtSkinnedMeshSystem.h"
+#include "hdtSkinnedMesh/hdtGeneric6DofConstraint.h"
+#include "hdtSkinnedMesh/hdtStiffSpringConstraint.h"
+#include "hdtSkinnedMesh/hdtConeTwistConstraint.h"
 
 namespace hdt
 {
@@ -23,25 +23,27 @@ namespace hdt
 
 		SkinnedMeshBone* findBone(IDStr name);
 		SkinnedMeshBody* findBody(IDStr name);
-		int findBoneIdx(hdt::IDStr name);
+		int findBoneIdx(IDStr name);
 
-		virtual void readTransform(float timeStep);
-		virtual void writeTransform();
+		void readTransform(float timeStep) override;
+		void writeTransform() override;
 
 		Ref<NiNode> m_skeleton;
 		Ref<NiNode> m_oldRoot;
-		bool	m_initialized = false;
+		bool m_initialized = false;
 
 		// angular velocity damper
 		btQuaternion m_lastRootRotation;
 	};
 
 	class XMLReader;
+
 	class SkyrimMeshParser
 	{
 	public:
 		SkyrimMeshParser();
-		Ref<SkyrimSystem> createMesh(NiNode* skeleton, NiAVObject* model, const std::string& filepath, std::unordered_map<IDStr, IDStr> renameMap);
+		Ref<SkyrimSystem> createMesh(NiNode* skeleton, NiAVObject* model, const std::string& filepath,
+		                             std::unordered_map<IDStr, IDStr> renameMap);
 
 	protected:
 
@@ -53,8 +55,8 @@ namespace hdt
 		XMLReader* m_reader;
 		std::unordered_map<IDStr, IDStr> m_renameMap;
 
-		NiNode* findObjectByName(const hdt::IDStr& name);
-		SkyrimBone* getOrCreateBone(const hdt::IDStr& name);
+		NiNode* findObjectByName(const IDStr& name);
+		SkyrimBone* getOrCreateBone(const IDStr& name);
 
 		std::string m_filePath;
 
@@ -63,19 +65,22 @@ namespace hdt
 		struct BoneTemplate : public btRigidBody::btRigidBodyConstructionInfo
 		{
 			static btEmptyShape emptyShape[1];
-			BoneTemplate() :btRigidBodyConstructionInfo(0, 0, emptyShape) {
+
+			BoneTemplate() : btRigidBodyConstructionInfo(0, nullptr, emptyShape)
+			{
 				m_centerOfMassTransform = btTransform::getIdentity();
 				m_marginMultipler = 1.f;
 			}
 
 			std::shared_ptr<btCollisionShape> m_shape;
-			std::vector<hdt::IDStr> m_canCollideWithBone;
-			std::vector<hdt::IDStr> m_noCollideWithBone;
+			std::vector<IDStr> m_canCollideWithBone;
+			std::vector<IDStr> m_noCollideWithBone;
 			btTransform m_centerOfMassTransform;
 			float m_marginMultipler;
 			float m_gravityFactor = 1.0f;
 			U32 m_collisionFilter = 0;
 		};
+
 		std::unordered_map<IDStr, BoneTemplate> m_boneTemplates;
 
 		enum FrameType
@@ -89,7 +94,8 @@ namespace hdt
 		};
 
 		bool parseFrameType(const std::string& name, FrameType& type, btTransform& frame);
-		static void calcFrame(FrameType type, const btTransform& frame, const btQsTransform& trA, const btQsTransform& trB, btTransform& frameA, btTransform& frameB);
+		static void calcFrame(FrameType type, const btTransform& frame, const btQsTransform& trA,
+		                      const btQsTransform& trB, btTransform& frameA, btTransform& frameB);
 
 		struct GenericConstraintTemplate
 		{
@@ -109,6 +115,7 @@ namespace hdt
 			btVector3 linearBounce = btVector3(0, 0, 0);
 			btVector3 angularBounce = btVector3(0, 0, 0);
 		};
+
 		std::unordered_map<IDStr, GenericConstraintTemplate> m_genericConstraintTemplates;
 
 		struct StiffSpringConstraintTemplate
@@ -119,6 +126,7 @@ namespace hdt
 			float damping = 0;
 			float equilibriumFactor = 0.5;
 		};
+
 		std::unordered_map<IDStr, StiffSpringConstraintTemplate> m_stiffSpringConstraintTemplates;
 
 		struct ConeTwistConstraintTemplate
@@ -133,6 +141,7 @@ namespace hdt
 			float biasFactor = 0.3f;
 			float relaxationFactor = 1.0f;
 		};
+
 		std::unordered_map<IDStr, ConeTwistConstraintTemplate> m_coneTwistConstraintTemplates;
 		std::unordered_map<IDStr, std::shared_ptr<btCollisionShape>> m_shapes;
 
@@ -158,8 +167,10 @@ namespace hdt
 		Ref<ConstraintGroup> readConstraintGroup();
 		std::shared_ptr<btCollisionShape> readShape();
 
-		template<typename ... Args> void Error(const char* fmt, Args ... args);
-		template<typename ... Args> void Warning(const char* fmt, Args ... args);
+		template <typename ... Args>
+		void Error(const char* fmt, Args ... args);
+		template <typename ... Args>
+		void Warning(const char* fmt, Args ... args);
 
 		std::vector<std::shared_ptr<btCollisionShape>> m_shapeRefs;
 	};

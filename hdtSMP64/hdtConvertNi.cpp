@@ -42,7 +42,7 @@ namespace hdt
 		return convertBt(mat);
 	}
 
-	NiPoint3 convertBt(const btVector3 & rhs)
+	NiPoint3 convertBt(const btVector3& rhs)
 	{
 		NiPoint3 ret;
 		ret.x = rhs[0];

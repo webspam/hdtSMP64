@@ -39,7 +39,8 @@ namespace hdt
 			{
 				if (reader.GetName() == "map")
 				{
-					try {
+					try
+					{
 						auto shape = reader.getAttribute("shape");
 						auto file = reader.getAttribute("file");
 						bbpFileList.insert(std::make_pair(shape, file));

@@ -59,7 +59,7 @@ namespace hdt
 		_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 
 		//ScanHair();
-		
+
 		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
 		auto tick = std::min(m_averageInterval, m_timeTick);
 
@@ -125,13 +125,13 @@ namespace hdt
 	{
 		struct Group
 		{
-			std::unordered_set<hdt::IDStr> tags;
-			std::unordered_map<hdt::IDStr, std::vector<SkyrimBody*>> list;
+			std::unordered_set<IDStr> tags;
+			std::unordered_map<IDStr, std::vector<SkyrimBody*>> list;
 		};
 
 		std::unordered_map<NiNode*, Group> maps;
 
-		hdt::IDStr invalidString;
+		IDStr invalidString;
 		for (auto& i : m_systems)
 		{
 			auto system = static_cast<SkyrimSystem*>(i());
@@ -164,7 +164,8 @@ namespace hdt
 				}
 				else if (j.second.size())
 				{
-					std::sort(j.second.begin(), j.second.end(), [](SkyrimBody* a, SkyrimBody* b) {
+					std::sort(j.second.begin(), j.second.end(), [](SkyrimBody* a, SkyrimBody* b)
+					{
 						if (a->m_disablePriority != b->m_disablePriority)
 							return a->m_disablePriority > b->m_disablePriority;
 						return a < b;
@@ -178,32 +179,32 @@ namespace hdt
 		}
 	}
 
-	void SkyrimPhysicsWorld::addSkinnedMeshSystem(hdt::SkinnedMeshSystem* system)
+	void SkyrimPhysicsWorld::addSkinnedMeshSystem(SkinnedMeshSystem* system)
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		auto s = dynamic_cast<SkyrimSystem*>(system);
 		if (!s) return;
 
 		s->m_initialized = false;
-		hdt::SkinnedMeshWorld::addSkinnedMeshSystem(system);
+		SkinnedMeshWorld::addSkinnedMeshSystem(system);
 	}
 
-	void SkyrimPhysicsWorld::removeSkinnedMeshSystem(hdt::SkinnedMeshSystem* system)
+	void SkyrimPhysicsWorld::removeSkinnedMeshSystem(SkinnedMeshSystem* system)
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 
-		hdt::SkinnedMeshWorld::removeSkinnedMeshSystem(system);
+		SkinnedMeshWorld::removeSkinnedMeshSystem(system);
 	}
 
 	void SkyrimPhysicsWorld::removeSystemByNode(void* root)
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 
-		for (int i = 0; i < m_systems.size(); )
+		for (int i = 0; i < m_systems.size();)
 		{
 			Ref<SkyrimSystem> s = m_systems[i].cast<SkyrimSystem>();
 			if (s && s->m_skeleton == root)
-				hdt::SkinnedMeshWorld::removeSkinnedMeshSystem(s);
+				SkinnedMeshWorld::removeSkinnedMeshSystem(s);
 			else ++i;
 		}
 	}
@@ -222,10 +223,10 @@ namespace hdt
 			i->readTransform(RESET_PHYSICS);
 	}
 
-	void SkyrimPhysicsWorld::onEvent(const FrameEvent & e)
+	void SkyrimPhysicsWorld::onEvent(const FrameEvent& e)
 	{
 		auto mm = MenuManager::GetSingleton();
-		
+
 		if ((e.gamePaused || mm->IsGamePaused()) && !m_suspended)
 			suspend();
 		else if (!(e.gamePaused || mm->IsGamePaused()) && m_suspended)
@@ -244,7 +245,7 @@ namespace hdt
 		}
 	}
 
-	void SkyrimPhysicsWorld::onEvent(const ShutdownEvent & e)
+	void SkyrimPhysicsWorld::onEvent(const ShutdownEvent& e)
 	{
 		for (auto system : m_systems)
 		{

@@ -65,7 +65,7 @@ namespace hdt
 			{
 			case XMLReader::Inspected::StartTag:
 				if (reader.GetLocalName() == "logLevel")
-					gLog.SetLogLevel((IDebugLog::LogLevel)reader.readInt());
+					gLog.SetLogLevel(static_cast<IDebugLog::LogLevel>(reader.readInt()));
 				else if (reader.GetLocalName() == "clampRotations")
 					SkyrimPhysicsWorld::get()->m_clampRotations = reader.readBool();
 				else if (reader.GetLocalName() == "unclampedResets")
@@ -83,7 +83,7 @@ namespace hdt
 			}
 		}
 	}
-	
+
 	static void config(XMLReader& reader)
 	{
 		while (reader.Inspect())
@@ -93,8 +93,8 @@ namespace hdt
 			case XMLReader::Inspected::StartTag:
 				if (reader.GetLocalName() == "solver")
 					solver(reader);
-				//else if (reader.GetLocalName() == "wind")
-				//	wind(reader);
+					//else if (reader.GetLocalName() == "wind")
+					//	wind(reader);
 				else if (reader.GetLocalName() == "smp")
 					smp(reader);
 				else

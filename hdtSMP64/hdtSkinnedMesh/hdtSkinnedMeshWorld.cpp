@@ -6,10 +6,9 @@
 
 namespace hdt
 {
-
 	SkinnedMeshWorld::SkinnedMeshWorld()
-		: btDiscreteDynamicsWorld(0, 0, &m_constraintSolver, 0)
-//		, m_constraintSolver(&m_mlcpSolver)
+		: btDiscreteDynamicsWorld(nullptr, nullptr, &m_constraintSolver, nullptr)
+	//		, m_constraintSolver(&m_mlcpSolver)
 	{
 		m_windSpeed = _mm_setzero_ps();
 
@@ -65,7 +64,7 @@ namespace hdt
 
 		for (int i = 0; i < system->m_constraints.size(); ++i)
 			addConstraint(system->m_constraints[i]->m_constraint, true);
-		
+
 		system->readTransform(-10.0);
 		system->m_world = this;
 	}
@@ -92,7 +91,7 @@ namespace hdt
 
 		system->m_world = nullptr;
 	}
-	
+
 	int SkinnedMeshWorld::stepSimulation(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep)
 	{
 		if (timeStep > fixedTimeStep * maxSubSteps)
@@ -100,7 +99,7 @@ namespace hdt
 
 		applyGravity();
 
-		while (timeStep >= fixedTimeStep*1.25f)
+		while (timeStep >= fixedTimeStep * 1.25f)
 		{
 			internalSingleStepSimulation(fixedTimeStep);
 			timeStep -= fixedTimeStep;
@@ -129,7 +128,7 @@ namespace hdt
 			for (auto& j : i->m_bones)
 			{
 				auto body = &j->m_rig;
-				if (!body->isStaticOrKinematicObject() && !(body->getFlags() &BT_DISABLE_WORLD_GRAVITY))
+				if (!body->isStaticOrKinematicObject() && !(body->getFlags() & BT_DISABLE_WORLD_GRAVITY))
 				{
 					body->setGravity(m_gravity * j->m_gravityFactor);
 				}
@@ -141,7 +140,7 @@ namespace hdt
 
 	void SkinnedMeshWorld::predictUnconstraintMotion(btScalar timeStep)
 	{
-		for (int i = 0; i<m_nonStaticRigidBodies.size(); i++)
+		for (int i = 0; i < m_nonStaticRigidBodies.size(); i++)
 		{
 			btRigidBody* body = m_nonStaticRigidBodies[i];
 			if (!body->isStaticOrKinematicObject())
@@ -155,7 +154,6 @@ namespace hdt
 				body->predictIntegratedTransform(timeStep, body->getInterpolationWorldTransform());
 			}
 		}
-
 	}
 
 	void SkinnedMeshWorld::integrateTransforms(btScalar timeStep)
@@ -199,7 +197,8 @@ namespace hdt
 		BT_PROFILE("solveConstraints");
 		if (!m_collisionObjects.size()) return;
 
-		m_constraintSolver.prepareSolve(getCollisionWorld()->getNumCollisionObjects(), getCollisionWorld()->getDispatcher()->getNumManifolds());
+		m_constraintSolver.prepareSolve(getCollisionWorld()->getNumCollisionObjects(),
+		                                getCollisionWorld()->getDispatcher()->getNumManifolds());
 
 		m_constraintSolver.m_groups.clear();
 		for (auto& i : m_systems)
@@ -208,10 +207,12 @@ namespace hdt
 
 		btPersistentManifold** manifold = m_dispatcher1->getInternalManifoldPointer();
 		int maxNumManifolds = m_dispatcher1->getNumManifolds();
-		m_constraintSolver.solveGroup(&m_collisionObjects[0], m_collisionObjects.size(), manifold, maxNumManifolds, &m_constraints[0], m_constraints.size(), solverInfo, m_debugDrawer, m_dispatcher1);
+		m_constraintSolver.solveGroup(&m_collisionObjects[0], m_collisionObjects.size(), manifold, maxNumManifolds,
+		                              &m_constraints[0], m_constraints.size(), solverInfo, m_debugDrawer,
+		                              m_dispatcher1);
 
 		m_constraintSolver.allSolved(solverInfo, m_debugDrawer);
-		((CollisionDispatcher*)m_dispatcher1)->clearAllManifold();
+		static_cast<CollisionDispatcher*>(m_dispatcher1)->clearAllManifold();
 		m_constraintSolver.m_groups.clear();
 	}
 }

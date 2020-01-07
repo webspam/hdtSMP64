@@ -8,8 +8,10 @@ namespace hdt
 	class IEventDispatcher
 	{
 	public:
-		
-		virtual ~IEventDispatcher() {}
+
+		virtual ~IEventDispatcher()
+		{
+		}
 
 		virtual void addListener(IEventListener<Event>*) = 0;
 		virtual void removeListener(IEventListener<Event>*) = 0;
@@ -21,7 +23,9 @@ namespace hdt
 	{
 	public:
 
-		virtual ~IEventDispatcher() {}
+		virtual ~IEventDispatcher()
+		{
+		}
 
 		virtual void addListener(IEventListener<void>*) = 0;
 		virtual void removeListener(IEventListener<void>*) = 0;
