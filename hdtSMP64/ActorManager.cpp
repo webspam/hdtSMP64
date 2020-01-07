@@ -4,7 +4,10 @@
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
 #include "skse64/GameRTTI.h"
+#include "skse64/NiSerialization.h"
 #include <cinttypes>
+#include "Offsets.h"
+#include "skse64/GameStreams.h"
 
 namespace hdt
 {
@@ -287,6 +290,11 @@ namespace hdt
 		{
 			skeleton.scanHead();
 			skeleton.head.isFullSkinning = false;
+			if (skeleton.head.npcFaceGeomNode)
+			{
+				_DMESSAGE("npc face geom no longer needed, clearing ref");
+				skeleton.head.npcFaceGeomNode = nullptr;
+			}
 		}
 		else
 		{
@@ -611,6 +619,9 @@ namespace hdt
 		}
 	}
 
+	typedef bool (*_TESNPC_GetFaceGeomPath)(TESNPC* a_npc, char* a_buf);
+	RelocAddr<_TESNPC_GetFaceGeomPath> TESNPC_GetFaceGeomPath(offset::TESNPC_GetFaceGeomPath);
+
 	void ActorManager::Skeleton::updateHead(BSFaceGenNiNode* headNode, BSGeometry* geometry)
 	{
 		if (this->head.headNode && this->head.headNode != headNode)
@@ -691,6 +702,89 @@ namespace hdt
 					doHeadSkeletonMerge(npc, facePartRootNode, this->head.prefix, this->head.renameMap,
 					                    this->head.nodeUseCount);
 					head.headParts.back().physicsFile = scanBBP(facePartRootNode);
+				}
+			}
+		}
+		else // npc
+		{
+			// for NPCs we dont have easy access back to the facegeom .nif so we're loading our own copy, but only do this once
+			if (!head.npcFaceGeomNode)
+			{
+				if (skeleton->m_owner && skeleton->m_owner->baseForm)
+				{
+					auto npc = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESNPC);
+					if (npc)
+					{
+						char filePath[MAX_PATH];
+						if (TESNPC_GetFaceGeomPath(npc, filePath))
+						{
+							_DMESSAGE("loading facegeom from path %s", filePath);
+							static const int MAX_SIZE = sizeof(NiStream) + 0x200;
+							UInt8 niStreamMemory[MAX_SIZE];
+							memset(niStreamMemory, 0, MAX_SIZE);
+							NiStream* niStream = (NiStream*)niStreamMemory;
+							CALL_MEMBER_FN(niStream, ctor)();
+
+							BSResourceNiBinaryStream binaryStream(filePath);
+							if (!binaryStream.IsValid())
+							{
+								_ERROR("somehow npc facegeom was not found");
+								CALL_MEMBER_FN(niStream, dtor)();
+							}
+							else
+							{
+								niStream->LoadStream(&binaryStream);
+								if (niStream->m_rootObjects.m_data[0])
+								{
+									auto rootFadeNode = niStream->m_rootObjects.m_data[0]->GetAsBSFadeNode();
+									if (rootFadeNode)
+									{
+										_DMESSAGE("npc root fadenode found");
+										head.npcFaceGeomNode = rootFadeNode;
+										doHeadSkeletonMerge(this->npc, rootFadeNode, this->head.prefix,
+										                    this->head.renameMap,
+										                    this->head.nodeUseCount);
+										head.headParts.back().physicsFile = scanBBP(rootFadeNode);
+									}
+									else
+									{
+										_DMESSAGE("npc facegeom root wasn't fadenode as expected");
+									}
+								}
+								CALL_MEMBER_FN(niStream, dtor)();
+							}
+						}
+					}
+				}
+				else
+				{
+					_WARNING("skipped npc %08x face part", skeleton->m_owner ? skeleton->m_owner->formID : 0x0);
+				}
+			}
+			else
+			{
+				_DMESSAGE("npc head already read on previous head part");
+			}
+
+			if (head.npcFaceGeomNode)
+			{
+				_DMESSAGE("moving bone pointers in NPC face part geometry before skinning");
+				if (geometry->m_spSkinInstance && geometry->m_spSkinInstance->m_spSkinData)
+				{
+					for (int i = 0; i < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; i++)
+					{
+						auto renameIt = head.renameMap.find(geometry->m_spSkinInstance->m_ppkBones[i]->m_name);
+						if (renameIt != head.renameMap.end())
+						{
+							auto node = findNode(npc, renameIt->second->cstr());
+							if (node)
+							{
+								_DMESSAGE("replacing node %s with %s",
+								          geometry->m_spSkinInstance->m_ppkBones[i]->m_name, node->m_name);
+								geometry->m_spSkinInstance->m_ppkBones[i] = node;
+							}
+						}
+					}
 				}
 			}
 		}

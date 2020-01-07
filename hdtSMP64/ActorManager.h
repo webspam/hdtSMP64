@@ -33,6 +33,7 @@ namespace hdt
 
 			Ref<IString> prefix;
 			Ref<BSFaceGenNiNode> headNode;
+			Ref<BSFadeNode> npcFaceGeomNode;
 			std::vector<HeadPart> headParts;
 			std::unordered_map<IDStr, IDStr> renameMap;
 			std::unordered_map<IDStr, uint8_t> nodeUseCount;
