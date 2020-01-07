@@ -26,15 +26,21 @@ namespace hdt
 		void SkinSingleGeometry(NiNode * a_skeleton, BSGeometry* a_geometry, char a_unk)
 		{
 			const char* name = "";
-
+			uint32_t formId = 0x0;
+			
 			if (a_skeleton->m_owner && a_skeleton->m_owner->baseForm)
 			{
 				auto bname = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESFullName);
 				if (bname)
 					name = bname->GetName();
-			}
 
-			_MESSAGE("SkinSingleGeometry %s %d - %s, %s", a_skeleton->m_name, a_skeleton->m_children.m_size, a_geometry->m_name, name);
+				auto bnpc = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESNPC);
+
+				if (bnpc && bnpc->nextTemplate)
+					formId = bnpc->nextTemplate->formID;
+			}
+			
+			_MESSAGE("SkinSingleGeometry %s %d - %s, %s, (formid %08x base form %08x head template form %08x)", a_skeleton->m_name, a_skeleton->m_children.m_size, a_geometry->m_name, name, a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0, a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
 
 			SkinSingleHeadGeometryEvent e;
 			e.skeleton = a_skeleton;
@@ -49,15 +55,21 @@ namespace hdt
 		void SkinAllGeometry(NiNode * a_skeleton, char a_unk)
 		{
 			const char* name = "";
-			
+			uint32_t formId = 0x0;
+
 			if (a_skeleton->m_owner && a_skeleton->m_owner->baseForm)
 			{
-			 	auto bname = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESFullName);
-			 	if (bname)
-			 		name = bname->GetName();
+				auto bname = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESFullName);
+				if (bname)
+					name = bname->GetName();
+
+				auto bnpc = DYNAMIC_CAST(a_skeleton->m_owner->baseForm, TESForm, TESNPC);
+
+				if (bnpc && bnpc->nextTemplate)
+					formId = bnpc->nextTemplate->formID;
 			}
 			
-			_MESSAGE("SkinAllGeometry %s %d, %s", a_skeleton->m_name, a_skeleton->m_children.m_size, name);
+			_MESSAGE("SkinAllGeometry %s %d, %s, (formid %08x base form %08x head template form %08x)", a_skeleton->m_name, a_skeleton->m_children.m_size, name, a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0, a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
 			
 			SkinAllHeadGeometryEvent e;
 			e.skeleton = a_skeleton;

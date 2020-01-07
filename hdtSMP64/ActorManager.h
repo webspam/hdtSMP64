@@ -26,9 +26,10 @@ namespace hdt
 			struct HeadPart
 			{
 				Ref<BSGeometry>                 headPart;
-				Ref<NiNode>						baseNode;
+				Ref<NiNode>						origPartRootNode;
 				std::string						physicsFile;
 				Ref<SkyrimSystem>				physics;
+				bool                            printBones;
 			};
 			
 			Ref<IString>						prefix;
@@ -50,13 +51,14 @@ namespace hdt
 
 		struct Skeleton
 		{
+			NiPointer<TESObjectREFR>  skeletonOwner;
 			Ref<NiNode>			skeleton;
 			Ref<NiNode>			npc;
 			std::vector<Armor>	armors;
 			Head head;
 
 			void cleanArmor();
-			void cleanHead();
+			void cleanHead(bool cleanAll = false);
 			void clear();
 
 			bool isActiveInScene() const;
