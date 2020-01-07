@@ -31,5 +31,9 @@ namespace hdt
 
 		// FaceGeom string
 		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x00363210;
+
+		// BSFaceGenModelExtraData Bone Limit
+		// 8B 70 58 EB 02 
+		constexpr std::uintptr_t BSFaceGenModelExtraData_BoneLimit = 0x0036B4C8;
 	}
 }

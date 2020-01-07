@@ -724,7 +724,7 @@ namespace hdt
 							memset(niStreamMemory, 0, MAX_SIZE);
 							NiStream* niStream = (NiStream*)niStreamMemory;
 							CALL_MEMBER_FN(niStream, ctor)();
-
+		
 							BSResourceNiBinaryStream binaryStream(filePath);
 							if (!binaryStream.IsValid())
 							{
@@ -765,7 +765,7 @@ namespace hdt
 			{
 				_DMESSAGE("npc head already read on previous head part");
 			}
-
+		
 			if (head.npcFaceGeomNode)
 			{
 				_DMESSAGE("moving bone pointers in NPC face part geometry before skinning");
@@ -782,6 +782,7 @@ namespace hdt
 								_DMESSAGE("replacing node %s with %s",
 								          geometry->m_spSkinInstance->m_ppkBones[i]->m_name, node->m_name);
 								geometry->m_spSkinInstance->m_ppkBones[i] = node;
+								geometry->m_spSkinInstance->m_worldTransforms[i] = &(node->m_worldTransform);
 							}
 						}
 					}

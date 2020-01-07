@@ -12,6 +12,8 @@
 #include "skse64/NiNodes.h"
 #include "skse64/GameRTTI.h"
 #include "skse64_common/SafeWrite.h"
+#include <xbyak/xbyak.h>
+#include "skse64_common/BranchTrampoline.h"
 
 namespace hdt
 {
@@ -88,16 +90,40 @@ namespace hdt
 			g_skinAllHeadGeometryEventDispatcher.dispatch(e);
 		}
 	};
-
+	
+	RelocAddr<uintptr_t> BoneLimit(offset::BSFaceGenModelExtraData_BoneLimit);
+	
 	void hookFaceGen()
 	{
 		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinSingleGeometry_GetPtrAddr(),
-		             (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
+			(void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinSingleGeometry));
 		DetourAttach((void**)BSFaceGenNiNodeEx::_SkinAllGeometry_GetPtrAddr(),
-		             (void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
+			(void*)GetFnAddr(&BSFaceGenNiNodeEx::SkinAllGeometry));
 
 		RelocAddr<uintptr_t> addr(offset::BSFaceGenNiNode_SkinSingleGeometry_bug);
 		SafeWrite8(addr.GetUIntPtr(), 0x7);
+
+		struct BSFaceGenExtraModelData_BoneCount_Code : Xbyak::CodeGenerator
+		{
+			BSFaceGenExtraModelData_BoneCount_Code(void* buf) : CodeGenerator(4096, buf)
+			{
+				Xbyak::Label j_Out;
+
+				mov(esi, ptr[rax + 0x58]);
+				cmp(esi, 8);
+				jl(j_Out);
+				mov(esi, 7);
+				L(j_Out);
+				jmp(ptr[rip]);
+				dq(BoneLimit.GetUIntPtr() + 0x7);
+			}
+		};
+
+		void* codeBuf = g_localTrampoline.StartAlloc();
+		BSFaceGenExtraModelData_BoneCount_Code code(codeBuf);
+		g_localTrampoline.EndAlloc(code.getCurr());
+
+		g_branchTrampoline.Write5Branch(BoneLimit.GetUIntPtr(), uintptr_t(code.getCode()));
 	}
 
 	void unhookFaceGen()

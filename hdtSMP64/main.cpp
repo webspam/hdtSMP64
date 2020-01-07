@@ -14,6 +14,7 @@
 
 #include <shlobj_core.h>
 #include "skse64/GameRTTI.h"
+#include "skse64_common/BranchTrampoline.h"
 
 namespace hdt
 {
@@ -163,7 +164,7 @@ namespace hdt
 
 	void DumpNodeChildren(NiAVObject* node)
 	{
-		_MESSAGE("{%s} {%s} {%X}", node->GetRTTI()->name, node->m_name, node);
+		_MESSAGE("{%s} {%s} {%X} [%f, %f, %f]", node->GetRTTI()->name, node->m_name, node, node->m_worldTransform.pos.x, node->m_worldTransform.pos.y, node->m_worldTransform.pos.z);
 		if (node->m_extraDataLen > 0)
 		{
 			gLog.Indent();
@@ -187,7 +188,17 @@ namespace hdt
 					BSGeometry* geometry = object->GetAsBSGeometry();
 					if (geometry)
 					{
-						_MESSAGE("{%s} {%s} {%X} - Geometry", object->GetRTTI()->name, object->m_name, object);
+						_MESSAGE("{%s} {%s} {%X} [%f, %f, %f] - Geometry", object->GetRTTI()->name, object->m_name, object, geometry->m_worldTransform.pos.x, geometry->m_worldTransform.pos.y, geometry->m_worldTransform.pos.z);
+						if (geometry->m_spSkinInstance && geometry->m_spSkinInstance->m_spSkinData)
+						{
+							gLog.Indent();
+							for (int i = 0; i < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; i++)
+							{
+								auto bone = geometry->m_spSkinInstance->m_ppkBones[i];
+								_MESSAGE("Bone %d - {%s} {%s} {%X} [%f, %f, %f]", i, bone->GetRTTI()->name, bone->m_name, bone, bone->m_worldTransform.pos.x, bone->m_worldTransform.pos.y, bone->m_worldTransform.pos.z);
+							}
+							gLog.Outdent();
+						}
 						NiPointer<BSShaderProperty> shaderProperty = niptr_cast<BSShaderProperty>(
 							geometry->m_spEffectState);
 						if (shaderProperty)
@@ -217,7 +228,7 @@ namespace hdt
 
 									_MESSAGE("Texture %d - %s (%s)", i, texturePath, textureName);
 								}
-
+								_MESSAGE("Flags - %08X %08X", lightingShader->shaderFlags1, lightingShader->shaderFlags2);
 								gLog.Outdent();
 							}
 						}
@@ -228,7 +239,7 @@ namespace hdt
 					}
 					else
 					{
-						_MESSAGE("{%s} {%s} {%X}", object->GetRTTI()->name, object->m_name, object);
+						_MESSAGE("{%s} {%s} {%X} [%f, %f, %f]", object->GetRTTI()->name, object->m_name, object, object->m_worldTransform.pos.x, object->m_worldTransform.pos.y, object->m_worldTransform.pos.z);
 					}
 				}
 			}
@@ -416,6 +427,18 @@ bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
 	if (skse->runtimeVersion != CURRENT_RELEASE_RUNTIME)
 	{
 		_FATALERROR("attempted to load plugin into unsupported game version, exiting");
+		return false;
+	}
+
+	if (!g_branchTrampoline.Create(1024 * 1))
+	{
+		_FATALERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
+		return false;
+	}
+
+	if (!g_localTrampoline.Create(1024 * 1, nullptr))
+	{
+		_FATALERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
 		return false;
 	}
 

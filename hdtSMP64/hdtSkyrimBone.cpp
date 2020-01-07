@@ -107,6 +107,8 @@ namespace hdt
 		m_node->m_worldTransform.pos = convertBt(transform.getOrigin());
 		m_node->m_worldTransform = m_node->m_worldTransform;
 
+		//_MESSAGE("wrote transforms bone %s [%f, %f, %f]", m_node->m_name, m_node->m_worldTransform.pos.x, m_node->m_worldTransform.pos.y, m_node->m_worldTransform.pos.z);
+
 		//auto parentTransform = m_node->m_parent ? m_node->m_parent->unkTransform : NiTransform();
 		//NiTransform invParentTransform;
 		//parentTransform.Invert(invParentTransform);
