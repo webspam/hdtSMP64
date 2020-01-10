@@ -19,7 +19,6 @@ namespace hdt
 		NiNode* skeleton = nullptr;
 		BSFaceGenNiNode* headNode = nullptr;
 		BSGeometry* geometry = nullptr;
-		bool hasSkinned = false;
 	};
 
 	struct ArmorAttachEvent

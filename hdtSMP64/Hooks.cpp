@@ -54,9 +54,8 @@ namespace hdt
 			e.geometry = a_geometry;
 			e.headNode = this;
 			g_skinSingleHeadGeometryEventDispatcher.dispatch(e);
-			CALL_MEMBER_FN(this, SkinSingleGeometry)(a_skeleton, a_geometry, a_unk);
-			e.hasSkinned = true;
-			g_skinSingleHeadGeometryEventDispatcher.dispatch(e);
+
+			// we are handling head part skinning so we don't call the original function here
 		}
 
 		void SkinAllGeometry(NiNode* a_skeleton, char a_unk)

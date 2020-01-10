@@ -64,7 +64,8 @@ namespace hdt
 			bool isActiveInScene() const;
 
 			void scanHead();
-			void updateHead(BSFaceGenNiNode* head, BSGeometry* geometry);
+			void processGeometry(BSFaceGenNiNode* head, BSGeometry* geometry);
+			void skinGeometry(BSFaceGenNiNode* head, BSGeometry* geometry, BSGeometry* origGeometry);
 
 			static void doSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
 			                            std::unordered_map<IDStr, IDStr>& map);
