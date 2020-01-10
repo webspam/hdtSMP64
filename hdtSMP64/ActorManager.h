@@ -65,7 +65,7 @@ namespace hdt
 
 			void scanHead();
 			void processGeometry(BSFaceGenNiNode* head, BSGeometry* geometry);
-			void skinGeometry(BSFaceGenNiNode* head, BSGeometry* geometry, BSGeometry* origGeometry);
+			void skinGeometry(BSFaceGenNiNode* head, BSGeometry* geometry, NiSkinInstancePtr boneSkinInstance);
 
 			static void doSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
 			                            std::unordered_map<IDStr, IDStr>& map);

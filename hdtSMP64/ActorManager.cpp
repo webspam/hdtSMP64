@@ -714,7 +714,7 @@ namespace hdt
 
 							if (geo)
 							{
-								skinGeometry(headNode, geometry, geo);
+								skinGeometry(headNode, geometry, geo->m_spSkinInstance);
 								skinned = true;
 								break;
 							}
@@ -792,15 +792,24 @@ namespace hdt
 				auto obj = findObject(head.npcFaceGeomNode, geometry->m_name);
 				if (obj)
 				{
-					auto geo = obj->GetAsBSGeometry();
+					const auto geo = obj->GetAsBSGeometry();
 
 					if (geo)
 					{
-						skinGeometry(headNode, geometry, geo);
+						skinGeometry(headNode, geometry, geo->m_spSkinInstance);
 					}
 					else
 					{
-						_WARNING("unable to skin NPC face part");
+						const auto niGeo = obj->GetAsNiGeometry();
+
+						if (niGeo)
+						{
+							skinGeometry(headNode, geometry, niGeo->m_spSkinInstance);
+						}
+						else
+						{
+							_WARNING("unable to skin NPC face part");
+						}
 					}
 				}
 				else
@@ -811,28 +820,28 @@ namespace hdt
 		}
 	}
 
-	void ActorManager::Skeleton::skinGeometry(BSFaceGenNiNode * faceGenNode, BSGeometry * geometry, BSGeometry * origGeometry)
+	void ActorManager::Skeleton::skinGeometry(BSFaceGenNiNode * faceGenNode, BSGeometry * geometry, const NiSkinInstancePtr boneSkinInstance)
 	{
 		_DMESSAGE("skinning geometry to skeleton");
 		if (geometry->m_spSkinInstance && geometry->m_spSkinInstance->m_spSkinData)
 		{
 			for (int i = 0; i < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; i++)
 			{
-				auto renameIt = this->head.renameMap.find(origGeometry->m_spSkinInstance->m_ppkBones[i]->m_name);
-				auto nodeName = renameIt != this->head.renameMap.end() ? renameIt->second->cstr() : origGeometry->m_spSkinInstance->m_ppkBones[i]->m_name;
+				auto renameIt = this->head.renameMap.find(boneSkinInstance->m_ppkBones[i]->m_name);
+				auto nodeName = renameIt != this->head.renameMap.end() ? renameIt->second->cstr() : boneSkinInstance->m_ppkBones[i]->m_name;
 
 				auto node = findNode(this->npc, nodeName);
 				
 				if (node)
 				{						
 					_DMESSAGE("skinning node %s to node %s",
-							origGeometry->m_spSkinInstance->m_ppkBones[i]->m_name, node->m_name);
+							boneSkinInstance->m_ppkBones[i]->m_name, node->m_name);
 					geometry->m_spSkinInstance->m_ppkBones[i] = node;
 					geometry->m_spSkinInstance->m_worldTransforms[i] = &(node->m_worldTransform);
 				}
 				else
 				{
-					_WARNING("unable to find node %s (%s) on npc to skin to, something is broken", nodeName, origGeometry->m_spSkinInstance->m_ppkBones[i]->m_name);
+					_WARNING("unable to find node %s (%s) on npc to skin to, something is broken", nodeName, boneSkinInstance->m_ppkBones[i]->m_name);
 				}
 			}
 		}
