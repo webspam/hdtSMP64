@@ -80,13 +80,13 @@ namespace hdt
 
 				if (!isFirstPersonSkeleton(e.skeleton))
 				{
-					auto mesh = SkyrimMeshParser().createMesh(npc, e.attachedNode, iter->physicsFile,
+					auto system = SkyrimSystemCreator().createSystem(npc, e.attachedNode, iter->physicsFile,
 					                                          std::move(renameMap));
 
-					if (mesh)
+					if (system)
 					{
-						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(mesh);
-						iter->physics = mesh;
+						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
+						iter->physics = system;
 					}
 				}
 			}
@@ -131,12 +131,12 @@ namespace hdt
 
 				std::unordered_map<IDStr, IDStr> renameMap = j.renameMap;
 
-				auto mesh = SkyrimMeshParser().createMesh(i.npc, j.armorWorn, j.physicsFile, std::move(renameMap));
+				auto system = SkyrimSystemCreator().createSystem(i.npc, j.armorWorn, j.physicsFile, std::move(renameMap));
 
-				if (mesh)
+				if (system)
 				{
-					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(mesh);
-					j.physics = mesh;
+					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
+					j.physics = system;
 				}
 			}
 
@@ -149,13 +149,13 @@ namespace hdt
 
 				std::unordered_map<IDStr, IDStr> renameMap = i.head.renameMap;
 
-				auto mesh = SkyrimMeshParser().createMesh(i.npc, i.head.headNode, headPart.physicsFile,
+				auto system = SkyrimSystemCreator().createSystem(i.npc, i.head.headNode, headPart.physicsFile,
 				                                          std::move(renameMap));
 
-				if (mesh)
+				if (system)
 				{
-					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(mesh);
-					headPart.physics = mesh;
+					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
+					headPart.physics = system;
 				}
 			}
 		}
@@ -442,27 +442,31 @@ namespace hdt
 				{
 					bool erase = false;
 
-					auto findNode = this->head.nodeUseCount.find(renameIt->first);
-					if (findNode != this->head.nodeUseCount.end())
+					_DMESSAGE("count %d", headPart.renamedBonesInUse.size());
+					if (headPart.renamedBonesInUse.count(renameIt->first) != 0)
 					{
-						findNode->second -= 1;
-						_DMESSAGE("decrementing use count by 1, it is now %d", findNode->second);
-						if (findNode->second <= 0)
+						auto findNode = this->head.nodeUseCount.find(renameIt->first);
+						if (findNode != this->head.nodeUseCount.end())
 						{
-							_DMESSAGE("node no longer in use, cleaning from skeleton");
-							auto removeObj = findObject(npc, renameIt->second->cstr());
-							if (removeObj)
+							findNode->second -= 1;
+							_DMESSAGE("decrementing use count by 1, it is now %d", findNode->second);
+							if (findNode->second <= 0)
 							{
-								_DMESSAGE("found node %s, removing", removeObj->m_name);
-								auto parent = removeObj->m_parent;
-								if (parent)
+								_DMESSAGE("node no longer in use, cleaning from skeleton");
+								auto removeObj = findObject(npc, renameIt->second->cstr());
+								if (removeObj)
 								{
-									parent->RemoveChild(removeObj);
-									removeObj->DecRef();
+									_DMESSAGE("found node %s, removing", removeObj->m_name);
+									auto parent = removeObj->m_parent;
+									if (parent)
+									{
+										parent->RemoveChild(removeObj);
+										removeObj->DecRef();
+									}
 								}
+								this->head.nodeUseCount.erase(findNode);
+								erase = true;
 							}
-							this->head.nodeUseCount.erase(findNode);
-							erase = true;
 						}
 					}
 
@@ -477,6 +481,7 @@ namespace hdt
 				if (headPart.physics)
 					SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
 				headPart.physics = nullptr;
+				headPart.renamedBonesInUse.clear();
 			}
 		}
 
@@ -504,7 +509,8 @@ namespace hdt
 
 	void ActorManager::Skeleton::doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
 	                                                 std::unordered_map<IDStr, IDStr>& map,
-	                                                 std::unordered_map<IDStr, uint8_t>& countMap)
+	                                                 std::unordered_map<IDStr, uint8_t>& countMap,
+													std::set<IDStr>& renamedBonesInUse)
 	{
 		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
 		{
@@ -513,7 +519,7 @@ namespace hdt
 
 			if (!srcChild->m_name)
 			{
-				doHeadSkeletonMerge(dst, srcChild, prefix, map, countMap);
+				doHeadSkeletonMerge(dst, srcChild, prefix, map, countMap, renamedBonesInUse);
 				continue;
 			}
 
@@ -526,31 +532,31 @@ namespace hdt
 			auto dstChild = findNode(dst, srcChild->m_name);
 			if (dstChild)
 			{
-				doHeadSkeletonMerge(dstChild, srcChild, prefix, map, countMap);
+				doHeadSkeletonMerge(dstChild, srcChild, prefix, map, countMap, renamedBonesInUse);
 			}
 			else
 			{
-				dst->AttachChild(cloneHeadNodeTree(srcChild, prefix, map, countMap), false);
+				dst->AttachChild(cloneHeadNodeTree(srcChild, prefix, map, countMap, renamedBonesInUse), false);
 			}
 		}
 	}
 
 	NiNode* ActorManager::Skeleton::cloneHeadNodeTree(NiNode* src, IString* prefix,
 	                                                  std::unordered_map<IDStr, IDStr>& map,
-	                                                  std::unordered_map<IDStr, uint8_t>& countMap)
+	                                                  std::unordered_map<IDStr, uint8_t>& countMap, std::set<IDStr>& renamedBonesInUse)
 	{
 		NiCloningProcess c;
 		auto ret = static_cast<NiNode*>(src->CreateClone(c));
 		src->ProcessClone(&c);
 
-		renameHeadTree(src, prefix, map, countMap);
-		renameHeadTree(ret, prefix, map, countMap);
+		renameHeadTree(src, prefix, map, countMap, renamedBonesInUse);
+		renameHeadTree(ret, prefix, map, countMap, renamedBonesInUse);
 
 		return ret;
 	}
 
 	void ActorManager::Skeleton::renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map,
-	                                            std::unordered_map<IDStr, uint8_t>& countMap)
+	                                            std::unordered_map<IDStr, uint8_t>& countMap, std::set<IDStr>& renamedBonesInUse)
 	{
 		if (root->m_name)
 		{
@@ -560,6 +566,7 @@ namespace hdt
 			{
 				_DMESSAGE("Rename Bone %s -> %s", root->m_name, newName.c_str());
 				countMap.insert(std::make_pair<IDStr, uint8_t>(root->m_name, 1));
+				renamedBonesInUse.insert(root->m_name);
 			}
 			setNiNodeName(root, newName.c_str());
 		}
@@ -568,7 +575,7 @@ namespace hdt
 		{
 			auto child = castNiNode(root->m_children.m_data[i]);
 			if (child)
-				renameHeadTree(child, prefix, map, countMap);
+				renameHeadTree(child, prefix, map, countMap, renamedBonesInUse);
 		}
 	}
 
@@ -607,7 +614,7 @@ namespace hdt
 			_DMESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name,
 			          headPart.physicsFile.c_str());
 			physicsDupes.insert(headPart.physicsFile);
-			auto system = SkyrimMeshParser().createMesh(npc, this->head.headNode, headPart.physicsFile,
+			auto system = SkyrimSystemCreator().createSystem(npc, this->head.headNode, headPart.physicsFile,
 			                                            std::move(renameMap));
 
 			if (system)
@@ -695,12 +702,13 @@ namespace hdt
 								{
 									findNode->second += 1;
 									_DMESSAGE("incrementing use count by 1, it is now %d", findNode->second);
+									head.headParts.back().renamedBonesInUse.insert(entry.first);
 								}
 							}
 						}
 					}
 					doHeadSkeletonMerge(npc, facePartRootNode, this->head.prefix, this->head.renameMap,
-					                    this->head.nodeUseCount);
+					                    this->head.nodeUseCount, head.headParts.back().renamedBonesInUse);
 					head.headParts.back().physicsFile = scanBBP(facePartRootNode);
 				}
 			}
@@ -743,7 +751,7 @@ namespace hdt
 										head.npcFaceGeomNode = rootFadeNode;
 										doHeadSkeletonMerge(this->npc, rootFadeNode, this->head.prefix,
 										                    this->head.renameMap,
-										                    this->head.nodeUseCount);
+										                    this->head.nodeUseCount, head.headParts.back().renamedBonesInUse);
 										head.headParts.back().physicsFile = scanBBP(rootFadeNode);
 									}
 									else
@@ -768,21 +776,31 @@ namespace hdt
 		
 			if (head.npcFaceGeomNode)
 			{
-				_DMESSAGE("moving bone pointers in NPC face part geometry before skinning");
-				if (geometry->m_spSkinInstance && geometry->m_spSkinInstance->m_spSkinData)
+				_DMESSAGE("skinning renamed bones");
+				auto obj = findObject(head.npcFaceGeomNode, geometry->m_name);
+				if (obj)
 				{
-					for (int i = 0; i < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; i++)
+					const auto faceGeomGeometry = obj->GetAsBSGeometry();
+
+					if (faceGeomGeometry)
 					{
-						auto renameIt = head.renameMap.find(geometry->m_spSkinInstance->m_ppkBones[i]->m_name);
-						if (renameIt != head.renameMap.end())
+						_DMESSAGE("geometry found in loaded facegeom");
+						if (geometry->m_spSkinInstance && geometry->m_spSkinInstance->m_spSkinData)
 						{
-							auto node = findNode(npc, renameIt->second->cstr());
-							if (node)
+							for (int i = 0; i < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; i++)
 							{
-								_DMESSAGE("replacing node %s with %s",
-								          geometry->m_spSkinInstance->m_ppkBones[i]->m_name, node->m_name);
-								geometry->m_spSkinInstance->m_ppkBones[i] = node;
-								geometry->m_spSkinInstance->m_worldTransforms[i] = &(node->m_worldTransform);
+								auto renameIt = head.renameMap.find(faceGeomGeometry->m_spSkinInstance->m_ppkBones[i]->m_name);
+								if (renameIt != head.renameMap.end())
+								{
+									auto node = findNode(npc, renameIt->second->cstr());
+									if (node)
+									{
+										_DMESSAGE("replacing node %s with %s",
+											geometry->m_spSkinInstance->m_ppkBones[i]->m_name, node->m_name);
+										geometry->m_spSkinInstance->m_ppkBones[i] = node;
+										geometry->m_spSkinInstance->m_worldTransforms[i] = &(node->m_worldTransform);
+									}
+								}
 							}
 						}
 					}

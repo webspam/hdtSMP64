@@ -127,32 +127,32 @@ namespace hdt
 		SkinnedMeshSystem::writeTransform();
 	}
 
-	btEmptyShape SkyrimMeshParser::BoneTemplate::emptyShape[1];
+	btEmptyShape SkyrimSystemCreator::BoneTemplate::emptyShape[1];
 
-	SkyrimMeshParser::SkyrimMeshParser()
+	SkyrimSystemCreator::SkyrimSystemCreator()
 	{
 	}
 
 	template <typename ... Args>
-	void SkyrimMeshParser::Error(const char* fmt, Args ... args)
+	void SkyrimSystemCreator::Error(const char* fmt, Args ... args)
 	{
 		std::string newfmt = std::string("%s(%d,%d):") + fmt;
 		_ERROR(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
 	}
 
 	template <typename ... Args>
-	void SkyrimMeshParser::Warning(const char* fmt, Args ... args)
+	void SkyrimSystemCreator::Warning(const char* fmt, Args ... args)
 	{
 		std::string newfmt = std::string("%s(%d,%d):") + fmt;
 		_WARNING(newfmt.c_str(), m_filePath.c_str(), m_reader->GetRow(), m_reader->GetColumn(), args...);
 	}
 
-	NiNode* SkyrimMeshParser::findObjectByName(const IDStr& name)
+	NiNode* SkyrimSystemCreator::findObjectByName(const IDStr& name)
 	{
 		return findNode(m_skeleton, name->cstr());
 	}
 
-	SkyrimBone* SkyrimMeshParser::getOrCreateBone(const IDStr& name)
+	SkyrimBone* SkyrimSystemCreator::getOrCreateBone(const IDStr& name)
 	{
 		auto bone = static_cast<SkyrimBone*>(m_mesh->findBone(getRenamedBone(name)));
 		if (bone) return bone;
@@ -175,7 +175,7 @@ namespace hdt
 		return bone;
 	}
 
-	IDStr SkyrimMeshParser::getRenamedBone(IDStr name)
+	IDStr SkyrimSystemCreator::getRenamedBone(IDStr name)
 	{
 		auto iter = m_renameMap.find(name);
 		if (iter != m_renameMap.end())
@@ -183,7 +183,7 @@ namespace hdt
 		return name;
 	}
 
-	Ref<SkyrimSystem> SkyrimMeshParser::createMesh(NiNode* skeleton, NiAVObject* model, const std::string& path,
+	Ref<SkyrimSystem> SkyrimSystemCreator::createSystem(NiNode* skeleton, NiAVObject* model, const std::string& path,
 	                                               std::unordered_map<IDStr, IDStr> renameMap)
 	{
 		if (path.empty()) return nullptr;
@@ -341,7 +341,7 @@ namespace hdt
 		return m_mesh->valid() ? m_mesh : nullptr;
 	}
 
-	Ref<ConstraintGroup> SkyrimMeshParser::readConstraintGroup()
+	Ref<ConstraintGroup> SkyrimSystemCreator::readConstraintGroup()
 	{
 		Ref<ConstraintGroup> ret = new ConstraintGroup;
 
@@ -402,7 +402,7 @@ namespace hdt
 		return ret;
 	}
 
-	void SkyrimMeshParser::readBoneTemplate(BoneTemplate& cinfo)
+	void SkyrimSystemCreator::readBoneTemplate(BoneTemplate& cinfo)
 	{
 		bool clearCollide = true;
 		while (m_reader->Inspect())
@@ -475,7 +475,7 @@ namespace hdt
 		}
 	}
 
-	std::shared_ptr<btCollisionShape> SkyrimMeshParser::readShape()
+	std::shared_ptr<btCollisionShape> SkyrimSystemCreator::readShape()
 	{
 		auto typeStr = m_reader->getAttribute("type");
 		if (typeStr == "ref")
@@ -666,7 +666,7 @@ namespace hdt
 		return nullptr;
 	}
 
-	void SkyrimMeshParser::readBone()
+	void SkyrimSystemCreator::readBone()
 	{
 		IDStr name = getRenamedBone(m_reader->getAttribute("name"));
 		IDStr cls = m_reader->getAttribute("template", "");
@@ -729,7 +729,7 @@ namespace hdt
 		*((uint32_t*)out) = t1;
 	};
 
-	Ref<SkyrimBody> SkyrimMeshParser::generateMeshBody(const std::string& name)
+	Ref<SkyrimBody> SkyrimSystemCreator::generateMeshBody(const std::string& name)
 	{
 		//Warning("Skinned Mesh currently not supported");
 		auto* triShape = castBSTriShape(findObject(m_model, name.c_str()));
@@ -839,7 +839,7 @@ namespace hdt
 		return body;
 	}
 
-	Ref<SkyrimBody> SkyrimMeshParser::readPerVertexShape()
+	Ref<SkyrimBody> SkyrimSystemCreator::readPerVertexShape()
 	{
 		auto name = m_reader->getAttribute("name");
 
@@ -925,7 +925,7 @@ namespace hdt
 		return body;
 	}
 
-	Ref<SkyrimBody> SkyrimMeshParser::readPerTriangleShape()
+	Ref<SkyrimBody> SkyrimSystemCreator::readPerTriangleShape()
 	{
 		auto name = m_reader->getAttribute("name");
 
@@ -1029,7 +1029,7 @@ namespace hdt
 		return body;
 	}
 
-	void SkyrimMeshParser::readFrameLerp(btTransform& tr)
+	void SkyrimSystemCreator::readFrameLerp(btTransform& tr)
 	{
 		tr.setIdentity();
 		while (m_reader->Inspect())
@@ -1052,7 +1052,7 @@ namespace hdt
 		}
 	}
 
-	bool SkyrimMeshParser::parseFrameType(const std::string& name, FrameType& frameType, btTransform& frame)
+	bool SkyrimSystemCreator::parseFrameType(const std::string& name, FrameType& frameType, btTransform& frame)
 	{
 		if (name == "frameInA")
 		{
@@ -1073,7 +1073,7 @@ namespace hdt
 		return true;
 	}
 
-	void SkyrimMeshParser::readGenericConstraintTemplate(GenericConstraintTemplate& dest)
+	void SkyrimSystemCreator::readGenericConstraintTemplate(GenericConstraintTemplate& dest)
 	{
 		while (m_reader->Inspect())
 		{
@@ -1118,7 +1118,7 @@ namespace hdt
 		}
 	}
 
-	bool SkyrimMeshParser::findBones(const IDStr& bodyAName, const IDStr& bodyBName, SkyrimBone*& bodyA,
+	bool SkyrimSystemCreator::findBones(const IDStr& bodyAName, const IDStr& bodyBName, SkyrimBone*& bodyA,
 	                                 SkyrimBone*& bodyB)
 	{
 		bodyA = static_cast<SkyrimBone*>(m_mesh->findBone(bodyAName));
@@ -1193,7 +1193,7 @@ namespace hdt
 		return btQuaternion(axis, angle);
 	}
 
-	void SkyrimMeshParser::calcFrame(FrameType type, const btTransform& frame, const btQsTransform& trA,
+	void SkyrimSystemCreator::calcFrame(FrameType type, const btTransform& frame, const btQsTransform& trA,
 	                                 const btQsTransform& trB, btTransform& frameA, btTransform& frameB)
 	{
 		btQsTransform frameInWorld;
@@ -1257,7 +1257,7 @@ namespace hdt
 		}
 	}
 
-	Ref<Generic6DofConstraint> SkyrimMeshParser::readGenericConstraint()
+	Ref<Generic6DofConstraint> SkyrimSystemCreator::readGenericConstraint()
 	{
 		auto bodyAName = getRenamedBone(m_reader->getAttribute("bodyA"));
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
@@ -1306,7 +1306,7 @@ namespace hdt
 		return constraint;
 	}
 
-	void SkyrimMeshParser::readStiffSpringConstraintTemplate(StiffSpringConstraintTemplate& dest)
+	void SkyrimSystemCreator::readStiffSpringConstraintTemplate(StiffSpringConstraintTemplate& dest)
 	{
 		while (m_reader->Inspect())
 		{
@@ -1334,7 +1334,7 @@ namespace hdt
 		}
 	}
 
-	void SkyrimMeshParser::readConeTwistConstraintTemplate(ConeTwistConstraintTemplate& dest)
+	void SkyrimSystemCreator::readConeTwistConstraintTemplate(ConeTwistConstraintTemplate& dest)
 	{
 		while (m_reader->Inspect())
 		{
@@ -1367,7 +1367,7 @@ namespace hdt
 		}
 	}
 
-	const SkyrimMeshParser::BoneTemplate& SkyrimMeshParser::getBoneTemplate(const IDStr& name)
+	const SkyrimSystemCreator::BoneTemplate& SkyrimSystemCreator::getBoneTemplate(const IDStr& name)
 	{
 		auto iter = m_boneTemplates.find(name);
 		if (iter == m_boneTemplates.end())
@@ -1375,7 +1375,7 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::GenericConstraintTemplate& SkyrimMeshParser::getGenericConstraintTemplate(const IDStr& name)
+	const SkyrimSystemCreator::GenericConstraintTemplate& SkyrimSystemCreator::getGenericConstraintTemplate(const IDStr& name)
 	{
 		auto iter = m_genericConstraintTemplates.find(name);
 		if (iter == m_genericConstraintTemplates.end())
@@ -1383,7 +1383,7 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::StiffSpringConstraintTemplate& SkyrimMeshParser::getStiffSpringConstraintTemplate(
+	const SkyrimSystemCreator::StiffSpringConstraintTemplate& SkyrimSystemCreator::getStiffSpringConstraintTemplate(
 		const IDStr& name)
 	{
 		auto iter = m_stiffSpringConstraintTemplates.find(name);
@@ -1392,7 +1392,7 @@ namespace hdt
 		return iter->second;
 	}
 
-	const SkyrimMeshParser::ConeTwistConstraintTemplate& SkyrimMeshParser::getConeTwistConstraintTemplate(
+	const SkyrimSystemCreator::ConeTwistConstraintTemplate& SkyrimSystemCreator::getConeTwistConstraintTemplate(
 		const IDStr& name)
 	{
 		auto iter = m_coneTwistConstraintTemplates.find(name);
@@ -1401,7 +1401,7 @@ namespace hdt
 		return iter->second;
 	}
 
-	Ref<StiffSpringConstraint> SkyrimMeshParser::readStiffSpringConstraint()
+	Ref<StiffSpringConstraint> SkyrimSystemCreator::readStiffSpringConstraint()
 	{
 		auto bodyAName = getRenamedBone(m_reader->getAttribute("bodyA"));
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));
@@ -1424,7 +1424,7 @@ namespace hdt
 		return constraint;
 	}
 
-	Ref<ConeTwistConstraint> SkyrimMeshParser::readConeTwistConstraint()
+	Ref<ConeTwistConstraint> SkyrimSystemCreator::readConeTwistConstraint()
 	{
 		auto bodyAName = getRenamedBone(m_reader->getAttribute("bodyA"));
 		auto bodyBName = getRenamedBone(m_reader->getAttribute("bodyB"));

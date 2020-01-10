@@ -28,7 +28,7 @@ namespace hdt
 				Ref<NiNode> origPartRootNode;
 				std::string physicsFile;
 				Ref<SkyrimSystem> physics;
-				bool printBones;
+				std::set<IDStr> renamedBonesInUse;
 			};
 
 			Ref<IString> prefix;
@@ -75,11 +75,11 @@ namespace hdt
 			// TODO: refactor this is just to get it working for now
 			static void doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
 			                                std::unordered_map<IDStr, IDStr>& map,
-			                                std::unordered_map<IDStr, uint8_t>& useMap);
+			                                std::unordered_map<IDStr, uint8_t>& useMap,	std::set<IDStr>& renamedBonesInUse);
 			static void renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map,
-			                           std::unordered_map<IDStr, uint8_t>& useMap);
+			                           std::unordered_map<IDStr, uint8_t>& useMap, std::set<IDStr>& renamedBonesInUse);
 			static NiNode* cloneHeadNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map,
-			                                 std::unordered_map<IDStr, uint8_t>& useMap);
+			                                 std::unordered_map<IDStr, uint8_t>& useMap, std::set<IDStr>& renamedBonesInUse);
 		};
 
 		bool m_shutdown = false;

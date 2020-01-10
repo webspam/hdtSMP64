@@ -38,11 +38,11 @@ namespace hdt
 
 	class XMLReader;
 
-	class SkyrimMeshParser
+	class SkyrimSystemCreator
 	{
 	public:
-		SkyrimMeshParser();
-		Ref<SkyrimSystem> createMesh(NiNode* skeleton, NiAVObject* model, const std::string& filepath,
+		SkyrimSystemCreator();
+		Ref<SkyrimSystem> createSystem(NiNode* skeleton, NiAVObject* model, const std::string& filepath,
 		                             std::unordered_map<IDStr, IDStr> renameMap);
 
 	protected:
