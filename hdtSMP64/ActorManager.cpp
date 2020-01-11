@@ -129,14 +129,17 @@ namespace hdt
 
 				j.physics = nullptr;
 
-				std::unordered_map<IDStr, IDStr> renameMap = j.renameMap;
-
-				auto system = SkyrimSystemCreator().createSystem(i.npc, j.armorWorn, j.physicsFile, std::move(renameMap));
-
-				if (system)
+				if (!isFirstPersonSkeleton(i.skeleton))
 				{
-					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
-					j.physics = system;
+					std::unordered_map<IDStr, IDStr> renameMap = j.renameMap;
+
+					auto system = SkyrimSystemCreator().createSystem(i.npc, j.armorWorn, j.physicsFile, std::move(renameMap));
+
+					if (system)
+					{
+						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
+						j.physics = system;
+					}
 				}
 			}
 
@@ -551,6 +554,12 @@ namespace hdt
 
 	void ActorManager::Skeleton::scanHead()
 	{
+		if (isFirstPersonSkeleton(this->skeleton))
+		{
+			_DMESSAGE("not scanning head of first person skeleton");
+			return;
+		}
+
 		if (!this->head.headNode)
 		{
 			_DMESSAGE("actor has no head node");
