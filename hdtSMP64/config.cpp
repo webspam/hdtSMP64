@@ -66,6 +66,8 @@ namespace hdt
 			case XMLReader::Inspected::StartTag:
 				if (reader.GetLocalName() == "logLevel")
 					gLog.SetLogLevel(static_cast<IDebugLog::LogLevel>(reader.readInt()));
+				else if (reader.GetLocalName() == "enableNPCFaceParts")
+					ActorManager::instance()->m_skinNPCFaceParts = reader.readBool();
 				else if (reader.GetLocalName() == "clampRotations")
 					SkyrimPhysicsWorld::get()->m_clampRotations = reader.readBool();
 				else if (reader.GetLocalName() == "unclampedResets")

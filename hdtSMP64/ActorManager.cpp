@@ -140,24 +140,7 @@ namespace hdt
 				}
 			}
 
-			for (auto& headPart : i.head.headParts)
-			{
-				if (headPart.physics && headPart.physics->m_world)
-					headPart.physics->m_world->removeSkinnedMeshSystem(headPart.physics);
-
-				headPart.physics = nullptr;
-
-				std::unordered_map<IDStr, IDStr> renameMap = i.head.renameMap;
-
-				auto system = SkyrimSystemCreator().createSystem(i.npc, i.head.headNode, headPart.physicsFile,
-				                                          std::move(renameMap));
-
-				if (system)
-				{
-					SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
-					headPart.physics = system;
-				}
-			}
+			i.scanHead();
 		}
 	}
 
@@ -502,9 +485,7 @@ namespace hdt
 
 
 	void ActorManager::Skeleton::doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
-	                                                 std::unordered_map<IDStr, IDStr>& map,
-	                                                 std::unordered_map<IDStr, uint8_t>& countMap,
-													std::set<IDStr>& renamedBonesInUse)
+	                                                 std::unordered_map<IDStr, IDStr>& map)
 	{
 		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
 		{
@@ -513,7 +494,7 @@ namespace hdt
 
 			if (!srcChild->m_name)
 			{
-				doHeadSkeletonMerge(dst, srcChild, prefix, map, countMap, renamedBonesInUse);
+				doHeadSkeletonMerge(dst, srcChild, prefix, map);
 				continue;
 			}
 
@@ -526,31 +507,28 @@ namespace hdt
 			auto dstChild = findNode(dst, srcChild->m_name);
 			if (dstChild)
 			{
-				doHeadSkeletonMerge(dstChild, srcChild, prefix, map, countMap, renamedBonesInUse);
+				doHeadSkeletonMerge(dstChild, srcChild, prefix, map);
 			}
 			else
 			{
-				dst->AttachChild(cloneHeadNodeTree(srcChild, prefix, map, countMap, renamedBonesInUse), false);
+				dst->AttachChild(cloneHeadNodeTree(srcChild, prefix, map), false);
 			}
 		}
 	}
 
 	NiNode* ActorManager::Skeleton::cloneHeadNodeTree(NiNode* src, IString* prefix,
-	                                                  std::unordered_map<IDStr, IDStr>& map,
-	                                                  std::unordered_map<IDStr, uint8_t>& countMap, std::set<IDStr>& renamedBonesInUse)
+	                                                  std::unordered_map<IDStr, IDStr>& map)
 	{
 		NiCloningProcess c;
 		auto ret = static_cast<NiNode*>(src->CreateClone(c));
 		src->ProcessClone(&c);
 
-		renameHeadTree(src, prefix, map, countMap, renamedBonesInUse);
-		renameHeadTree(ret, prefix, map, countMap, renamedBonesInUse);
+		renameHeadTree(ret, prefix, map);
 
 		return ret;
 	}
 
-	void ActorManager::Skeleton::renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map,
-	                                            std::unordered_map<IDStr, uint8_t>& countMap, std::set<IDStr>& renamedBonesInUse)
+	void ActorManager::Skeleton::renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map)
 	{
 		if (root->m_name)
 		{
@@ -559,8 +537,6 @@ namespace hdt
 			if (map.insert(std::make_pair<IDStr, IDStr>(root->m_name, newName)).second)
 			{
 				_DMESSAGE("Rename Bone %s -> %s", root->m_name, newName.c_str());
-				countMap.insert(std::make_pair<IDStr, uint8_t>(root->m_name, 1));
-				renamedBonesInUse.insert(root->m_name);
 			}
 			setNiNodeName(root, newName.c_str());
 		}
@@ -569,7 +545,7 @@ namespace hdt
 		{
 			auto child = castNiNode(root->m_children.m_data[i]);
 			if (child)
-				renameHeadTree(child, prefix, map, countMap, renamedBonesInUse);
+				renameHeadTree(child, prefix, map);
 		}
 	}
 
@@ -671,65 +647,43 @@ namespace hdt
 		head.headParts.back().headPart = geometry;
 		head.headParts.back().physics = nullptr;
 
-		// skeleton merge
-		if (skeleton->m_owner && skeleton->m_owner->formID == 0x14) // player character
-		{
-			auto fmd = static_cast<BSFaceGenModelExtraData*>(geometry->GetExtraData("FMD"));
-			if (fmd && fmd->m_model && fmd->m_model->unk10 && fmd->m_model->unk10->unk08)
-			{
-				const auto facePartRootNode = fmd->m_model->unk10->unk08->GetAsNiNode();
-				if (facePartRootNode)
-				{
-					_DMESSAGE("geometry %s found root node %s", geometry->m_name, facePartRootNode->m_name);
-					head.headParts.back().origPartRootNode = facePartRootNode;
-					for (auto& entry : this->head.renameMap)
-					{
-						auto obj = findObject(facePartRootNode, entry.first->cstr());
-						if (obj)
-						{
-							auto node = obj->GetAsNiNode();
-							if (node)
-							{
-								_DMESSAGE("node %s found rename to %s", node->m_name, entry.second->cstr());
-								setNiNodeName(node, entry.second->cstr());
-								auto findNode = this->head.nodeUseCount.find(entry.first);
-								if (findNode != this->head.nodeUseCount.end())
-								{
-									findNode->second += 1;
-									_DMESSAGE("incrementing use count by 1, it is now %d", findNode->second);
-									head.headParts.back().renamedBonesInUse.insert(entry.first);
-								}
-							}
-						}
-					}
-					doHeadSkeletonMerge(npc, facePartRootNode, this->head.prefix, this->head.renameMap,
-					                    this->head.nodeUseCount, head.headParts.back().renamedBonesInUse);
-					head.headParts.back().physicsFile = scanBBP(facePartRootNode);
-					bool skinned = false;
-					for (int i = 0; i < facePartRootNode->m_children.m_size; i++)
-					{
-						if (facePartRootNode->m_children.m_data[i])
-						{
-							const auto geo = facePartRootNode->m_children.m_data[i]->GetAsBSGeometry();
+		// Skinning
+		_DMESSAGE("skinning geometry to skeleton");		
 
-							if (geo)
-							{
-								skinGeometry(headNode, geometry, geo->m_spSkinInstance);
-								skinned = true;
-								break;
-							}
-						}
-					}
-					if (!skinned)
+		if (!geometry->m_spSkinInstance || !geometry->m_spSkinInstance->m_spSkinData)
+		{
+			_ERROR("geometry is missing skin instance - how?");
+			return;
+		}
+
+		auto fmd = static_cast<BSFaceGenModelExtraData*>(geometry->GetExtraData("FMD"));
+
+		BSGeometry* origGeom = nullptr;
+		NiGeometry* origNiGeom = nullptr;
+		
+		if (fmd && fmd->m_model && fmd->m_model->unk10 && fmd->m_model->unk10->unk08)
+		{
+			_DMESSAGE("orig part node found via fmd");
+			auto origRootNode = fmd->m_model->unk10->unk08->GetAsNiNode();
+			head.headParts.back().physicsFile = scanBBP(origRootNode);
+			head.headParts.back().origPartRootNode = origRootNode;
+			for (int i = 0; i < origRootNode->m_children.m_size; i++)
+			{
+				if (origRootNode->m_children.m_data[i])
+				{
+					const auto geo = origRootNode->m_children.m_data[i]->GetAsBSGeometry();
+
+					if (geo)
 					{
-						_WARNING("unable to skin player head part");
+						origGeom = geo;
+						break;
 					}
 				}
-			}
+			}			
 		}
-		else // npc
+		else 
 		{
-			// for NPCs we dont have easy access back to the facegeom .nif so we're loading our own copy, but only do this once
+			_DMESSAGE("no fmd available, loading original facegeom");
 			if (!head.npcFaceGeomNode)
 			{
 				if (skeleton->m_owner && skeleton->m_owner->baseForm)
@@ -762,11 +716,7 @@ namespace hdt
 									if (rootFadeNode)
 									{
 										_DMESSAGE("npc root fadenode found");
-										head.npcFaceGeomNode = rootFadeNode;
-										doHeadSkeletonMerge(this->npc, rootFadeNode, this->head.prefix,
-											this->head.renameMap,
-											this->head.nodeUseCount, head.headParts.back().renamedBonesInUse);
-										head.headParts.back().physicsFile = scanBBP(rootFadeNode);
+										head.npcFaceGeomNode = rootFadeNode;							
 									}
 									else
 									{
@@ -778,73 +728,123 @@ namespace hdt
 						}
 					}
 				}
-				else
-				{
-					_WARNING("skipped npc %08x face part", skeleton->m_owner ? skeleton->m_owner->formID : 0x0);
-				}
 			}
 			else
 			{
-				_DMESSAGE("npc head already read on previous head part");
+				_DMESSAGE("using cached facegeom");
 			}
 			if (head.npcFaceGeomNode)
 			{
+				head.headParts.back().physicsFile = scanBBP(head.npcFaceGeomNode);
 				auto obj = findObject(head.npcFaceGeomNode, geometry->m_name);
 				if (obj)
 				{
-					const auto geo = obj->GetAsBSGeometry();
+					if (obj->GetAsBSGeometry())
+						origGeom = obj->GetAsBSGeometry();
+					else if (obj->GetAsNiGeometry())
+						origNiGeom = obj->GetAsNiGeometry();
+				}
+			}
+		}
 
-					if (geo)
+		bool hasMerged = false;
+		bool hasRenames = false;
+		
+		for (int boneIdx = 0; boneIdx < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; boneIdx++)
+		{
+			BSFixedString boneName("");
+			
+			// skin the way the game does via FMD
+			if (boneIdx <= 7)
+			{
+				if (fmd)
+					boneName = fmd->bones[boneIdx];
+			}
+
+			if (!*boneName.c_str())
+			{
+				if (origGeom)
+				{
+					boneName = origGeom->m_spSkinInstance->m_ppkBones[boneIdx]->m_name;
+				}
+				else if (origNiGeom)
+				{
+					boneName = origNiGeom->m_spSkinInstance->m_ppkBones[boneIdx]->m_name;
+				}
+			}
+
+			auto renameIt = this->head.renameMap.find(boneName.c_str());
+
+			if (renameIt != this->head.renameMap.end())
+			{
+				_DMESSAGE("found renamed bone %s -> %s", boneName, renameIt->second->cstr());
+				boneName = renameIt->second->cstr();
+				hasRenames = true;
+			}
+			
+			auto boneNode = findNode(this->npc, boneName);
+
+			if (!boneNode && !hasMerged)
+			{
+				_DMESSAGE("bone not found on skeleton, trying skeleton merge");
+				if (this->head.headParts.back().origPartRootNode)
+				{
+					doHeadSkeletonMerge(npc, head.headParts.back().origPartRootNode, head.prefix, head.renameMap);
+				}
+				else if (this->head.npcFaceGeomNode)
+				{
+					doHeadSkeletonMerge(npc, this->head.npcFaceGeomNode, head.prefix, head.renameMap);
+				}
+				hasMerged = true;
+				
+				auto postMergeRenameIt = this->head.renameMap.find(boneName.c_str());
+
+				if (postMergeRenameIt != this->head.renameMap.end())
+				{
+					_DMESSAGE("found renamed bone %s -> %s", boneName, postMergeRenameIt->second->cstr());
+					boneName = postMergeRenameIt->second->cstr();
+					hasRenames = true;
+				}
+				
+				boneNode = findNode(this->npc, boneName);		
+			}
+
+			if (!boneNode)
+			{
+				_ERROR("bone %s not found after skeleton merge, geometry cannot be fully skinned", boneName);
+				continue;
+			}
+
+			geometry->m_spSkinInstance->m_ppkBones[boneIdx] = boneNode;
+			geometry->m_spSkinInstance->m_worldTransforms[boneIdx] = &boneNode->m_worldTransform;
+		}
+
+		geometry->m_spSkinInstance->m_pkRootParent = headNode;
+
+		if (hasRenames)
+		{
+			for (auto &entry : head.renameMap)
+			{
+				if ((this->head.headParts.back().origPartRootNode && findObject(this->head.headParts.back().origPartRootNode, entry.first->cstr())) ||
+					(this->head.npcFaceGeomNode && findObject(this->head.npcFaceGeomNode, entry.first->cstr())))
+				{
+					auto findNode = this->head.nodeUseCount.find(entry.first);
+					if (findNode != this->head.nodeUseCount.end())
 					{
-						skinGeometry(headNode, geometry, geo->m_spSkinInstance);
+						findNode->second += 1;
+						_DMESSAGE("incrementing use count by 1, it is now %d", findNode->second);
+
 					}
 					else
 					{
-						const auto niGeo = obj->GetAsNiGeometry();
-
-						if (niGeo)
-						{
-							skinGeometry(headNode, geometry, niGeo->m_spSkinInstance);
-						}
-						else
-						{
-							_WARNING("unable to skin NPC face part");
-						}
+						this->head.nodeUseCount.insert(std::make_pair(entry.first, 1));
+						_DMESSAGE("first use of bone, count 1");
 					}
-				}
-				else
-				{
-					_WARNING("unable to skin NPC face part");
-				}
+					head.headParts.back().renamedBonesInUse.insert(entry.first);
+				}				
 			}
 		}
-	}
 
-	void ActorManager::Skeleton::skinGeometry(BSFaceGenNiNode * faceGenNode, BSGeometry * geometry, const NiSkinInstancePtr boneSkinInstance)
-	{
-		_DMESSAGE("skinning geometry to skeleton");
-		if (geometry->m_spSkinInstance && geometry->m_spSkinInstance->m_spSkinData)
-		{
-			for (int i = 0; i < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; i++)
-			{
-				auto renameIt = this->head.renameMap.find(boneSkinInstance->m_ppkBones[i]->m_name);
-				auto nodeName = renameIt != this->head.renameMap.end() ? renameIt->second->cstr() : boneSkinInstance->m_ppkBones[i]->m_name;
-
-				auto node = findNode(this->npc, nodeName);
-				
-				if (node)
-				{						
-					_DMESSAGE("skinning node %s to node %s",
-							boneSkinInstance->m_ppkBones[i]->m_name, node->m_name);
-					geometry->m_spSkinInstance->m_ppkBones[i] = node;
-					geometry->m_spSkinInstance->m_worldTransforms[i] = &(node->m_worldTransform);
-				}
-				else
-				{
-					_WARNING("unable to find node %s (%s) on npc to skin to, something is broken", nodeName, boneSkinInstance->m_ppkBones[i]->m_name);
-				}
-			}
-		}
-		geometry->m_spSkinInstance->m_pkRootParent = faceGenNode;
+		_DMESSAGE("done skinning part");
 	}
 }

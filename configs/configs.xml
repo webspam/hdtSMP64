@@ -3,6 +3,8 @@
 <configs>
 	<smp>
 		<logLevel>3</logLevel>
+		<!-- enableNPCFaceParts: enable physics for NPC face parts -->
+		<enableNPCFaceParts>true</enableNPCFaceParts>
 		<!-- clampRotations: when turning a large angle, clamp rotation speed, so your character rotates slowly instead of instantly -->
 		<clampRotations>true</clampRotations>
 		<!-- unclampedResets: when unclamped, if you do a large turn (full 180 for example) SMP will attempt to apply physics

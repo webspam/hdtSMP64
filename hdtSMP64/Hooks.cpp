@@ -14,6 +14,7 @@
 #include "skse64_common/SafeWrite.h"
 #include <xbyak/xbyak.h>
 #include "skse64_common/BranchTrampoline.h"
+#include "ActorManager.h"
 
 namespace hdt
 {
@@ -49,13 +50,18 @@ namespace hdt
 			         a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0,
 			         a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
 
-			SkinSingleHeadGeometryEvent e;
-			e.skeleton = a_skeleton;
-			e.geometry = a_geometry;
-			e.headNode = this;
-			g_skinSingleHeadGeometryEventDispatcher.dispatch(e);
-
-			// we are handling head part skinning so we don't call the original function here
+			if ((a_skeleton->m_owner && a_skeleton->m_owner->formID == 0x14) || ActorManager::instance()->m_skinNPCFaceParts)
+			{
+				SkinSingleHeadGeometryEvent e;
+				e.skeleton = a_skeleton;
+				e.geometry = a_geometry;
+				e.headNode = this;
+				g_skinSingleHeadGeometryEventDispatcher.dispatch(e);
+			}
+			else
+			{
+				CALL_MEMBER_FN(this, SkinSingleGeometry)(a_skeleton, a_geometry, a_unk);
+			}
 		}
 
 		void SkinAllGeometry(NiNode* a_skeleton, char a_unk)
@@ -80,13 +86,20 @@ namespace hdt
 			         a_skeleton->m_owner ? a_skeleton->m_owner->formID : 0x0,
 			         a_skeleton->m_owner ? a_skeleton->m_owner->baseForm->formID : 0x0, formId);
 
-			SkinAllHeadGeometryEvent e;
-			e.skeleton = a_skeleton;
-			e.headNode = this;
-			g_skinAllHeadGeometryEventDispatcher.dispatch(e);
-			CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
-			e.hasSkinned = true;
-			g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+			if ((a_skeleton->m_owner && a_skeleton->m_owner->formID == 0x14) || ActorManager::instance()->m_skinNPCFaceParts)
+			{
+				SkinAllHeadGeometryEvent e;
+				e.skeleton = a_skeleton;
+				e.headNode = this;
+				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+				CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
+				e.hasSkinned = true;
+				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+			}
+			else
+			{
+				CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
+			}
 		}
 	};
 	
@@ -109,9 +122,9 @@ namespace hdt
 				Xbyak::Label j_Out;
 
 				mov(esi, ptr[rax + 0x58]);
-				cmp(esi, 8);
+				cmp(esi, 9);
 				jl(j_Out);
-				mov(esi, 7);
+				mov(esi, 8);
 				L(j_Out);
 				jmp(ptr[rip]);
 				dq(BoneLimit.GetUIntPtr() + 0x7);
