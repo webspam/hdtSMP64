@@ -87,14 +87,18 @@ namespace hdt
 		std::vector<IDStr> m_tags;
 		std::unordered_set<IDStr> m_canCollideWithTags;
 		std::unordered_set<IDStr> m_noCollideWithTags;
+		std::vector<SkinnedMeshBone*> m_canCollideWithBones;
 		std::vector<SkinnedMeshBone*> m_noCollideWithBones;
 
 		float flexible(const Vertex& v);
 
 		bool canCollideWith(const SkinnedMeshBone* bone) const
 		{
-			return std::find(m_noCollideWithBones.begin(), m_noCollideWithBones.end(), bone) == m_noCollideWithBones.
-				end();
+			if (m_canCollideWithBones.size())
+			{
+				return std::find(m_canCollideWithBones.begin(), m_canCollideWithBones.end(), bone) != m_canCollideWithBones.end();
+			}
+			return std::find(m_noCollideWithBones.begin(), m_noCollideWithBones.end(), bone) == m_noCollideWithBones.end();
 		}
 
 		virtual bool canCollideWith(const SkinnedMeshBody* body) const;

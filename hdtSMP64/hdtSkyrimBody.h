@@ -18,6 +18,7 @@ namespace hdt
 		{
 			SHARED_PUBLIC,
 			SHARED_INTERNAL,
+			SHARED_EXTERNAL,
 			SHARED_PRIVATE,
 		};
 

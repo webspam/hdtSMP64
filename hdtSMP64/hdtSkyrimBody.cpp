@@ -28,6 +28,10 @@ namespace hdt
 			if (m_mesh->m_skeleton != body->m_mesh->m_skeleton)
 				return false;
 			break;
+		case SHARED_EXTERNAL:
+			if (m_mesh->m_skeleton == body->m_mesh->m_skeleton)
+				return false;
+			break;
 		case SHARED_PRIVATE:
 			if (m_mesh != body->m_mesh)
 				return false;
