@@ -32,7 +32,7 @@ namespace hdt
 			return std::find(m_canCollideWithBone.begin(), m_canCollideWithBone.end(), rhs->m_name) !=
 				m_canCollideWithBone.end();
 		}
-		return std::find(m_noCollideWithBone.begin(), m_noCollideWithBone.end(), rhs->m_name) != m_noCollideWithBone.
+		return std::find(m_noCollideWithBone.begin(), m_noCollideWithBone.end(), rhs->m_name) == m_noCollideWithBone.
 			end();
 	}
 }
