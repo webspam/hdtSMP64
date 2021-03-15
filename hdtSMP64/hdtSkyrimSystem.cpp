@@ -867,6 +867,8 @@ namespace hdt
 						body->m_shared = SkyrimBody::SHARED_PUBLIC;
 					else if (str == "internal")
 						body->m_shared = SkyrimBody::SHARED_INTERNAL;
+					else if (str == "external")
+						body->m_shared = SkyrimBody::SHARED_EXTERNAL;
 					else if (str == "private")
 						body->m_shared = SkyrimBody::SHARED_PRIVATE;
 					else
@@ -881,6 +883,11 @@ namespace hdt
 					body->m_canCollideWithTags.insert(m_reader->readText());
 				else if (name == "no-collide-with-tag")
 					body->m_noCollideWithTags.insert(m_reader->readText());
+				else if (name == "can-collide-with-bone")
+				{
+					auto bone = getOrCreateBone(m_reader->readText());
+					if (bone) body->m_canCollideWithBones.push_back(bone);
+				}
 				else if (name == "no-collide-with-bone")
 				{
 					auto bone = getOrCreateBone(m_reader->readText());
@@ -970,6 +977,8 @@ namespace hdt
 						body->m_shared = SkyrimBody::SHARED_PUBLIC;
 					else if (str == "internal")
 						body->m_shared = SkyrimBody::SHARED_INTERNAL;
+					else if (str == "external")
+						body->m_shared = SkyrimBody::SHARED_EXTERNAL;
 					else if (str == "private")
 						body->m_shared = SkyrimBody::SHARED_PRIVATE;
 					else
@@ -986,6 +995,11 @@ namespace hdt
 					body->m_noCollideWithTags.insert(m_reader->readText());
 				else if (name == "can-collide-with-tag")
 					body->m_canCollideWithTags.insert(m_reader->readText());
+				else if (name == "can-collide-with-bone")
+				{
+					auto bone = getOrCreateBone(m_reader->readText());
+					if (bone) body->m_canCollideWithBones.push_back(bone);
+				}
 				else if (name == "no-collide-with-bone")
 				{
 					auto bone = getOrCreateBone(m_reader->readText());
