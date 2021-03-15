@@ -56,6 +56,8 @@ namespace hdt
 			Ref<NiNode> npc;
 			std::vector<Armor> armors;
 			Head head;
+			bool hasPos;
+			NiPoint3 pos;
 
 			void cleanArmor();
 			void cleanHead(bool cleanAll = false);
@@ -103,5 +105,6 @@ namespace hdt
 		std::vector<Skeleton> getSkeletons() const;
 
 		bool m_skinNPCFaceParts = true;
+		float m_maxDistance = 1e4f;
 	};
 }

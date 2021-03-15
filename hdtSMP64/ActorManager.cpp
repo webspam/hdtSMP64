@@ -152,9 +152,34 @@ namespace hdt
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
 
+		bool have_pcPos = false;
+		NiPoint3 pcPos;
 		for (auto& i : m_skeletons)
 		{
-			if (!i.isActiveInScene())
+			i.hasPos = false;
+			if (i.npc)
+			{
+				auto rootNode = findNode(i.npc, "NPC Root [Root]");
+				if (rootNode)
+				{
+					i.hasPos = true;
+					i.pos = rootNode->m_worldTransform.pos;
+				}
+			}
+			if (i.skeletonOwner && i.skeletonOwner->formID == 0x14)
+			{
+				have_pcPos = i.hasPos;
+				pcPos = i.pos;
+			}
+		}
+
+		for (auto& i : m_skeletons)
+		{
+			auto offset = i.pos - pcPos;
+			auto distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
+			bool tooFar = have_pcPos && i.hasPos && distance2 > m_maxDistance * m_maxDistance;
+
+			if (!i.isActiveInScene() || tooFar)
 			{
 				if (i.skeleton->m_uiRefCount == 1)
 				{
