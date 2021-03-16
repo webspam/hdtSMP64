@@ -14,14 +14,9 @@ namespace hdt
 
 	class SkinnedMeshSystem : public RefObject
 	{
-	public:
-		typedef concurrency::task<void> task;
-		typedef concurrency::task_group task_group;
+		friend class hdt::SkinnedMeshWorld;
 
-		std::vector<Ref<SkinnedMeshBone>> m_bones;
-		std::vector<Ref<SkinnedMeshBody>> m_meshes;
-		std::vector<Ref<BoneScaleConstraint>> m_constraints;
-		std::vector<Ref<ConstraintGroup>> m_constraintGroups;
+	public:
 
 		virtual void resetTransformsToOriginal();
 		virtual void readTransform(float timeStep);
@@ -35,5 +30,15 @@ namespace hdt
 
 		std::vector<std::shared_ptr<btCollisionShape>> m_shapeRefs;
 		SkinnedMeshWorld* m_world = nullptr;
+
+	protected:
+		std::vector<Ref<SkinnedMeshBone>> m_bones;
+		std::vector<Ref<SkinnedMeshBody>> m_meshes;
+		std::vector<Ref<BoneScaleConstraint>> m_constraints;
+		std::vector<Ref<ConstraintGroup>> m_constraintGroups;
+
+	private:
+		typedef concurrency::task<void> task;
+		typedef concurrency::task_group task_group;
 	};
 }

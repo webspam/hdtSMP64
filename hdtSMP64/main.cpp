@@ -282,7 +282,7 @@ namespace hdt
 
 				if (armor.physics)
 				{
-					for (auto mesh : armor.physics->m_meshes)
+					for (auto mesh : armor.physics->meshes())
 						Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
 				}
 			}
@@ -301,7 +301,7 @@ namespace hdt
 
 					if (headPart.physics)
 					{
-						for (auto mesh : headPart.physics->m_meshes)
+						for (auto mesh : headPart.physics->meshes())
 							Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
 					}
 				}
@@ -374,7 +374,7 @@ namespace hdt
 				{
 					activeArmors++;
 
-					activeCollisionMeshes += armor.physics->m_meshes.size();
+					activeCollisionMeshes += armor.physics->meshes().size();
 				}
 			}
 
@@ -388,7 +388,7 @@ namespace hdt
 					{
 						activeHeadParts++;
 
-						activeCollisionMeshes += headpart.physics->m_meshes.size();
+						activeCollisionMeshes += headpart.physics->meshes().size();
 					}
 				}
 			}

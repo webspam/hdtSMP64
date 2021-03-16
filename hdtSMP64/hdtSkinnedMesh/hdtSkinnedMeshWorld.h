@@ -4,7 +4,7 @@
 
 namespace hdt
 {
-	class SkinnedMeshWorld : public btDiscreteDynamicsWorld
+	class SkinnedMeshWorld : protected btDiscreteDynamicsWorld
 	{
 	public:
 
@@ -41,10 +41,11 @@ namespace hdt
 		void performDiscreteCollisionDetection() override;
 		void solveConstraints(btContactSolverInfo& solverInfo) override;
 
-	public:
 		std::vector<Ref<SkinnedMeshSystem>> m_systems;
 
 		btVector3 m_windSpeed;
+
+	private:
 
 		std::vector<SkinnedMeshBody*> _bodies;
 		std::vector<SkinnedMeshShape*> _shapes;

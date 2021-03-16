@@ -12,6 +12,8 @@ namespace hdt
 {
 	class SkyrimSystem : public SkinnedMeshSystem
 	{
+		friend class SkyrimSystemCreator;
+
 	public:
 		struct BoneData
 		{
@@ -27,6 +29,8 @@ namespace hdt
 
 		void readTransform(float timeStep) override;
 		void writeTransform() override;
+
+		const std::vector<Ref<SkinnedMeshBody>>& meshes() const { return m_meshes; }
 
 		Ref<NiNode> m_skeleton;
 		Ref<NiNode> m_oldRoot;

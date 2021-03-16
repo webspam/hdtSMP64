@@ -13,7 +13,7 @@ namespace hdt
 {
 	constexpr float RESET_PHYSICS = -10.0f;
 
-	class SkyrimPhysicsWorld : public SkinnedMeshWorld, public IEventListener<FrameEvent>,
+	class SkyrimPhysicsWorld : protected SkinnedMeshWorld, public IEventListener<FrameEvent>,
 	                           public IEventListener<ShutdownEvent>, public BSTEventSink<SKSECameraEvent>
 	{
 	public:
@@ -55,6 +55,8 @@ namespace hdt
 
 		btVector3 applyTranslationOffset();
 		void restoreTranslationOffset(const btVector3&);
+
+		btContactSolverInfo& getSolverInfo() { return btDiscreteDynamicsWorld::getSolverInfo(); }
 
 		float m_timeTick = 1 / 60.f;
 		bool m_clampRotations = true;

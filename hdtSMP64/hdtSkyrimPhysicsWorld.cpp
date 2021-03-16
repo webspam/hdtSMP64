@@ -136,7 +136,7 @@ namespace hdt
 		{
 			auto system = static_cast<SkyrimSystem*>(i());
 			auto& map = maps[system->m_skeleton];
-			for (auto& j : i->m_meshes)
+			for (auto& j : system->meshes())
 			{
 				auto shape = static_cast<SkyrimBody*>(j());
 				if (!shape) continue;
@@ -247,21 +247,10 @@ namespace hdt
 
 	void SkyrimPhysicsWorld::onEvent(const ShutdownEvent& e)
 	{
-		for (auto system : m_systems)
+		while (m_systems.size())
 		{
-			for (int i = 0; i < system->m_meshes.size(); ++i)
-				removeCollisionObject(system->m_meshes[i]);
-			for (int i = 0; i < system->m_constraints.size(); ++i)
-				removeConstraint(system->m_constraints[i]->m_constraint);
-			for (int i = 0; i < system->m_bones.size(); ++i)
-				removeRigidBody(&system->m_bones[i]->m_rig);
-
-			for (auto i : system->m_constraintGroups)
-				for (auto j : i->m_constraints)
-					removeConstraint(j->m_constraint);
+			SkinnedMeshWorld::removeSkinnedMeshSystem(m_systems.back());
 		}
-
-		m_systems.clear();
 	}
 
 	EventResult SkyrimPhysicsWorld::ReceiveEvent(SKSECameraEvent* evn, EventDispatcher<SKSECameraEvent>* dispatcher)
