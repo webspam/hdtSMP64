@@ -181,24 +181,20 @@ namespace hdt
 
 			if (!i.isActiveInScene() || tooFar)
 			{
-				if (i.skeleton->m_uiRefCount == 1)
+				for (auto& j : i.armors)
+				{
+					if (j.physics && j.physics->m_world)
+						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+				}
+				for (auto& j : i.head.headParts)
+				{
+					if (j.physics && j.physics->m_world)
+						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+				}
+				if (!i.isActiveInScene() && i.skeleton->m_uiRefCount == 1)
 				{
 					i.clear();
 					i.skeleton = nullptr;
-				}
-				else
-				{
-					for (auto& j : i.armors)
-					{
-						if (j.physics && j.physics->m_world)
-							j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-					}
-
-					for (auto& j : i.head.headParts)
-					{
-						if (j.physics && j.physics->m_world)
-							j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-					}
 				}
 			}
 			else
