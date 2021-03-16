@@ -179,25 +179,7 @@ namespace hdt
 			auto distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
 			bool tooFar = have_pcPos && i.hasPos && distance2 > m_maxDistance * m_maxDistance;
 
-			if (!i.isActiveInScene() || tooFar)
-			{
-				for (auto& j : i.armors)
-				{
-					if (j.physics && j.physics->m_world)
-						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-				}
-				for (auto& j : i.head.headParts)
-				{
-					if (j.physics && j.physics->m_world)
-						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-				}
-				if (!i.isActiveInScene() && i.skeleton->m_uiRefCount == 1)
-				{
-					i.clear();
-					i.skeleton = nullptr;
-				}
-			}
-			else
+			if (i.skeleton->m_uiRefCount > 1 && i.isActiveInScene() && !tooFar)
 			{
 				auto world = SkyrimPhysicsWorld::get();
 				for (auto& j : i.armors)
@@ -210,6 +192,24 @@ namespace hdt
 				{
 					if (j.physics && !j.physics->m_world)
 						world->addSkinnedMeshSystem(j.physics);
+				}
+			}
+			else
+			{
+				for (auto& j : i.armors)
+				{
+					if (j.physics && j.physics->m_world)
+						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+				}
+				for (auto& j : i.head.headParts)
+				{
+					if (j.physics && j.physics->m_world)
+						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+				}
+				if (i.skeleton->m_uiRefCount == 1)
+				{
+					i.clear();
+					i.skeleton = nullptr;
 				}
 			}
 		}
