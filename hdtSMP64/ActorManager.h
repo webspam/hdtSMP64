@@ -55,8 +55,10 @@ namespace hdt
 			NiPointer<TESObjectREFR> skeletonOwner;
 			Ref<NiNode> skeleton;
 			Ref<NiNode> npc;
-			std::vector<Armor> armors;
 			Head head;
+
+			void addArmor(NiNode* armorModel);
+			void attachArmor(NiNode* armorModel, NiAVObject* attachedNode);
 
 			void cleanArmor();
 			void cleanHead(bool cleanAll = false);
@@ -69,6 +71,7 @@ namespace hdt
 			void attachToWorld();
 			void detachFromWorld();
 			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance);
+			void reloadMeshes();
 
 			void scanHead();
 			void processGeometry(BSFaceGenNiNode* head, BSGeometry* geometry);
@@ -85,8 +88,11 @@ namespace hdt
 			static void renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static NiNode* cloneHeadNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 
+			const std::vector<Armor>& getArmors() { return armors; }
+
 		private:
 			bool isAttached = false;
+			std::vector<Armor> armors;
 		};
 
 		bool m_shutdown = false;

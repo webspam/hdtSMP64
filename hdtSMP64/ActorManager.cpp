@@ -40,74 +40,41 @@ namespace hdt
 		return false;
 	}
 
-	void ActorManager::onEvent(const ArmorAttachEvent& e)
+	NiNode* getNpcNode(NiNode* skeleton)
 	{
-		auto npc = findNode(e.skeleton, "NPC");
-
-		if (!npc) return;
-
 		// TODO: replace this with a generic skeleton fixing configuration option
 		// hardcode an exception for lurker skeletons because they are made incorrectly
-		if (e.skeleton->m_owner && e.skeleton->m_owner->baseForm)
+		auto npc = findNode(skeleton, "NPC");
+		if (skeleton->m_owner && skeleton->m_owner->baseForm)
 		{
-			auto npcForm = DYNAMIC_CAST(e.skeleton->m_owner->baseForm, TESForm, TESNPC);
+			auto npcForm = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESNPC);
 			if (npcForm && npcForm->race.race)
 			{
 				if (!strcmp(npcForm->race.race->models[0].GetModelName(),
-				            "Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
+					"Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
 				{
-					npc = findNode(e.skeleton, "NPC Root [Root]");
+					npc = findNode(skeleton, "NPC Root [Root]");
 				}
 			}
 		}
+		return npc;
+	}
+
+	void ActorManager::onEvent(const ArmorAttachEvent& e)
+	{
+		if (!findNode(e.skeleton, "NPC")) return;
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
 
+		auto& skeleton = getSkeletonData(e.skeleton);
 		if (e.hasAttached)
 		{
-			auto prefix = generatePrefix(e.armorModel);
-			auto& skeleton = getSkeletonData(e.skeleton);
-			auto iter = std::find_if(skeleton.armors.begin(), skeleton.armors.end(), [=](Armor& i)
-			{
-				return i.prefix == prefix;
-			});
-
-			if (iter != skeleton.armors.end())
-			{
-				iter->armorWorn = e.attachedNode;
-				std::unordered_map<IDStr, IDStr> renameMap = iter->renameMap;
-
-				if (!isFirstPersonSkeleton(e.skeleton))
-				{
-					auto system = SkyrimSystemCreator().createSystem(npc, e.attachedNode, iter->physicsFile,
-					                                          std::move(renameMap));
-
-					if (system)
-					{
-						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
-						iter->physics = system;
-					}
-				}
-			}
+			skeleton.attachArmor(e.armorModel, e.attachedNode);
 		}
 		else
 		{
-			auto prefix = generatePrefix(e.armorModel);
-			auto& skeleton = getSkeletonData(e.skeleton);
-			skeleton.npc = npc;
-			auto iter = std::find_if(skeleton.armors.begin(), skeleton.armors.end(), [=](Armor& i)
-			{
-				return i.prefix == prefix;
-			});
-			if (iter == skeleton.armors.end())
-			{
-				skeleton.armors.push_back(Armor());
-				skeleton.armors.back().prefix = prefix;
-				iter = skeleton.armors.end() - 1;
-			}
-			Skeleton::doSkeletonMerge(npc, e.armorModel, prefix, iter->renameMap);
-			iter->physicsFile = scanBBP(e.armorModel);
+			skeleton.addArmor(e.armorModel);
 		}
 	}
 
@@ -122,28 +89,7 @@ namespace hdt
 
 		for (auto& i : m_skeletons)
 		{
-			for (auto& j : i.armors)
-			{
-				if (j.physics && j.physics->m_world)
-					j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-
-				j.physics = nullptr;
-
-				if (!isFirstPersonSkeleton(i.skeleton))
-				{
-					std::unordered_map<IDStr, IDStr> renameMap = j.renameMap;
-
-					auto system = SkyrimSystemCreator().createSystem(i.npc, j.armorWorn, j.physicsFile, std::move(renameMap));
-
-					if (system)
-					{
-						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
-						j.physics = system;
-					}
-				}
-			}
-
-			i.scanHead();
+			i.reloadMeshes();
 		}
 	}
 
@@ -157,11 +103,11 @@ namespace hdt
 
 		for (auto& i : m_skeletons)
 		{
-			if (i.skeleton->m_uiRefCount > 1)
+			if (i.skeleton->m_uiRefCount != 1)
 			{
 				i.updateAttachedState(playerPosition, m_maxDistance);
 			}
-			else
+			else if (!i.isActiveInScene())
 			{
 				i.detachFromWorld();
 				i.clear();
@@ -368,6 +314,58 @@ namespace hdt
 		}
 	}
 
+	void ActorManager::Skeleton::addArmor(NiNode* armorModel)
+	{
+		auto prefix = generatePrefix(armorModel);
+		npc = getNpcNode(skeleton);
+		auto iter = std::find_if(armors.begin(), armors.end(), [=](Armor& i)
+		{
+			return i.prefix == prefix;
+		});
+		if (iter == armors.end())
+		{
+			armors.push_back(Armor());
+			armors.back().prefix = prefix;
+			iter = armors.end() - 1;
+		}
+		doSkeletonMerge(npc, armorModel, prefix, iter->renameMap);
+		iter->physicsFile = scanBBP(armorModel);
+	}
+
+	void ActorManager::Skeleton::attachArmor(NiNode* armorModel, NiAVObject* attachedNode)
+	{
+		auto prefix = generatePrefix(armorModel);
+		auto iter = std::find_if(armors.begin(), armors.end(), [=](Armor& i)
+		{
+			return i.prefix == prefix;
+		});
+
+		if (iter != armors.end())
+		{
+			iter->armorWorn = attachedNode;
+			std::unordered_map<IDStr, IDStr> renameMap = iter->renameMap;
+
+			if (!isFirstPersonSkeleton(skeleton))
+			{
+				auto system = SkyrimSystemCreator().createSystem(getNpcNode(skeleton), attachedNode, iter->physicsFile,
+					std::move(renameMap));
+
+				if (system)
+				{
+					if (iter->physics && iter->physics->m_world)
+					{
+						iter->physics->m_world->removeSkinnedMeshSystem(iter->physics);
+					}
+					iter->physics = system;
+					if (isAttached)
+					{
+						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
+					}
+				}
+			}
+		}
+	}
+
 	void ActorManager::Skeleton::cleanArmor()
 	{
 		for (auto& i : armors)
@@ -521,14 +519,14 @@ namespace hdt
 
 	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance)
 	{
-		if (isActiveInScene() && playerPosition.has_value())
+		if (isActiveInScene())
 		{
 			if (isPlayerCharacter())
 			{
 				attachToWorld();
 				return;
 			}
-			else
+			else if (playerPosition.has_value())
 			{
 				auto pos = position();
 				if (pos.has_value())
@@ -544,6 +542,35 @@ namespace hdt
 			}
 		}
 		detachFromWorld();
+	}
+
+	void ActorManager::Skeleton::reloadMeshes()
+	{
+		for (auto& i : armors)
+		{
+			if (i.physics && i.physics->m_world)
+			{
+				i.physics->m_world->removeSkinnedMeshSystem(i.physics);
+			}
+			i.physics = nullptr;
+
+			if (!isFirstPersonSkeleton(skeleton))
+			{
+				std::unordered_map<IDStr, IDStr> renameMap = i.renameMap;
+
+				auto system = SkyrimSystemCreator().createSystem(npc, i.armorWorn, i.physicsFile, std::move(renameMap));
+
+				if (system)
+				{
+					if (isAttached)
+					{
+						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
+					}
+					i.physics = system;
+				}
+			}
+		}
+		scanHead();
 	}
 
 	void ActorManager::Skeleton::doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,

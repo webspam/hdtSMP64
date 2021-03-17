@@ -270,7 +270,7 @@ namespace hdt
 			              skelOwner && skelOwner->baseForm ? skelOwner->baseForm->formID : 0x00000000
 			);
 
-			for (auto armor : skeleton.armors)
+			for (auto armor : skeleton.getArmors())
 			{
 				Console_Print("[HDT-SMP] -- tracked armor addon %s, %s",
 				              armor.armorWorn->m_name,
@@ -366,7 +366,7 @@ namespace hdt
 			if (skeleton.isActiveInScene())
 				activeSkeletons++;
 
-			for (const auto armor : skeleton.armors)
+			for (const auto armor : skeleton.getArmors())
 			{
 				armors++;
 
