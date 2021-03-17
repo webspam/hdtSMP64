@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include <LinearMath/btCpuFeatureUtility.h>
+#include <random>
 
 #if defined (BT_ALLOW_SSE4)
 #include <intrin.h>
@@ -172,7 +173,9 @@ namespace hdt
 	                                           btSolverConstraint** end, btSingleConstraintRowSolver s)
 		: SolverTask(A, B), m_begin(begin), m_end(end), m_solver(s)
 	{
-		std::random_shuffle(m_begin, m_end);
+		std::random_device rng;
+		std::mt19937 urng(rng());
+		std::shuffle(m_begin, m_end, urng);
 	}
 
 	void NonContactSolverTask::solve()
@@ -349,7 +352,9 @@ namespace hdt
 			m_contactTasks.push_back(task);
 		}
 
-		std::random_shuffle(m_tasks.begin(), m_tasks.end());
+		std::random_device rng;
+		std::mt19937 urng(rng());
+		std::shuffle(m_tasks.begin(), m_tasks.end(), urng);
 		return ret;
 	}
 
@@ -402,8 +407,10 @@ namespace hdt
 		}
 		else
 		{
-			std::random_shuffle(m_nonContactTasks.begin(), m_nonContactTasks.end());
-			std::random_shuffle(m_contactTasks.begin(), m_contactTasks.end());
+			std::random_device rng;
+			std::mt19937 urng(rng());
+			std::shuffle(m_nonContactTasks.begin(), m_nonContactTasks.end(), urng);
+			std::shuffle(m_contactTasks.begin(), m_contactTasks.end(), urng);
 			concurrency::parallel_for_each(m_nonContactTasks.begin(), m_nonContactTasks.end(),
 			                               [](const SolverTaskPtr& task) { task->solve(); });
 			concurrency::parallel_for_each(m_contactTasks.begin(), m_contactTasks.end(),

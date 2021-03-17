@@ -9,6 +9,7 @@
 #include "HookEvents.h"
 
 #include <mutex>
+#include <optional>
 
 namespace hdt
 {
@@ -56,14 +57,18 @@ namespace hdt
 			Ref<NiNode> npc;
 			std::vector<Armor> armors;
 			Head head;
-			bool hasPos;
-			NiPoint3 pos;
 
 			void cleanArmor();
 			void cleanHead(bool cleanAll = false);
 			void clear();
 
 			bool isActiveInScene() const;
+			bool isPlayerCharacter() const;
+			std::optional<NiPoint3> position() const;
+
+			void attachToWorld();
+			void detachFromWorld();
+			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance);
 
 			void scanHead();
 			void processGeometry(BSFaceGenNiNode* head, BSGeometry* geometry);
@@ -79,6 +84,9 @@ namespace hdt
 			                                std::unordered_map<IDStr, IDStr>& map);
 			static void renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static NiNode* cloneHeadNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
+
+		private:
+			bool isAttached = false;
 		};
 
 		bool m_shutdown = false;

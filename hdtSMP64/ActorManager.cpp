@@ -152,67 +152,23 @@ namespace hdt
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
 
-		bool have_pcPos = false;
-		NiPoint3 pcPos;
-		for (auto& i : m_skeletons)
-		{
-			i.hasPos = false;
-			if (i.npc)
-			{
-				auto rootNode = findNode(i.npc, "NPC Root [Root]");
-				if (rootNode)
-				{
-					i.hasPos = true;
-					i.pos = rootNode->m_worldTransform.pos;
-				}
-			}
-			if (i.skeletonOwner && i.skeletonOwner->formID == 0x14)
-			{
-				have_pcPos = i.hasPos;
-				pcPos = i.pos;
-			}
-		}
+		auto& playerCharacter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& s) { return s.isPlayerCharacter(); });
+		auto playerPosition = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->position();
 
 		for (auto& i : m_skeletons)
 		{
-			auto offset = i.pos - pcPos;
-			auto distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
-			bool tooFar = have_pcPos && i.hasPos && distance2 > m_maxDistance * m_maxDistance;
-
-			if (i.skeleton->m_uiRefCount > 1 && i.isActiveInScene() && !tooFar)
+			if (i.skeleton->m_uiRefCount > 1)
 			{
-				auto world = SkyrimPhysicsWorld::get();
-				for (auto& j : i.armors)
-				{
-					if (j.physics && !j.physics->m_world)
-						world->addSkinnedMeshSystem(j.physics);
-				}
-
-				for (auto& j : i.head.headParts)
-				{
-					if (j.physics && !j.physics->m_world)
-						world->addSkinnedMeshSystem(j.physics);
-				}
+				i.updateAttachedState(playerPosition, m_maxDistance);
 			}
 			else
 			{
-				for (auto& j : i.armors)
-				{
-					if (j.physics && j.physics->m_world)
-						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-				}
-				for (auto& j : i.head.headParts)
-				{
-					if (j.physics && j.physics->m_world)
-						j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-				}
-				if (i.skeleton->m_uiRefCount == 1)
-				{
-					i.clear();
-					i.skeleton = nullptr;
-				}
+				i.detachFromWorld();
+				i.clear();
+				i.skeleton = nullptr;
 			}
 		}
+
 		m_skeletons.erase(
 			std::remove_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& i) { return !i.skeleton; }),
 			m_skeletons.end());
@@ -507,6 +463,88 @@ namespace hdt
 		return skeleton->m_parent && skeleton->m_parent->m_parent && skeleton->m_parent->m_parent->m_parent;
 	}
 
+	bool ActorManager::Skeleton::isPlayerCharacter() const
+	{
+		return skeletonOwner == *g_thePlayer.GetPtr();
+	}
+
+	std::optional<NiPoint3> ActorManager::Skeleton::position() const
+	{
+		if (npc)
+		{
+			auto rootNode = findNode(npc, "NPC Root [Root]");
+			if (rootNode)
+			{
+				return rootNode->m_worldTransform.pos;
+			}
+		}
+		return std::optional<NiPoint3>();
+	}
+
+	void ActorManager::Skeleton::attachToWorld()
+	{
+		if (!isAttached)
+		{
+			auto world = SkyrimPhysicsWorld::get();
+			for (auto& j : armors)
+			{
+				if (j.physics && !j.physics->m_world)
+					world->addSkinnedMeshSystem(j.physics);
+			}
+
+			for (auto& j : head.headParts)
+			{
+				if (j.physics && !j.physics->m_world)
+					world->addSkinnedMeshSystem(j.physics);
+			}
+			isAttached = true;
+		}
+	}
+
+	void ActorManager::Skeleton::detachFromWorld()
+	{
+		if (isAttached)
+		{
+			for (auto& j : armors)
+			{
+				if (j.physics && j.physics->m_world)
+					j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+			}
+			for (auto& j : head.headParts)
+			{
+				if (j.physics && j.physics->m_world)
+					j.physics->m_world->removeSkinnedMeshSystem(j.physics);
+			}
+			isAttached = false;
+		}
+	}
+
+	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance)
+	{
+		if (isActiveInScene() && playerPosition.has_value())
+		{
+			if (isPlayerCharacter())
+			{
+				attachToWorld();
+				return;
+			}
+			else
+			{
+				auto pos = position();
+				if (pos.has_value())
+				{
+					auto offset = pos.value() - playerPosition.value();
+					float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
+					if (distance2 <= maxDistance * maxDistance)
+					{
+						attachToWorld();
+						return;
+					}
+				}
+			}
+		}
+		detachFromWorld();
+	}
 
 	void ActorManager::Skeleton::doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
 	                                                 std::unordered_map<IDStr, IDStr>& map)

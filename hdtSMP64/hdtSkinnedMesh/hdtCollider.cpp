@@ -124,7 +124,7 @@ namespace hdt
 	{
 		if (numCollider)
 		{
-			register Aabb aabb = *this->aabb;
+			Aabb aabb = *this->aabb;
 			auto aabbEnd = this->aabb + numCollider;
 			for (auto i = this->aabb + 1; i < aabbEnd; ++i)
 				aabb.merge(*i);
