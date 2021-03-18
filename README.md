@@ -1,22 +1,23 @@
 # hdtSMP for Skyrim Special Edition
 
-Fork of [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
-
-High Heels plugin has been removed, this repository only contains HDT-SMP.
+Fork of [original code](https://github.com/aers/hdtSMP64) by aers, originally from
+[original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
 ## Changes 
 
-+ build now works with unchanged bullet source
-+ support both "." and "," as decimal seperators in config files
-+ properly remove tracked armors from physics world if the tracked skeleton isn't part of the active scene
-+ write transforms during game pauses, fixes physics appearing to reset while game is paused
-+ reset system on loading screens so there's no brief physics glitches when loading between areas
-+ better pause logic based on reading pause state from menumanager, fixing issues with added menus that don't pause the game (quickloot, VR)
-+ add options for how to handle large rotations
-+ hard-code a skeleton exception for the BenthicLurker skeleton because it is made incorrectly
-+ add a debug command to print some stats to console
-+ removed dependency on hdtSSEFramework and removed it from the repository
-+ rename plugin hdtSMP64 to differentiate from the old version that depends on Framework, and because we can support VR, not just SSE
++ Added distance check in ActorManager to disable NPCs more than a certain distance from the player. This
+  resolves the massive FPS drop in certain cell transitions.
++ Added can-collide-with-bone to mesh definitions, as a natural counterpart to no-collide-with-bone.
++ Added new "external" sharing option, for objects that should collide with other NPCs, but not this one.
++ Significant refactoring of armor handling in ActorManager, to be much stricter about disabling systems and
+  reducing gradual FPS loss. Added workaround for armors with the same prefix, which previously remained
+  permanently attached and could cause slowdowns or crashes.
+
+## Coming soon (maybe)
+
++ Continued refactoring to deal with head parts as well as armors.
++ Reworked tag system for better compartmentalized .xml files.
++ Find out what's wrong with certain SMP hairs in some circumstances?
 
 ## Build Instructions
 
@@ -67,7 +68,7 @@ You will need to add a forward declaration or include for TESObjectREFR in NiObj
 
 hydrogensaysHDT - Creating this plugin
 
-aers - that's me :)
+aers - fixes and improvements
 
 ousnius - some fixes, and "consulting"
 
