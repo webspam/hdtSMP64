@@ -62,7 +62,10 @@ namespace hdt
 
 	void ActorManager::onEvent(const ArmorAttachEvent& e)
 	{
-		if (!findNode(e.skeleton, "NPC")) return;
+		if (!findNode(e.skeleton, "NPC"))
+		{
+			return;
+		}
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
@@ -103,15 +106,15 @@ namespace hdt
 
 		for (auto& i : m_skeletons)
 		{
-			if (i.skeleton->m_uiRefCount != 1)
-			{
-				i.updateAttachedState(playerPosition, m_maxDistance);
-			}
-			else if (!i.isActiveInScene())
+			if (i.skeleton->m_uiRefCount == 1 && !i.isActiveInScene())
 			{
 				i.detachFromWorld();
 				i.clear();
 				i.skeleton = nullptr;
+			}
+			else
+			{
+				i.updateAttachedState(playerPosition, m_maxDistance);
 			}
 		}
 
@@ -144,7 +147,7 @@ namespace hdt
 		if (m_shutdown) return;
 
 		auto& skeleton = getSkeletonData(e.skeleton);
-		skeleton.npc = npc;
+		skeleton.npc = getNpcNode(e.skeleton);
 
 		skeleton.processGeometry(e.headNode, e.geometry);
 
@@ -318,29 +321,30 @@ namespace hdt
 	{
 		auto prefix = generatePrefix(armorModel);
 		npc = getNpcNode(skeleton);
+		auto physicsFile = scanBBP(armorModel);
 		auto iter = std::find_if(armors.begin(), armors.end(), [=](Armor& i)
 		{
 			return i.prefix == prefix;
 		});
-		if (iter == armors.end())
+		if (iter == armors.end() || iter->physicsFile.size())
 		{
 			armors.push_back(Armor());
 			armors.back().prefix = prefix;
 			iter = armors.end() - 1;
 		}
 		doSkeletonMerge(npc, armorModel, prefix, iter->renameMap);
-		iter->physicsFile = scanBBP(armorModel);
+		iter->physicsFile = physicsFile;
 	}
 
 	void ActorManager::Skeleton::attachArmor(NiNode* armorModel, NiAVObject* attachedNode)
 	{
 		auto prefix = generatePrefix(armorModel);
-		auto iter = std::find_if(armors.begin(), armors.end(), [=](Armor& i)
+		auto iter = std::find_if(armors.rbegin(), armors.rend(), [=](Armor& i)
 		{
 			return i.prefix == prefix;
 		});
 
-		if (iter != armors.end())
+		if (iter != armors.rend())
 		{
 			iter->armorWorn = attachedNode;
 			std::unordered_map<IDStr, IDStr> renameMap = iter->renameMap;
@@ -357,7 +361,7 @@ namespace hdt
 						iter->physics->m_world->removeSkinnedMeshSystem(iter->physics);
 					}
 					iter->physics = system;
-					if (isAttached)
+					if (system && isAttached)
 					{
 						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
 					}
@@ -519,29 +523,43 @@ namespace hdt
 
 	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance)
 	{
-		if (isActiveInScene())
+		// Skeletons that aren't active in any scene are always detached.
+		// Player character is always attached.
+		// Otherwise, attach only if both the player character and this skeleton have a position,
+		// and the distance between them is below the threshold value.
+		if (!isActiveInScene())
 		{
-			if (isPlayerCharacter())
+			detachFromWorld();
+		}
+		else if (isPlayerCharacter())
+		{
+			attachToWorld();
+		}
+		else if (playerPosition.has_value())
+		{
+			auto pos = position();
+			if (pos.has_value())
 			{
-				attachToWorld();
-				return;
-			}
-			else if (playerPosition.has_value())
-			{
-				auto pos = position();
-				if (pos.has_value())
+				auto offset = pos.value() - playerPosition.value();
+				float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
+				if (distance2 > maxDistance * maxDistance)
 				{
-					auto offset = pos.value() - playerPosition.value();
-					float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
-					if (distance2 <= maxDistance * maxDistance)
-					{
-						attachToWorld();
-						return;
-					}
+					detachFromWorld();
+				}
+				else
+				{
+					attachToWorld();
 				}
 			}
+			else
+			{
+				detachFromWorld();
+			}
 		}
-		detachFromWorld();
+		else
+		{
+			detachFromWorld();
+		}
 	}
 
 	void ActorManager::Skeleton::reloadMeshes()
