@@ -274,15 +274,15 @@ namespace hdt
 			{
 				Console_Print("[HDT-SMP] -- tracked armor addon %s, %s",
 				              armor.armorWorn->m_name,
-				              armor.physics
-					              ? armor.physics->m_world
+				              armor.state() != ActorManager::e_NoPhysics
+					              ? armor.state() == ActorManager::e_Active
 						                ? "has active physics system"
 						                : "has inactive physics system"
 					              : "has no physics system");
 
-				if (armor.physics)
+				if (armor.state() != ActorManager::e_NoPhysics)
 				{
-					for (auto mesh : armor.physics->meshes())
+					for (auto mesh : armor.meshes())
 						Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
 				}
 			}
@@ -370,11 +370,11 @@ namespace hdt
 			{
 				armors++;
 
-				if (armor.physics && armor.physics->m_world)
+				if (armor.state() == ActorManager::e_Active)
 				{
 					activeArmors++;
 
-					activeCollisionMeshes += armor.physics->meshes().size();
+					activeCollisionMeshes += armor.meshes().size();
 				}
 			}
 

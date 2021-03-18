@@ -20,15 +20,40 @@ namespace hdt
 		  , public IEventListener<FrameEvent>
 		  , public IEventListener<ShutdownEvent>
 	{
+	public:
+
+		enum PhysicsState
+		{
+			e_NoPhysics,
+			e_Inactive,
+			e_Active
+		};
+
 	protected:
+		struct Skeleton;
+
+		struct PhysicsItem
+		{
+			std::string physicsFile;
+
+			void setPhysics(Ref<SkyrimSystem>& system, bool active);
+			void clearPhysics();
+			PhysicsState state() const;
+
+			const std::vector<Ref<SkinnedMeshBody>>& meshes() const;
+
+			void updateActive(bool active);
+		private:
+			Ref<SkyrimSystem> m_physics;
+		};
+
 		struct Head
 		{
-			struct HeadPart
+			struct HeadPart : public PhysicsItem
 			{
 				Ref<BSGeometry> headPart;
 				Ref<NiNode> origPartRootNode;
 				std::string physicsFile;
-				Ref<SkyrimSystem> physics;
 				std::set<IDStr> renamedBonesInUse;
 			};
 
@@ -41,13 +66,11 @@ namespace hdt
 			bool isFullSkinning;
 		};
 
-		struct Armor
+		struct Armor : public PhysicsItem
 		{
 			Ref<IString> prefix;
 			Ref<NiAVObject> armorWorn;
 			std::unordered_map<IDStr, IDStr> renameMap;
-			std::string physicsFile;
-			Ref<SkyrimSystem> physics;
 		};
 
 		struct Skeleton
@@ -68,8 +91,6 @@ namespace hdt
 			bool isPlayerCharacter() const;
 			std::optional<NiPoint3> position() const;
 
-			void attachToWorld();
-			void detachFromWorld();
 			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance);
 			void reloadMeshes();
 
@@ -91,7 +112,7 @@ namespace hdt
 			const std::vector<Armor>& getArmors() { return armors; }
 
 		private:
-			bool isAttached = false;
+			bool isActive = false;
 			std::vector<Armor> armors;
 		};
 

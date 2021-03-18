@@ -108,7 +108,6 @@ namespace hdt
 		{
 			if (i.skeleton->m_uiRefCount == 1 && !i.isActiveInScene())
 			{
-				i.detachFromWorld();
 				i.clear();
 				i.skeleton = nullptr;
 			}
@@ -206,6 +205,47 @@ namespace hdt
 		else
 		{
 			skeleton.head.isFullSkinning = true;
+		}
+	}
+
+	void ActorManager::PhysicsItem::setPhysics(Ref<SkyrimSystem>& system, bool active)
+	{
+		clearPhysics();
+		m_physics = system;
+		if (active)
+		{
+			SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(m_physics);
+		}
+	}
+
+	void ActorManager::PhysicsItem::clearPhysics()
+	{
+		if (state() == e_Active)
+		{
+			m_physics->m_world->removeSkinnedMeshSystem(m_physics);
+		}
+		m_physics = nullptr;
+	}
+
+	ActorManager::PhysicsState ActorManager::PhysicsItem::state() const
+	{
+		return m_physics ? (m_physics->m_world ? e_Active : e_Inactive) : e_NoPhysics;
+	}
+
+	const std::vector<Ref<SkinnedMeshBody>>& ActorManager::PhysicsItem::meshes() const
+	{
+		return m_physics->meshes();
+	}
+
+	void ActorManager::PhysicsItem::updateActive(bool active)
+	{
+		if (active && state() == e_Inactive)
+		{
+			SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(m_physics);
+		}
+		else if (!active && state() == e_Active)
+		{
+			m_physics->m_world->removeSkinnedMeshSystem(m_physics);
 		}
 	}
 
@@ -356,15 +396,7 @@ namespace hdt
 
 				if (system)
 				{
-					if (iter->physics && iter->physics->m_world)
-					{
-						iter->physics->m_world->removeSkinnedMeshSystem(iter->physics);
-					}
-					iter->physics = system;
-					if (system && isAttached)
-					{
-						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
-					}
+					iter->setPhysics(system, isActive);
 				}
 			}
 		}
@@ -377,7 +409,7 @@ namespace hdt
 			if (!i.armorWorn) continue;
 			if (i.armorWorn->m_parent) continue;
 
-			SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(i.physics);
+			i.clearPhysics();
 			if (npc) doSkeletonClean(npc, i.prefix);
 			i.prefix = nullptr;
 		}
@@ -437,9 +469,7 @@ namespace hdt
 
 				headPart.headPart = nullptr;
 				headPart.origPartRootNode = nullptr;
-				if (headPart.physics)
-					SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
-				headPart.physics = nullptr;
+				headPart.clearPhysics();
 				headPart.renamedBonesInUse.clear();
 			}
 		}
@@ -450,6 +480,7 @@ namespace hdt
 
 	void ActorManager::Skeleton::clear()
 	{
+		std::for_each(armors.begin(), armors.end(), [](Armor& armor) { armor.clearPhysics(); });
 		SkyrimPhysicsWorld::get()->removeSystemByNode(npc);
 		cleanHead();
 		head.headParts.clear();
@@ -483,94 +514,44 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::attachToWorld()
-	{
-		if (!isAttached)
-		{
-			auto world = SkyrimPhysicsWorld::get();
-			for (auto& j : armors)
-			{
-				if (j.physics && !j.physics->m_world)
-					world->addSkinnedMeshSystem(j.physics);
-			}
-
-			for (auto& j : head.headParts)
-			{
-				if (j.physics && !j.physics->m_world)
-					world->addSkinnedMeshSystem(j.physics);
-			}
-			isAttached = true;
-		}
-	}
-
-	void ActorManager::Skeleton::detachFromWorld()
-	{
-		if (isAttached)
-		{
-			for (auto& j : armors)
-			{
-				if (j.physics && j.physics->m_world)
-					j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-			}
-			for (auto& j : head.headParts)
-			{
-				if (j.physics && j.physics->m_world)
-					j.physics->m_world->removeSkinnedMeshSystem(j.physics);
-			}
-			isAttached = false;
-		}
-	}
-
 	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance)
 	{
 		// Skeletons that aren't active in any scene are always detached.
 		// Player character is always attached.
 		// Otherwise, attach only if both the player character and this skeleton have a position,
 		// and the distance between them is below the threshold value.
-		if (!isActiveInScene())
+		isActive = false;
+
+		if (isActiveInScene())
 		{
-			detachFromWorld();
-		}
-		else if (isPlayerCharacter())
-		{
-			attachToWorld();
-		}
-		else if (playerPosition.has_value())
-		{
-			auto pos = position();
-			if (pos.has_value())
+			if (isPlayerCharacter())
 			{
-				auto offset = pos.value() - playerPosition.value();
-				float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
-				if (distance2 > maxDistance * maxDistance)
+				isActive = true;
+			}
+			else if (playerPosition.has_value())
+			{
+				auto pos = position();
+				if (pos.has_value())
 				{
-					detachFromWorld();
-				}
-				else
-				{
-					attachToWorld();
+					auto offset = pos.value() - playerPosition.value();
+					float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
+					if (distance2 <= maxDistance * maxDistance)
+					{
+						isActive = true;
+					}
 				}
 			}
-			else
-			{
-				detachFromWorld();
-			}
 		}
-		else
-		{
-			detachFromWorld();
-		}
+
+		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.updateActive(isActive); });
+		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.updateActive(isActive); });
 	}
 
 	void ActorManager::Skeleton::reloadMeshes()
 	{
 		for (auto& i : armors)
 		{
-			if (i.physics && i.physics->m_world)
-			{
-				i.physics->m_world->removeSkinnedMeshSystem(i.physics);
-			}
-			i.physics = nullptr;
+			i.clearPhysics();
 
 			if (!isFirstPersonSkeleton(skeleton))
 			{
@@ -580,11 +561,7 @@ namespace hdt
 
 				if (system)
 				{
-					if (isAttached)
-					{
-						SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
-					}
-					i.physics = system;
+					i.setPhysics(system, isActive);
 				}
 			}
 		}
@@ -675,9 +652,7 @@ namespace hdt
 		for (auto& headPart : this->head.headParts)
 		{
 			// always regen physics for all head parts
-			if (headPart.physics)
-				SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
-			headPart.physics = nullptr;
+			headPart.clearPhysics();
 
 			if (headPart.physicsFile.empty())
 			{
@@ -703,8 +678,7 @@ namespace hdt
 			if (system)
 			{
 				_DMESSAGE("success");
-				SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(system);
-				headPart.physics = system;
+				headPart.setPhysics(system, isActive);
 			}
 		}
 	}
@@ -719,9 +693,7 @@ namespace hdt
 			_DMESSAGE("completely new head attached to skeleton, clearing tracking");
 			for (auto& headPart : this->head.headParts)
 			{
-				if (headPart.physics)
-					SkyrimPhysicsWorld::get()->removeSkinnedMeshSystem(headPart.physics);
-				headPart.physics = nullptr;
+				headPart.clearPhysics();
 				headPart.headPart = nullptr;
 				headPart.origPartRootNode = nullptr;
 			}
@@ -758,7 +730,7 @@ namespace hdt
 		this->head.headParts.push_back(Head::HeadPart());
 
 		head.headParts.back().headPart = geometry;
-		head.headParts.back().physics = nullptr;
+		head.headParts.back().clearPhysics();
 
 		// Skinning
 		_DMESSAGE("skinning geometry to skeleton");		
