@@ -26,10 +26,17 @@ namespace hdt
 		return &s;
 	}
 
-	IDStr ActorManager::generatePrefix(NiAVObject* armor)
+	IDStr ActorManager::armorPrefix(ActorManager::IDType id)
 	{
 		char buffer[128];
-		sprintf_s(buffer, "hdtSSEPhysics_AutoRename_%016llX ", (uintptr_t)armor);
+		sprintf_s(buffer, "hdtSSEPhysics_AutoRename_Armor_%08X ", id);
+		return IDStr(buffer);
+	}
+
+	IDStr ActorManager::headPrefix(ActorManager::IDType id)
+	{
+		char buffer[128];
+		sprintf_s(buffer, "hdtSSEPhysics_AutoRename_Head_%08X ", id);
 		return IDStr(buffer);
 	}
 
@@ -358,14 +365,7 @@ namespace hdt
 
 			if (child->m_name && !strncmp(child->m_name, prefix->cstr(), prefix->size()))
 			{
-				if (child->m_uiRefCount > 1)
-				{
-					_MESSAGE("Not removing bone %s with %d outstanding references", child->m_name, child->m_uiRefCount - 1);
-				}
-				else
-				{
-					dst->RemoveAt(i++);
-				}
+				dst->RemoveAt(i++);
 			}
 			else
 			{
@@ -376,45 +376,38 @@ namespace hdt
 
 	void ActorManager::Skeleton::addArmor(NiNode* armorModel)
 	{
-		auto prefix = generatePrefix(armorModel);
+		IDType id = armors.size() ? armors.back().id + 1 : 0;
+		auto prefix = armorPrefix(id);
 		npc = getNpcNode(skeleton);
 		auto physicsFile = scanBBP(armorModel);
-		auto iter = std::find_if(armors.begin(), armors.end(), [=](Armor& i)
-		{
-			return i.prefix == prefix;
-		});
-		if (iter == armors.end() || iter->physicsFile.size())
-		{
-			armors.push_back(Armor());
-			armors.back().prefix = prefix;
-			iter = armors.end() - 1;
-		}
-		doSkeletonMerge(npc, armorModel, prefix, iter->renameMap);
-		iter->physicsFile = physicsFile;
+
+		armors.push_back(Armor());
+		armors.back().id = id;
+		armors.back().prefix = prefix;
+		armors.back().physicsFile = physicsFile;
+
+		doSkeletonMerge(npc, armorModel, prefix, armors.back().renameMap);
 	}
 
 	void ActorManager::Skeleton::attachArmor(NiNode* armorModel, NiAVObject* attachedNode)
 	{
-		auto prefix = generatePrefix(armorModel);
-		auto iter = std::find_if(armors.rbegin(), armors.rend(), [=](Armor& i)
+		if (armors.size() == 0 || armors.back().hasPhysics())
 		{
-			return i.prefix == prefix;
-		});
+			_MESSAGE("Not attaching armor - no record or physics already exists");
+		}
+		Armor& armor = armors.back();
 
-		if (iter != armors.rend())
+		armor.armorWorn = attachedNode;
+		std::unordered_map<IDStr, IDStr> renameMap = armor.renameMap;
+
+		if (!isFirstPersonSkeleton(skeleton))
 		{
-			iter->armorWorn = attachedNode;
-			std::unordered_map<IDStr, IDStr> renameMap = iter->renameMap;
+			auto system = SkyrimSystemCreator().createSystem(getNpcNode(skeleton), attachedNode, armor.physicsFile,
+				std::move(renameMap));
 
-			if (!isFirstPersonSkeleton(skeleton))
+			if (system)
 			{
-				auto system = SkyrimSystemCreator().createSystem(getNpcNode(skeleton), attachedNode, iter->physicsFile,
-					std::move(renameMap));
-
-				if (system)
-				{
-					iter->setPhysics(system, isActive);
-				}
+				armor.setPhysics(system, isActive);
 			}
 		}
 	}
@@ -675,7 +668,8 @@ namespace hdt
 		cleanHead();
 
 		this->head.headNode = headNode;
-		this->head.prefix = generatePrefix(headNode);
+		++this->head.id;
+		this->head.prefix = headPrefix(this->head.id);
 
 		auto it = std::find_if(this->head.headParts.begin(), this->head.headParts.end(),
 		                       [geometry](const Head::HeadPart& p)

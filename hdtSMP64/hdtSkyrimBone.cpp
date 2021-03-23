@@ -23,10 +23,6 @@ namespace hdt
 
 	void SkyrimBone::readTransform(float timeStep)
 	{
-		if (m_node->m_uiRefCount == 1)
-		{
-			_MESSAGE("Orphaned bone %s no longer in skeleton", m_node->m_name);
-		}
 		auto oldScale = m_currentTransform.getScale();
 		m_currentTransform = convertNi(m_node->m_worldTransform);
 		auto newScale = m_currentTransform.getScale();

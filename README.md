@@ -9,13 +9,12 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
   resolves the massive FPS drop in certain cell transitions (such as Blue Palace -> Solitude).
 + Added can-collide-with-bone to mesh definitions, as a natural counterpart to no-collide-with-bone.
 + Added new "external" sharing option, for objects that should collide with other NPCs, but not this one.
+  Good for defining the whole body as a collision mesh for interactions between characters.
 + Significant refactoring of armor handling in ActorManager, to be much stricter about disabling systems and
   reducing gradual FPS loss. Added workaround for armors with the same prefix, which previously remained
   permanently attached and could cause slowdowns or crashes.
-+ SkyrimBone now keeps a proper reference to its underlying node, which prevents a bug when an NPC with
-  active physics had their equipment changed. This was most noticeable when changing costumes on characters
-  with short SMP hairs. Combined with an extra check on reference count before removing bones from the
-  skeleton, this seems to fix things.
++ Changed prefix mechanism to use a simple incrementing value instead of trying to use pointers to objects.
+  Previously this could lead to prefix collisions with a variety of weird effects and occasional crashes.
 + Skeletons should remain active as long as they are in the same cell as (and close enough to) the player
   character. Resolves an issue where entering the Ancestor Glade often incorrectly marked skeletons as
   inactive and disabled physics.
@@ -32,9 +31,9 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 + Several options, including shape and collision definitions on bones, exist but don't seem to do anything.
 + Sphere-triangle collision check without penetration defined is obviously wrong, but fixing the test
   doesn't improve things. Needs further investigation.
-+ Several issues have a real root cause of the same prefix being created for different armors. The
-  workarounds I've added are generally good defensive programming, but the actual prefix collision issue
-  still remains.
++ Smp reset doesn't reload meshes correctly for some items (observed with Artesian Cloaks of Skyrim).
+  Suspect references to the original triangle meshes are being dropped when they're no longer needed. We
+  could keep ownership of the meshes, but it seems pretty marginal and a waste of memory.
 + Probably any open bug listed on Nexus that isn't resolved in changes, above. This list only contains
   issues I have personally verified.
 

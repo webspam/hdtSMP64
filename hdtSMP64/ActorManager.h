@@ -20,6 +20,8 @@ namespace hdt
 		  , public IEventListener<FrameEvent>
 		  , public IEventListener<ShutdownEvent>
 	{
+		using IDType = UInt32;
+
 	public:
 
 		enum ItemState
@@ -49,6 +51,7 @@ namespace hdt
 
 			void setPhysics(Ref<SkyrimSystem>& system, bool active);
 			void clearPhysics();
+			bool hasPhysics() const { return m_physics; }
 			ItemState state() const;
 
 			const std::vector<Ref<SkinnedMeshBody>>& meshes() const;
@@ -68,6 +71,7 @@ namespace hdt
 				std::set<IDStr> renamedBonesInUse;
 			};
 
+			IDType id;
 			Ref<IString> prefix;
 			Ref<BSFaceGenNiNode> headNode;
 			Ref<BSFadeNode> npcFaceGeomNode;
@@ -79,6 +83,7 @@ namespace hdt
 
 		struct Armor : public PhysicsItem
 		{
+			IDType id;
 			Ref<IString> prefix;
 			Ref<NiAVObject> armorWorn;
 			std::unordered_map<IDStr, IDStr> renameMap;
@@ -136,7 +141,9 @@ namespace hdt
 		~ActorManager();
 
 		static ActorManager* instance();
-		static IDStr generatePrefix(NiAVObject* armor);
+
+		static IDStr armorPrefix(IDType id);
+		static IDStr headPrefix(IDType id);
 
 		void onEvent(const ArmorAttachEvent& e) override;
 		void onEvent(const FrameEvent& e) override;
