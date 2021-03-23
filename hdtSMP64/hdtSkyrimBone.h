@@ -16,6 +16,6 @@ namespace hdt
 		void writeTransform() override;
 
 		int m_depth;
-		NiNode* m_node;
+		Ref<NiNode> m_node;
 	};
 }
