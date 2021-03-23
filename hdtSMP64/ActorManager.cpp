@@ -228,7 +228,7 @@ namespace hdt
 		m_physics = nullptr;
 	}
 
-	ActorManager::PhysicsState ActorManager::PhysicsItem::state() const
+	ActorManager::ItemState ActorManager::PhysicsItem::state() const
 	{
 		return m_physics ? (m_physics->m_world ? e_Active : e_Inactive) : e_NoPhysics;
 	}
@@ -523,23 +523,30 @@ namespace hdt
 		// Otherwise, attach only if both the player character and this skeleton have a position,
 		// and the distance between them is below the threshold value.
 		isActive = false;
+		state = e_InactiveNotInScene;
 
 		if (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell)
 		{
 			if (isPlayerCharacter())
 			{
 				isActive = true;
+				state = e_ActiveIsPlayer;
 			}
-			else if (playerPosition.has_value())
+			else
 			{
-				auto pos = position();
-				if (pos.has_value())
+				state = e_InactiveTooFar;
+				if (playerPosition.has_value())
 				{
-					auto offset = pos.value() - playerPosition.value();
-					float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
-					if (distance2 <= maxDistance * maxDistance)
+					auto pos = position();
+					if (pos.has_value())
 					{
-						isActive = true;
+						auto offset = pos.value() - playerPosition.value();
+						float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
+						if (distance2 <= maxDistance * maxDistance)
+						{
+							isActive = true;
+							state = e_ActiveNearPlayer;
+						}
 					}
 				}
 			}
@@ -547,6 +554,8 @@ namespace hdt
 
 		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.updateActive(isActive); });
 		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.updateActive(isActive); });
+
+
 	}
 
 	void ActorManager::Skeleton::reloadMeshes()

@@ -22,11 +22,22 @@ namespace hdt
 	{
 	public:
 
-		enum PhysicsState
+		enum ItemState
 		{
 			e_NoPhysics,
 			e_Inactive,
 			e_Active
+		};
+
+		// Overall skeleton state, purely for console debug info
+		enum SkeletonState
+		{
+			// Note order: inactive states must come before e_SkeletonActive, and active states after
+			e_InactiveNotInScene,
+			e_InactiveTooFar,
+			e_SkeletonActive,
+			e_ActiveNearPlayer,
+			e_ActiveIsPlayer
 		};
 
 	private:
@@ -38,7 +49,7 @@ namespace hdt
 
 			void setPhysics(Ref<SkyrimSystem>& system, bool active);
 			void clearPhysics();
-			PhysicsState state() const;
+			ItemState state() const;
 
 			const std::vector<Ref<SkinnedMeshBody>>& meshes() const;
 
@@ -79,6 +90,7 @@ namespace hdt
 			Ref<NiNode> skeleton;
 			Ref<NiNode> npc;
 			Head head;
+			SkeletonState state;
 
 			void addArmor(NiNode* armorModel);
 			void attachArmor(NiNode* armorModel, NiAVObject* attachedNode);
@@ -87,7 +99,6 @@ namespace hdt
 			void cleanHead(bool cleanAll = false);
 			void clear();
 
-			bool isActiveInScene() const;
 			bool isPlayerCharacter() const;
 			std::optional<NiPoint3> position() const;
 
@@ -112,6 +123,8 @@ namespace hdt
 			const std::vector<Armor>& getArmors() { return armors; }
 
 		private:
+			bool isActiveInScene() const;
+
 			bool isActive = false;
 			std::vector<Armor> armors;
 		};

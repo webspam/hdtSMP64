@@ -12,6 +12,8 @@
 #include "Hooks.h"
 #include "HookEvents.h"
 
+#include <numeric>
+
 #include <shlobj_core.h>
 #include "skse64/GameRTTI.h"
 #include "skse64_common/BranchTrampoline.h"
@@ -247,12 +249,23 @@ namespace hdt
 		}
 	}
 
-	void SMPDebug_PrintDetailed()
+	void SMPDebug_PrintDetailed(bool includeItems)
 	{
-		auto skeletons = ActorManager::instance()->getSkeletons();
+		static std::map<ActorManager::SkeletonState, char*> stateStrings =
+		{ { ActorManager::e_InactiveNotInScene, "Not in scene"},
+			{ActorManager::e_InactiveTooFar, "Too far from player"},
+			{ActorManager::e_ActiveIsPlayer, "Is player character"},
+			{ActorManager::e_ActiveNearPlayer, "Is near player"} };
 
-		for (auto skeleton : skeletons)
+		auto skeletons = ActorManager::instance()->getSkeletons();
+		std::vector<int>order(skeletons.size());
+		std::iota(order.begin(), order.end(), 0);
+		std::sort(order.begin(), order.end(), [&](int a, int b) { return skeletons[a].state < skeletons[b].state; });
+
+		for (int i : order)
 		{
+			auto& skeleton = skeletons[i];
+
 			TESObjectREFR* skelOwner = nullptr;
 			TESFullName* ownerName = nullptr;
 
@@ -263,49 +276,54 @@ namespace hdt
 					ownerName = DYNAMIC_CAST(skelOwner->baseForm, TESForm, TESFullName);
 			}
 
-			Console_Print("[HDT-SMP] %s skeleton - owner %s (refr formid %08x, base formid %08x)",
-			              skeleton.isActiveInScene() ? "active" : "inactive",
+			Console_Print("[HDT-SMP] %s skeleton - owner %s (refr formid %08x, base formid %08x) - %s",
+			              skeleton.state > ActorManager::e_SkeletonActive ? "active" : "inactive",
 			              ownerName ? ownerName->GetName() : "unk_name",
 			              skelOwner ? skelOwner->formID : 0x00000000,
-			              skelOwner && skelOwner->baseForm ? skelOwner->baseForm->formID : 0x00000000
+			              skelOwner && skelOwner->baseForm ? skelOwner->baseForm->formID : 0x00000000,
+			              stateStrings[skeleton.state]
 			);
 
-			for (auto armor : skeleton.getArmors())
+			if (includeItems)
 			{
-				Console_Print("[HDT-SMP] -- tracked armor addon %s, %s",
-				              armor.armorWorn->m_name,
-				              armor.state() != ActorManager::e_NoPhysics
-					              ? armor.state() == ActorManager::e_Active
-						                ? "has active physics system"
-						                : "has inactive physics system"
-					              : "has no physics system");
-
-				if (armor.state() != ActorManager::e_NoPhysics)
+				for (auto armor : skeleton.getArmors())
 				{
-					for (auto mesh : armor.meshes())
-						Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
-				}
-			}
+					Console_Print("[HDT-SMP] -- tracked armor addon %s, %s",
+						armor.armorWorn->m_name,
+						armor.state() != ActorManager::e_NoPhysics
+						? armor.state() == ActorManager::e_Active
+						? "has active physics system"
+						: "has inactive physics system"
+						: "has no physics system");
 
-			if (skeleton.head.headNode)
-			{
-				for (auto headPart : skeleton.head.headParts)
-				{
-					Console_Print("[HDT-SMP] -- tracked headpart %s, %s",
-					              headPart.headPart->m_name,
-					              headPart.state() != ActorManager::e_NoPhysics
-						              ? headPart.state() == ActorManager::e_Active
-							                ? "has active physics system"
-							                : "has inactive physics system"
-						              : "has no physics system");
-
-					if (headPart.state() != ActorManager::e_NoPhysics)
+					if (armor.state() != ActorManager::e_NoPhysics)
 					{
-						for (auto mesh : headPart.meshes())
+						for (auto mesh : armor.meshes())
 							Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
 					}
 				}
+
+				if (skeleton.head.headNode)
+				{
+					for (auto headPart : skeleton.head.headParts)
+					{
+						Console_Print("[HDT-SMP] -- tracked headpart %s, %s",
+							headPart.headPart->m_name,
+							headPart.state() != ActorManager::e_NoPhysics
+							? headPart.state() == ActorManager::e_Active
+							? "has active physics system"
+							: "has inactive physics system"
+							: "has no physics system");
+
+						if (headPart.state() != ActorManager::e_NoPhysics)
+						{
+							for (auto mesh : headPart.meshes())
+								Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
+						}
+					}
+				}
 			}
+
 		}
 	}
 
@@ -348,7 +366,12 @@ namespace hdt
 		}
 		if (_strnicmp(buffer, "detail", MAX_PATH) == 0)
 		{
-			SMPDebug_PrintDetailed();
+			SMPDebug_PrintDetailed(true);
+			return true;
+		}
+		if(_strnicmp(buffer, "list", MAX_PATH) == 0)
+		{
+			SMPDebug_PrintDetailed(false);
 			return true;
 		}
 
@@ -363,7 +386,7 @@ namespace hdt
 
 		for (auto skeleton : skeletons)
 		{
-			if (skeleton.isActiveInScene())
+			if (skeleton.state > ActorManager::e_SkeletonActive)
 				activeSkeletons++;
 
 			for (const auto armor : skeleton.getArmors())

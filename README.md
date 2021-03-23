@@ -27,6 +27,8 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 ## Known issues
 
 + Several options, including shape and collision definitions on bones, exist but don't seem to do anything.
++ Sphere-triangle collision check without penetration defined is obviously wrong, but fixing the test
+  doesn't improve things. Needs further investigation.
 
 ## Build Instructions
 
