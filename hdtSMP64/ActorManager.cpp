@@ -103,17 +103,18 @@ namespace hdt
 
 		auto& playerCharacter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& s) { return s.isPlayerCharacter(); });
 		auto playerPosition = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->position();
+		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
 		for (auto& i : m_skeletons)
 		{
-			if (i.skeleton->m_uiRefCount == 1 && !i.isActiveInScene())
+			if (i.skeleton->m_uiRefCount == 1)
 			{
 				i.clear();
 				i.skeleton = nullptr;
 			}
 			else
 			{
-				i.updateAttachedState(playerPosition, m_maxDistance);
+				i.updateAttachedState(playerPosition, m_maxDistance, playerCell);
 			}
 		}
 
@@ -514,15 +515,16 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance)
+	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell)
 	{
-		// Skeletons that aren't active in any scene are always detached.
+		// Skeletons that aren't active in any scene are always detached, unless they are in the
+		// same cell as the player character (workaround for issue in Ancestor Glade).
 		// Player character is always attached.
 		// Otherwise, attach only if both the player character and this skeleton have a position,
 		// and the distance between them is below the threshold value.
 		isActive = false;
 
-		if (isActiveInScene())
+		if (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell)
 		{
 			if (isPlayerCharacter())
 			{

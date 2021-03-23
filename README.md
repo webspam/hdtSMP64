@@ -1,12 +1,12 @@
 # hdtSMP for Skyrim Special Edition
 
-Fork of [version](https://github.com/aers/hdtSMP64) by aers, originally from
+Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
 ## Changes 
 
 + Added distance check in ActorManager to disable NPCs more than a certain distance from the player. This
-  resolves the massive FPS drop in certain cell transitions.
+  resolves the massive FPS drop in certain cell transitions (such as Blue Palace -> Solitude).
 + Added can-collide-with-bone to mesh definitions, as a natural counterpart to no-collide-with-bone.
 + Added new "external" sharing option, for objects that should collide with other NPCs, but not this one.
 + Significant refactoring of armor handling in ActorManager, to be much stricter about disabling systems and
@@ -14,11 +14,19 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, originally from
   permanently attached and could cause slowdowns or crashes.
 + SkyrimBone now keeps a proper reference to its underlying node, which prevents a bug when an NPC with
   active physics had their equipment changed. This was most noticeable when changing costumes on characters
-  with certain SMP hairs.
+  with short SMP hairs.
++ Skeletons should remain active as long as they are in the same cell as (and close enough to) the player
+  character. Resolves an issue where entering the Ancestor Glade often incorrectly marked skeletons as
+  inactive and disabled physics.
 
 ## Coming soon (maybe)
 
 + Reworked tag system for better compartmentalized .xml files.
++ More parallelism on collision checking.
+
+## Known issues
+
++ Several options, including shape and collision definitions on bones, exist but don't seem to do anything.
 
 ## Build Instructions
 

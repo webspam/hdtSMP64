@@ -29,7 +29,7 @@ namespace hdt
 			e_Active
 		};
 
-	protected:
+	private:
 		struct Skeleton;
 
 		struct PhysicsItem
@@ -91,7 +91,7 @@ namespace hdt
 			bool isPlayerCharacter() const;
 			std::optional<NiPoint3> position() const;
 
-			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance);
+			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell);
 			void reloadMeshes();
 
 			void scanHead();
@@ -119,6 +119,8 @@ namespace hdt
 		bool m_shutdown = false;
 		std::recursive_mutex m_lock;
 		std::vector<Skeleton> m_skeletons;
+
+
 
 		Skeleton& getSkeletonData(NiNode* skeleton);
 
