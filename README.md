@@ -1,6 +1,6 @@
 # hdtSMP for Skyrim Special Edition
 
-Fork of [original code](https://github.com/aers/hdtSMP64) by aers, originally from
+Fork of [version](https://github.com/aers/hdtSMP64) by aers, originally from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
 ## Changes 
@@ -12,12 +12,13 @@ Fork of [original code](https://github.com/aers/hdtSMP64) by aers, originally fr
 + Significant refactoring of armor handling in ActorManager, to be much stricter about disabling systems and
   reducing gradual FPS loss. Added workaround for armors with the same prefix, which previously remained
   permanently attached and could cause slowdowns or crashes.
++ SkyrimBone now keeps a proper reference to its underlying node, which prevents a bug when an NPC with
+  active physics had their equipment changed. This was most noticeable when changing costumes on characters
+  with certain SMP hairs.
 
 ## Coming soon (maybe)
 
-+ Continued refactoring to deal with head parts as well as armors.
 + Reworked tag system for better compartmentalized .xml files.
-+ Find out what's wrong with certain SMP hairs in some circumstances?
 
 ## Build Instructions
 
