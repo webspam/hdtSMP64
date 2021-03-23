@@ -293,15 +293,15 @@ namespace hdt
 				{
 					Console_Print("[HDT-SMP] -- tracked headpart %s, %s",
 					              headPart.headPart->m_name,
-					              headPart.physics
-						              ? headPart.physics->m_world
+					              headPart.state() != ActorManager::e_NoPhysics
+						              ? headPart.state() == ActorManager::e_Active
 							                ? "has active physics system"
 							                : "has inactive physics system"
 						              : "has no physics system");
 
-					if (headPart.physics)
+					if (headPart.state() != ActorManager::e_NoPhysics)
 					{
-						for (auto mesh : headPart.physics->meshes())
+						for (auto mesh : headPart.meshes())
 							Console_Print("[HDT-SMP] ---- has collision mesh %s", mesh->m_name->cstr());
 					}
 				}
@@ -384,11 +384,11 @@ namespace hdt
 				{
 					headParts++;
 
-					if (headpart.physics && headpart.physics->m_world)
+					if (headpart.state() == ActorManager::e_Active)
 					{
 						activeHeadParts++;
 
-						activeCollisionMeshes += headpart.physics->meshes().size();
+						activeCollisionMeshes += headpart.meshes().size();
 					}
 				}
 			}
