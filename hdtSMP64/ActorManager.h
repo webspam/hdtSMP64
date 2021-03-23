@@ -114,12 +114,6 @@ namespace hdt
 			static NiNode* cloneNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static void renameTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 
-			// TODO: refactor this is just to get it working for now
-			static void doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
-			                                std::unordered_map<IDStr, IDStr>& map);
-			static void renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
-			static NiNode* cloneHeadNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
-
 			const std::vector<Armor>& getArmors() { return armors; }
 
 		private:

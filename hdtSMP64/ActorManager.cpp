@@ -297,6 +297,14 @@ namespace hdt
 				continue;
 			}
 
+			// FIXME: This was previously only in doHeadSkeletonMerge.
+			// But surely non-head skeletons wouldn't have this anyway?
+			if (!strcmp(srcChild->m_name, "BSFaceGenNiNodeSkinned"))
+			{
+				_DMESSAGE("skipping facegen ninode in skeleton merge");
+				continue;
+			}
+
 			auto dstChild = findNode(dst, srcChild->m_name);
 			if (dstChild)
 			{
@@ -315,6 +323,7 @@ namespace hdt
 		auto ret = static_cast<NiNode*>(src->CreateClone(c));
 		src->ProcessClone(&c);
 
+		// FIXME: cloneHeadNodeTree just did this for ret, not both. Don't know if that matters. Armor parts need it on both.
 		renameTree(src, prefix, map);
 		renameTree(ret, prefix, map);
 
@@ -349,7 +358,14 @@ namespace hdt
 
 			if (child->m_name && !strncmp(child->m_name, prefix->cstr(), prefix->size()))
 			{
-				dst->RemoveAt(i++);
+				if (child->m_uiRefCount > 1)
+				{
+					_MESSAGE("Not removing bone %s with %d outstanding references", child->m_name, child->m_uiRefCount - 1);
+				}
+				else
+				{
+					dst->RemoveAt(i++);
+				}
 			}
 			else
 			{
@@ -577,71 +593,6 @@ namespace hdt
 			}
 		}
 		scanHead();
-	}
-
-	void ActorManager::Skeleton::doHeadSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
-	                                                 std::unordered_map<IDStr, IDStr>& map)
-	{
-		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
-		{
-			auto srcChild = castNiNode(src->m_children.m_data[i]);
-			if (!srcChild) continue;
-
-			if (!srcChild->m_name)
-			{
-				doHeadSkeletonMerge(dst, srcChild, prefix, map);
-				continue;
-			}
-
-			if (!strcmp(srcChild->m_name, "BSFaceGenNiNodeSkinned"))
-			{
-				_DMESSAGE("skipping facegen ninode in skeleton merge");
-				continue;
-			}
-
-			auto dstChild = findNode(dst, srcChild->m_name);
-			if (dstChild)
-			{
-				doHeadSkeletonMerge(dstChild, srcChild, prefix, map);
-			}
-			else
-			{
-				dst->AttachChild(cloneHeadNodeTree(srcChild, prefix, map), false);
-			}
-		}
-	}
-
-	NiNode* ActorManager::Skeleton::cloneHeadNodeTree(NiNode* src, IString* prefix,
-	                                                  std::unordered_map<IDStr, IDStr>& map)
-	{
-		NiCloningProcess c;
-		auto ret = static_cast<NiNode*>(src->CreateClone(c));
-		src->ProcessClone(&c);
-
-		renameHeadTree(ret, prefix, map);
-
-		return ret;
-	}
-
-	void ActorManager::Skeleton::renameHeadTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map)
-	{
-		if (root->m_name)
-		{
-			std::string newName(prefix->cstr(), prefix->size());
-			newName += root->m_name;
-			if (map.insert(std::make_pair<IDStr, IDStr>(root->m_name, newName)).second)
-			{
-				_DMESSAGE("Rename Bone %s -> %s", root->m_name, newName.c_str());
-			}
-			setNiNodeName(root, newName.c_str());
-		}
-
-		for (int i = 0; i < root->m_children.m_arrayBufLen; ++i)
-		{
-			auto child = castNiNode(root->m_children.m_data[i]);
-			if (child)
-				renameHeadTree(child, prefix, map);
-		}
 	}
 
 	void ActorManager::Skeleton::scanHead()
@@ -885,11 +836,11 @@ namespace hdt
 				_DMESSAGE("bone not found on skeleton, trying skeleton merge");
 				if (this->head.headParts.back().origPartRootNode)
 				{
-					doHeadSkeletonMerge(npc, head.headParts.back().origPartRootNode, head.prefix, head.renameMap);
+					doSkeletonMerge(npc, head.headParts.back().origPartRootNode, head.prefix, head.renameMap);
 				}
 				else if (this->head.npcFaceGeomNode)
 				{
-					doHeadSkeletonMerge(npc, this->head.npcFaceGeomNode, head.prefix, head.renameMap);
+					doSkeletonMerge(npc, this->head.npcFaceGeomNode, head.prefix, head.renameMap);
 				}
 				hasMerged = true;
 				

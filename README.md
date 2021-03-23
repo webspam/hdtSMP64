@@ -14,10 +14,13 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
   permanently attached and could cause slowdowns or crashes.
 + SkyrimBone now keeps a proper reference to its underlying node, which prevents a bug when an NPC with
   active physics had their equipment changed. This was most noticeable when changing costumes on characters
-  with short SMP hairs.
+  with short SMP hairs. Combined with an extra check on reference count before removing bones from the
+  skeleton, this seems to fix things.
 + Skeletons should remain active as long as they are in the same cell as (and close enough to) the player
   character. Resolves an issue where entering the Ancestor Glade often incorrectly marked skeletons as
   inactive and disabled physics.
++ Added "smp list" console command to list tracked NPCs without so much detail - useful for checking which
+  NPCs are active in crowded areas. NPCs are now sorted according to active status.
 
 ## Coming soon (maybe)
 
@@ -29,6 +32,11 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 + Several options, including shape and collision definitions on bones, exist but don't seem to do anything.
 + Sphere-triangle collision check without penetration defined is obviously wrong, but fixing the test
   doesn't improve things. Needs further investigation.
++ Several issues have a real root cause of the same prefix being created for different armors. The
+  workarounds I've added are generally good defensive programming, but the actual prefix collision issue
+  still remains.
++ Probably any open bug listed on Nexus that isn't resolved in changes, above. This list only contains
+  issues I have personally verified.
 
 ## Build Instructions
 
