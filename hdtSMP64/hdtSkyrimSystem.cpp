@@ -183,9 +183,12 @@ namespace hdt
 		return name;
 	}
 
-	Ref<SkyrimSystem> SkyrimSystemCreator::createSystem(NiNode* skeleton, NiAVObject* model, const std::string& path,
+	Ref<SkyrimSystem> SkyrimSystemCreator::createSystem(NiNode* skeleton, NiAVObject* model, const DefaultBBP::PhysicsFile file,
 	                                               std::unordered_map<IDStr, IDStr> renameMap)
 	{
+		auto path = file.first;
+		auto meshNameMap = file.second;
+
 		if (path.empty()) return nullptr;
 		auto loaded = readAllFile(path.c_str());
 		if (loaded.empty())
@@ -236,7 +239,7 @@ namespace hdt
 					}
 					else if (name == "per-vertex-shape")
 					{
-						auto shape = readPerVertexShape();
+						auto shape = readPerVertexShape(meshNameMap);
 						if (shape && shape->m_vertices.size())
 						{
 							m_mesh->m_meshes.push_back(shape);
@@ -245,7 +248,7 @@ namespace hdt
 					}
 					else if (name == "per-triangle-shape")
 					{
-						auto shape = readPerTriangleShape();
+						auto shape = readPerTriangleShape(meshNameMap);
 						if (shape && shape->m_vertices.size())
 						{
 							m_mesh->m_meshes.push_back(shape);
@@ -729,121 +732,123 @@ namespace hdt
 		*((uint32_t*)out) = t1;
 	};
 
-	Ref<SkyrimBody> SkyrimSystemCreator::generateMeshBody(const std::string& name)
+	std::pair< Ref<SkyrimBody>, SkyrimSystemCreator::VertexOffsetMap > SkyrimSystemCreator::generateMeshBody(const std::string name, const DefaultBBP::NameSet& names)
 	{
-		//Warning("Skinned Mesh currently not supported");
-		auto* triShape = castBSTriShape(findObject(m_model, name.c_str()));
-		auto* dynamicShape = castBSDynamicTriShape(findObject(m_model, name.c_str()));
-		if (!triShape)
-		{
-			Warning("%s is not a BSTriShape/BSDynamicTriShape or doesn't exist, skipped", name.c_str());
-			m_reader->skipCurrentElement();
-			return nullptr;
-		}
-
 		Ref<SkyrimBody> body = new SkyrimBody;
 		body->m_name = name;
 
-		if (!triShape->m_spSkinInstance)
-		{
-			//auto bone = m_mesh->findBone(name);
-			//if (!bone)
-			//{
-			//	bone = new hdtSkyrimBone(name, g, defaultBoneInfo);
-			//	m_mesh->m_bones.push_back(bone);
-			//}
-			//body->addBone(bone, btQsTransform());
+		int vertexStart = 0;
+		int boneStart = 0;
 
-			//for (int i = 0; i < body->m_vertices.size(); ++i)
-			//{
-			//	body->m_vertices[i].setBoneIdx(0, 0);
-			//	body->m_vertices[i].m_weight[0] = 1;
-			//}
-			Warning("Shape %s has no skin data, skipped", name.c_str());
-			m_reader->skipCurrentElement();
-			return nullptr;
-		}
-		NiSkinInstance* skinInstance = triShape->m_spSkinInstance;
-		NiSkinData* skinData = skinInstance->m_spSkinData;
-		for (int boneIdx = 0; boneIdx < skinData->m_uiBones; ++boneIdx)
+		VertexOffsetMap vertexOffsetMap;
+
+		for (auto meshName : names)
 		{
-			auto node = skinInstance->m_ppkBones[boneIdx];
-			auto boneData = &skinData->m_pkBoneData[boneIdx];
-			auto boundingSphere = BoundingSphere(convertNi(boneData->m_kBound.pos), boneData->m_kBound.radius);
-			IDStr boneName = node->m_name;
-			auto bone = m_mesh->findBone(boneName);
-			if (!bone)
+			auto* triShape = castBSTriShape(findObject(m_model, meshName.c_str()));
+			auto* dynamicShape = castBSDynamicTriShape(findObject(m_model, meshName.c_str()));
+			if (!triShape)
 			{
-				auto defaultBoneInfo = getBoneTemplate("");
-				bone = new SkyrimBone(boneName, node->GetAsNiNode(), defaultBoneInfo);
-				m_mesh->m_bones.push_back(bone);
+				continue;
 			}
 
-			body->addBone(bone, convertNi(boneData->m_kSkinToBone), boundingSphere);
-		}
+			if (!triShape->m_spSkinInstance)
+			{
+				continue;
+			}
+			NiSkinInstance* skinInstance = triShape->m_spSkinInstance;
+			NiSkinData* skinData = skinInstance->m_spSkinData;
+			for (int boneIdx = 0; boneIdx < skinData->m_uiBones; ++boneIdx)
+			{
+				auto node = skinInstance->m_ppkBones[boneIdx];
+				auto boneData = &skinData->m_pkBoneData[boneIdx];
+				auto boundingSphere = BoundingSphere(convertNi(boneData->m_kBound.pos), boneData->m_kBound.radius);
+				IDStr boneName = node->m_name;
+				auto bone = m_mesh->findBone(boneName);
+				if (!bone)
+				{
+					auto defaultBoneInfo = getBoneTemplate("");
+					bone = new SkyrimBone(boneName, node->GetAsNiNode(), defaultBoneInfo);
+					m_mesh->m_bones.push_back(bone);
+				}
 
-		NiSkinPartition* skinPartition = triShape->m_spSkinInstance->m_spSkinPartition;
-		body->m_vertices.resize(skinPartition->vertexCount);
+				body->addBone(bone, convertNi(boneData->m_kSkinToBone), boundingSphere);
+			}
 
-		// vertices data are all the same in every partitions
-		auto partition = skinPartition->m_pkPartitions;
-		auto vFlags = NiSkinPartition::GetVertexFlags(partition->vertexDesc);
-		auto vSize = NiSkinPartition::GetVertexSize(partition->vertexDesc);
+			NiSkinPartition* skinPartition = triShape->m_spSkinInstance->m_spSkinPartition;
+			body->m_vertices.resize(vertexStart + skinPartition->vertexCount);
 
-		auto vertexBlock = partition->shapeData->m_RawVertexData;
-		UInt8* dynamicVData = nullptr;
-		if (dynamicShape)
-			dynamicVData = static_cast<UInt8*>(dynamicShape->pDynamicData);
+			// vertices data are all the same in every partitions
+			auto partition = skinPartition->m_pkPartitions;
+			auto vFlags = NiSkinPartition::GetVertexFlags(partition->vertexDesc);
+			auto vSize = NiSkinPartition::GetVertexSize(partition->vertexDesc);
 
-		uint8_t boneOffset = 0;
-
-		if (vFlags & VF_VERTEX)
-			boneOffset += 16;
-		if (vFlags & VF_UV)
-			boneOffset += 4;
-		if (vFlags & VF_UV_2)
-			boneOffset += 4;
-		if (vFlags & VF_NORMAL)
-			boneOffset += 4;
-		if (vFlags & VF_TANGENT)
-			boneOffset += 4;
-		if (vFlags & VF_COLORS)
-			boneOffset += 4;
-
-		for (int j = 0; j < skinPartition->vertexCount; ++j)
-		{
-			NiPoint3* vertexPos;
-
+			auto vertexBlock = partition->shapeData->m_RawVertexData;
+			UInt8* dynamicVData = nullptr;
 			if (dynamicShape)
-				vertexPos = reinterpret_cast<NiPoint3*>(&dynamicVData[j * 16]);
-			else
-				vertexPos = reinterpret_cast<NiPoint3*>(&vertexBlock[j * vSize]);
+				dynamicVData = static_cast<UInt8*>(dynamicShape->pDynamicData);
 
-			body->m_vertices[j].m_skinPos = convertNi(*vertexPos);
+			uint8_t boneOffset = 0;
 
-			SkyrimSystem::BoneData* boneData = reinterpret_cast<SkyrimSystem::BoneData*>(&vertexBlock[j * vSize +
-				boneOffset]);
+			if (vFlags & VF_VERTEX)
+				boneOffset += 16;
+			if (vFlags & VF_UV)
+				boneOffset += 4;
+			if (vFlags & VF_UV_2)
+				boneOffset += 4;
+			if (vFlags & VF_NORMAL)
+				boneOffset += 4;
+			if (vFlags & VF_TANGENT)
+				boneOffset += 4;
+			if (vFlags & VF_COLORS)
+				boneOffset += 4;
 
-			for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
+			for (int j = 0; j < skinPartition->vertexCount; ++j)
 			{
-				auto localBoneIndex = boneData->boneIndices[k];
-				assert(localBoneIndex < body->m_skinnedBones.size());
-				body->m_vertices[j].m_boneIdx[k] = localBoneIndex;
-				float32(&body->m_vertices[j].m_weight[k], boneData->boneWeights[k]);
+				NiPoint3* vertexPos;
+
+				if (dynamicShape)
+					vertexPos = reinterpret_cast<NiPoint3*>(&dynamicVData[j * 16]);
+				else
+					vertexPos = reinterpret_cast<NiPoint3*>(&vertexBlock[j * vSize]);
+
+				body->m_vertices[j + vertexStart].m_skinPos = convertNi(*vertexPos);
+
+				SkyrimSystem::BoneData* boneData = reinterpret_cast<SkyrimSystem::BoneData*>(&vertexBlock[j * vSize +
+					boneOffset]);
+
+				for (int k = 0; k < partition->m_usBonesPerVertex && k < 4; ++k)
+				{
+					auto localBoneIndex = boneData->boneIndices[k];
+					assert(localBoneIndex < body->m_skinnedBones.size());
+					body->m_vertices[j + vertexStart].m_boneIdx[k] = localBoneIndex + boneStart;
+					float32(&body->m_vertices[j + vertexStart].m_weight[k], boneData->boneWeights[k]);
+				}
 			}
+
+			vertexOffsetMap.insert({ meshName, vertexStart });
+			boneStart = body->m_skinnedBones.size();
+			vertexStart = body->m_vertices.size();
+		}
+
+		if (0 == vertexStart)
+		{
+			m_reader->skipCurrentElement();
+			return { nullptr, {} };
 		}
 
 		for (auto& i : body->m_vertices)
 			i.sortWeight();
 
-		return body;
+		return { body, vertexOffsetMap };
 	}
 
-	Ref<SkyrimBody> SkyrimSystemCreator::readPerVertexShape()
+	Ref<SkyrimBody> SkyrimSystemCreator::readPerVertexShape(DefaultBBP::NameMap meshNameMap)
 	{
 		auto name = m_reader->getAttribute("name");
+		auto it = meshNameMap.find(name);
+		auto names = (it == meshNameMap.end()) ? DefaultBBP::NameSet({ name }) : it->second;
 
-		auto body = generateMeshBody(name);
+		auto body = generateMeshBody(name, names).first;
 		if (!body) return nullptr;
 
 		auto shape = new PerVertexShape(body);
@@ -932,30 +937,39 @@ namespace hdt
 		return body;
 	}
 
-	Ref<SkyrimBody> SkyrimSystemCreator::readPerTriangleShape()
+	Ref<SkyrimBody> SkyrimSystemCreator::readPerTriangleShape(DefaultBBP::NameMap meshNameMap)
 	{
 		auto name = m_reader->getAttribute("name");
+		auto it = meshNameMap.find(name);
+		auto names = (it == meshNameMap.end()) ? DefaultBBP::NameSet({ name }) : it->second;
 
-		auto body = generateMeshBody(name);
+		auto bodyData = generateMeshBody(name, names);
+		auto body = bodyData.first;
+		auto vertexOffsetMap = bodyData.second;
 		if (!body) return nullptr;
 
 		auto shape = new PerTriangleShape(body);
-		auto* g = castBSTriShape(findObject(m_model, name.c_str()));
-		if (g->m_spSkinInstance)
+
+		for (auto entry : vertexOffsetMap)
 		{
-			NiSkinPartition* skinPartition = g->m_spSkinInstance->m_spSkinPartition;
-			for (int i = 0; i < skinPartition->m_uiPartitions; ++i)
+			auto* g = castBSTriShape(findObject(m_model, entry.first.c_str()));
+			if (g->m_spSkinInstance)
 			{
-				auto& partition = skinPartition->m_pkPartitions[i];
-				for (int j = 0; j < partition.m_usTriangles; ++j)
-					shape->addTriangle(partition.m_pusTriList[j * 3], partition.m_pusTriList[j * 3 + 1],
-					                   partition.m_pusTriList[j * 3 + 2]);
+				int offset = entry.second;
+				NiSkinPartition* skinPartition = g->m_spSkinInstance->m_spSkinPartition;
+				for (int i = 0; i < skinPartition->m_uiPartitions; ++i)
+				{
+					auto& partition = skinPartition->m_pkPartitions[i];
+					for (int j = 0; j < partition.m_usTriangles; ++j)
+						shape->addTriangle(partition.m_pusTriList[j * 3] + offset, partition.m_pusTriList[j * 3 + 1] + offset,
+							partition.m_pusTriList[j * 3 + 2] + offset);
+				}
 			}
-		}
-		else
-		{
-			Warning("Shape %s has no skin data, skipped", name.c_str());
-			return nullptr;
+			else
+			{
+				Warning("Shape %s has no skin data, skipped", entry.first.c_str());
+				return nullptr;
+			}
 		}
 
 		while (m_reader->Inspect())
@@ -1013,7 +1027,6 @@ namespace hdt
 						if (body->m_skinnedBones[i].ptr->m_name == getRenamedBone(boneName))
 						{
 							body->m_skinnedBones[i].weightThreshold = wt;
-							break;
 						}
 				}
 				else if (name == "disable-tag")

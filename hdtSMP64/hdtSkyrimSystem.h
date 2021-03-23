@@ -7,6 +7,7 @@
 #include "hdtSkinnedMesh/hdtGeneric6DofConstraint.h"
 #include "hdtSkinnedMesh/hdtStiffSpringConstraint.h"
 #include "hdtSkinnedMesh/hdtConeTwistConstraint.h"
+#include "hdtDefaultBBP.h"
 
 namespace hdt
 {
@@ -46,10 +47,12 @@ namespace hdt
 	{
 	public:
 		SkyrimSystemCreator();
-		Ref<SkyrimSystem> createSystem(NiNode* skeleton, NiAVObject* model, const std::string& filepath,
+		Ref<SkyrimSystem> createSystem(NiNode* skeleton, NiAVObject* model, const DefaultBBP::PhysicsFile file,
 		                             std::unordered_map<IDStr, IDStr> renameMap);
 
 	protected:
+
+		using VertexOffsetMap = std::unordered_map<std::string, int>;
 
 		IDStr getRenamedBone(IDStr name);
 
@@ -149,7 +152,7 @@ namespace hdt
 		std::unordered_map<IDStr, ConeTwistConstraintTemplate> m_coneTwistConstraintTemplates;
 		std::unordered_map<IDStr, std::shared_ptr<btCollisionShape>> m_shapes;
 
-		Ref<SkyrimBody> generateMeshBody(const std::string& name);
+		std::pair< Ref<SkyrimBody>, VertexOffsetMap > generateMeshBody(const std::string name, const DefaultBBP::NameSet& names);
 
 		void readFrameLerp(btTransform& tr);
 		void readBoneTemplate(BoneTemplate& dest);
@@ -163,8 +166,8 @@ namespace hdt
 		const ConeTwistConstraintTemplate& getConeTwistConstraintTemplate(const IDStr& name);
 
 		void readBone();
-		Ref<SkyrimBody> readPerVertexShape();
-		Ref<SkyrimBody> readPerTriangleShape();
+		Ref<SkyrimBody> readPerVertexShape(DefaultBBP::NameMap meshNameMap);
+		Ref<SkyrimBody> readPerTriangleShape(DefaultBBP::NameMap meshNameMap);
 		Ref<Generic6DofConstraint> readGenericConstraint();
 		Ref<StiffSpringConstraint> readStiffSpringConstraint();
 		Ref<ConeTwistConstraint> readConeTwistConstraint();

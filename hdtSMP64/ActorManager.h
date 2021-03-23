@@ -47,7 +47,7 @@ namespace hdt
 
 		struct PhysicsItem
 		{
-			std::string physicsFile;
+			DefaultBBP::PhysicsFile physicsFile;
 
 			void setPhysics(Ref<SkyrimSystem>& system, bool active);
 			void clearPhysics();
@@ -67,7 +67,6 @@ namespace hdt
 			{
 				Ref<BSGeometry> headPart;
 				Ref<NiNode> origPartRootNode;
-				std::string physicsFile;
 				std::set<IDStr> renamedBonesInUse;
 			};
 

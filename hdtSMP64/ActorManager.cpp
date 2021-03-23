@@ -379,7 +379,7 @@ namespace hdt
 		IDType id = armors.size() ? armors.back().id + 1 : 0;
 		auto prefix = armorPrefix(id);
 		npc = getNpcNode(skeleton);
-		auto physicsFile = scanBBP(armorModel);
+		auto physicsFile = DefaultBBP::instance()->scanBBP(armorModel);
 
 		armors.push_back(Armor());
 		armors.back().id = id;
@@ -609,24 +609,24 @@ namespace hdt
 			// always regen physics for all head parts
 			headPart.clearPhysics();
 
-			if (headPart.physicsFile.empty())
+			if (headPart.physicsFile.first.empty())
 			{
 				_DMESSAGE("no physics file for headpart %s", headPart.headPart->m_name);
 				continue;
 			}
 
-			if (physicsDupes.count(headPart.physicsFile))
+			if (physicsDupes.count(headPart.physicsFile.first))
 			{
 				_DMESSAGE("previous head part generated physics system for file %s, skipping",
-				          headPart.physicsFile.c_str());
+				          headPart.physicsFile.first.c_str());
 				continue;
 			}
 
 			std::unordered_map<IDStr, IDStr> renameMap = this->head.renameMap;
 
 			_DMESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name,
-			          headPart.physicsFile.c_str());
-			physicsDupes.insert(headPart.physicsFile);
+			          headPart.physicsFile.first.c_str());
+			physicsDupes.insert(headPart.physicsFile.first);
 			auto system = SkyrimSystemCreator().createSystem(npc, this->head.headNode, headPart.physicsFile,
 			                                            std::move(renameMap));
 
@@ -706,7 +706,7 @@ namespace hdt
 		{
 			_DMESSAGE("orig part node found via fmd");
 			auto origRootNode = fmd->m_model->unk10->unk08->GetAsNiNode();
-			head.headParts.back().physicsFile = scanBBP(origRootNode);
+			head.headParts.back().physicsFile = DefaultBBP::instance()->scanBBP(origRootNode);
 			head.headParts.back().origPartRootNode = origRootNode;
 			for (int i = 0; i < origRootNode->m_children.m_size; i++)
 			{
@@ -776,7 +776,7 @@ namespace hdt
 			}
 			if (head.npcFaceGeomNode)
 			{
-				head.headParts.back().physicsFile = scanBBP(head.npcFaceGeomNode);
+				head.headParts.back().physicsFile = DefaultBBP::instance()->scanBBP(head.npcFaceGeomNode);
 				auto obj = findObject(head.npcFaceGeomNode, geometry->m_name);
 				if (obj)
 				{
