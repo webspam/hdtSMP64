@@ -163,6 +163,17 @@ namespace hdt
 	DefaultBBP::NameMap DefaultBBP::defaultNameMap(NiNode* armor)
 	{
 		std::unordered_map<std::string, std::unordered_set<std::string> > nameMap;
+		auto skinned = findNode(armor, "BSFaceGenNiNodeSkinned");
+		if (skinned)
+		{
+			for (int i = 0; i < skinned->m_children.m_arrayBufLen; ++i)
+			{
+				if (!skinned->m_children.m_data[i]) continue;
+				auto tri = skinned->m_children.m_data[i]->GetAsBSTriShape();
+				if (!tri) continue;
+				nameMap.insert({ tri->m_name, {tri->m_name} });
+			}
+		}
 		for (int i = 0; i < armor->m_children.m_arrayBufLen; ++i)
 		{
 			if (!armor->m_children.m_data[i]) continue;
