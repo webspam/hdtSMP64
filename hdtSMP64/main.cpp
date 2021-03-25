@@ -223,7 +223,7 @@ namespace hdt
 
 									const char* textureName = "";
 									NiTexturePtr* texture = GetTextureFromIndex(material, i);
-									if (texture)
+									if (texture && texture->get())
 									{
 										textureName = texture->get()->name;
 									}
