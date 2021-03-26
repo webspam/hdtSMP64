@@ -13,10 +13,16 @@ namespace hdt
 	{
 	public:
 		using RemapEntry = std::pair<int, std::string>;
-		using Remap = std::pair<std::string, std::set<RemapEntry> >;
 		using NameSet = std::unordered_set<std::string>;
 		using NameMap = std::unordered_map<std::string, NameSet >;
 		using PhysicsFile = std::pair<std::string, NameMap>;
+
+		struct Remap
+		{
+			std::string name;
+			std::set<RemapEntry> entries;
+			std::unordered_set<std::string> required;
+		};
 
 		static DefaultBBP* instance();
 		PhysicsFile scanBBP(NiNode* scan);

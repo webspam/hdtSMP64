@@ -74,7 +74,7 @@ namespace hdt
 				else if (reader.GetName() == "remap")
 				{
 					auto target = reader.getAttribute("target");
-					Remap remap = { target, { } };
+					Remap remap = { target, { }, { } };
 					while (reader.Inspect())
 					{
 						if (reader.GetInspected() == Xml::Inspected::StartTag)
@@ -88,7 +88,12 @@ namespace hdt
 								}
 								catch (...) {}
 								auto source = reader.readText();
-								remap.second.insert({ priority, source });
+								remap.entries.insert({ priority, source });
+							}
+							else if (reader.GetName() == "requires")
+							{
+								auto req = reader.readText();
+								remap.required.insert(req);
 							}
 							else
 							{
@@ -137,24 +142,35 @@ namespace hdt
 
 		for (auto remap : remaps)
 		{
-			auto start = std::find_if(remap.second.rbegin(), remap.second.rend(), [&](const RemapEntry& e)
-			{ return nameMap.find(e.second) != nameMap.end(); });
-			auto end = std::find_if(start, remap.second.rend(), [&](const RemapEntry& e)
-			{ return e.first != start->first; });
-			if (start != remap.second.rend())
+			bool doRemap = true;
+			for (auto req : remap.required)
 			{
-				auto& s = nameMap.insert({ remap.first, { } }).first;
-				std::for_each(start, end, [&](const RemapEntry& e)
+				if (nameMap.find(req) == nameMap.end())
 				{
-					auto it = nameMap.find(e.second);
-					if (it != nameMap.end())
+					doRemap = false;
+				}
+			}
+			if (doRemap)
+			{
+				auto start = std::find_if(remap.entries.rbegin(), remap.entries.rend(), [&](const RemapEntry& e)
+				{ return nameMap.find(e.second) != nameMap.end(); });
+				auto end = std::find_if(start, remap.entries.rend(), [&](const RemapEntry& e)
+				{ return e.first != start->first; });
+				if (start != remap.entries.rend())
+				{
+					auto& s = nameMap.insert({ remap.name, { } }).first;
+					std::for_each(start, end, [&](const RemapEntry& e)
 					{
-						std::for_each(it->second.begin(), it->second.end(), [&](const std::string& name)
+						auto it = nameMap.find(e.second);
+						if (it != nameMap.end())
 						{
-							s->second.insert(name);
-						});
-					}
-				});
+							std::for_each(it->second.begin(), it->second.end(), [&](const std::string& name)
+							{
+								s->second.insert(name);
+							});
+						}
+					});
+				}
 			}
 		}
 		return nameMap;
