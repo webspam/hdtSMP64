@@ -834,6 +834,27 @@ namespace hdt
 				}
 				else if (this->head.npcFaceGeomNode)
 				{
+					// Facegen data doesn't have any tree structure to the skeleton. We need to make any new
+					// nodes children of the head node, so that they move properly when there's no physics.
+					auto headNode = findNode(head.npcFaceGeomNode, "NPC Head [Head]");
+					if (headNode)
+					{
+						NiTransform invTransform;
+						headNode->m_localTransform.Invert(invTransform);
+						for (int i = 0; i < head.npcFaceGeomNode->m_children.m_arrayBufLen; ++i)
+						{
+							Ref<NiNode> child = castNiNode(head.npcFaceGeomNode->m_children.m_data[i]);
+							if (child && !findNode(npc, child->m_name))
+							{
+								// FIXME: I'm not 100% sure which order the operands should be in. This is
+								// the more conventional way. As long as the transforms are just translation
+								// it doesn't make any difference.
+								child->m_localTransform = child->m_localTransform * invTransform;
+								head.npcFaceGeomNode->RemoveAt(i);
+								headNode->AttachChild(child, false);
+							}
+						}
+					}
 					doSkeletonMerge(npc, this->head.npcFaceGeomNode, head.prefix, head.renameMap);
 				}
 				hasMerged = true;
