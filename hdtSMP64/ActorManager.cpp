@@ -846,10 +846,7 @@ namespace hdt
 							Ref<NiNode> child = castNiNode(head.npcFaceGeomNode->m_children.m_data[i]);
 							if (child && !findNode(npc, child->m_name))
 							{
-								// FIXME: I'm not 100% sure which order the operands should be in. This is
-								// the more conventional way. As long as the transforms are just translation
-								// it doesn't make any difference.
-								child->m_localTransform = child->m_localTransform * invTransform;
+								child->m_localTransform = invTransform * child->m_localTransform;
 								head.npcFaceGeomNode->RemoveAt(i);
 								headNode->AttachChild(child, false);
 							}
