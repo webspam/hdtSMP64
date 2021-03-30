@@ -10,13 +10,13 @@ namespace hdt
 
 	static const CollisionResult zero;
 
-	template <class T0, class T1>
+	template <class T1, bool SwapResults = false>
 	struct CollisionCheck
 	{
-		typedef typename T0::ShapeProp SP0;
+		typedef typename PerVertexShape::ShapeProp SP0;
 		typedef typename T1::ShapeProp SP1;
 
-		CollisionCheck(T0* a, T1* b, CollisionResult* r)
+		CollisionCheck(PerVertexShape* a, T1* b, CollisionResult* r)
 		{
 			v0 = a->m_owner->m_vpos.data();
 			v1 = b->m_owner->m_vpos.data();
@@ -38,7 +38,26 @@ namespace hdt
 		std::atomic_long numResults;
 		CollisionResult* results;
 
-		bool checkCollide(Collider* a, Collider* b, CollisionResult& res);
+		bool checkCollide(Collider* a, Collider* b, CollisionResult& res)
+		{
+			static_assert(std::is_same<T1, PerTriangleShape>::value, "Must override checkCollide for non-triangle collisions");
+
+			auto s = v0[a->vertex];
+			auto r = s.marginMultiplier() * sp0->margin;
+			auto p0 = v1[b->vertices[0]];
+			auto p1 = v1[b->vertices[1]];
+			auto p2 = v1[b->vertices[2]];
+			auto margin = (p0.marginMultiplier() + p1.marginMultiplier() + p2.marginMultiplier()) / 3;
+			auto penetration = sp1->penetration * margin;
+			margin *= sp1->margin;
+
+			CheckTriangle tri(p0.pos(), p1.pos(), p2.pos(), margin, penetration);
+			if (!tri.valid) return false;
+			auto ret = checkSphereTriangle(s.pos(), r, tri, res);
+			res.colliderA = a;
+			res.colliderB = b;
+			return ret;
+		}
 
 		bool addResult(const CollisionResult& res)
 		{
@@ -46,6 +65,12 @@ namespace hdt
 			if (p < SkinnedMeshAlgorithm::MaxCollisionCount)
 			{
 				results[p] = res;
+				if (SwapResults)
+				{
+					std::swap(results[p].posA, results[p].posB);
+					std::swap(results[p].colliderA, results[p].colliderB);
+					results[p].normOnB = -results[p].normOnB;
+				}
 				return true;
 			}
 			return false;
@@ -91,9 +116,6 @@ namespace hdt
 
 					for (auto i = abeg; i < aend; ++i)
 					{
-						//if (numResults >= SkinnedMeshAlgorithm::MaxCollisionCount)
-						//	break;
-
 						if (!i->collideWith(aabbB))
 							continue;
 
@@ -123,9 +145,6 @@ namespace hdt
 
 					for (auto j = bbeg; j < bend; ++j)
 					{
-						//if (numResults >= SkinnedMeshAlgorithm::MaxCollisionCount)
-						//	break;
-
 						if (!j->collideWith(aabbA))
 							continue;
 
@@ -155,21 +174,13 @@ namespace hdt
 			if (pairs.size() >= std::thread::hardware_concurrency())
 				concurrency::parallel_for_each(pairs.begin(), pairs.end(), func);
 			else for (auto& i : pairs) func(i);
-			//if (pairs.size() >= 4)
-			//{
-			//	concurrency::task_group taskGroup;
-			//	for (auto& i : pairs)
-			//		taskGroup.run([&]() { func(i); });
-			//	taskGroup.wait();
-			//}
-			//else for (auto& i : pairs) func(i);
 
 			return numResults;
 		}
 	};
 
 	template <>
-	bool CollisionCheck<PerVertexShape, PerVertexShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
+	bool CollisionCheck<PerVertexShape, false>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
 	{
 		auto s0 = v0[a->vertex];
 		auto r0 = s0.marginMultiplier() * sp0->margin;
@@ -182,50 +193,15 @@ namespace hdt
 		return ret;
 	}
 
-	template <>
-	bool CollisionCheck<PerVertexShape, PerTriangleShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
+	template <class T1>
+	int checkCollide(PerVertexShape* a, T1* b, CollisionResult* results)
 	{
-		auto s = v0[a->vertex];
-		auto r = s.marginMultiplier() * sp0->margin;
-		auto p0 = v1[b->vertices[0]];
-		auto p1 = v1[b->vertices[1]];
-		auto p2 = v1[b->vertices[2]];
-		auto margin = (p0.marginMultiplier() + p1.marginMultiplier() + p2.marginMultiplier()) / 3;
-		auto penetration = sp1->penetration * margin;
-		margin *= sp1->margin;
-
-		CheckTriangle tri(p0.pos(), p1.pos(), p2.pos(), margin, penetration);
-		if (!tri.valid) return false;
-		auto ret = checkSphereTriangle(s.pos(), r, tri, res);
-		res.colliderA = a;
-		res.colliderB = b;
-		return ret;
+		return CollisionCheck<T1>(a, b, results)();
 	}
 
-	template <>
-	bool CollisionCheck<PerTriangleShape, PerVertexShape>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
+	int checkCollide(PerTriangleShape* a, PerVertexShape* b, CollisionResult* results)
 	{
-		auto s = v1[b->vertex];
-		auto r = s.marginMultiplier() * sp1->margin;
-		auto p0 = v0[a->vertices[0]];
-		auto p1 = v0[a->vertices[1]];
-		auto p2 = v0[a->vertices[2]];
-		auto margin = (p0.marginMultiplier() + p1.marginMultiplier() + p2.marginMultiplier()) / 3;
-		auto penetration = sp0->penetration * margin;
-		margin *= sp0->margin;
-
-		CheckTriangle tri(p0.pos(), p1.pos(), p2.pos(), margin, penetration);
-		if (!tri.valid) return false;
-		auto ret = checkTriangleSphere(s.pos(), r, tri, res);
-		res.colliderA = a;
-		res.colliderB = b;
-		return ret;
-	}
-
-	template <class T0, class T1>
-	int checkCollide(T0* a, T1* b, CollisionResult* results)
-	{
-		return CollisionCheck<T0, T1>(a, b, results)();
+		return CollisionCheck<PerTriangleShape, true>(b, a, results)();
 	}
 
 	void SkinnedMeshAlgorithm::MergeBuffer::doMerge(SkinnedMeshShape* a, SkinnedMeshShape* b,

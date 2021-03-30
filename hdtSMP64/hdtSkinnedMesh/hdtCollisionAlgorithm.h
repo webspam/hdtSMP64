@@ -25,11 +25,6 @@ namespace hdt
 
 	bool checkSphereSphere(const btVector3& a, const btVector3& b, float ra, float rb, CollisionResult& res);
 	bool checkSphereTriangle(const btVector3& s, float r, const CheckTriangle& tri, CollisionResult& res);
-	bool checkTriangleSphere(const btVector3& s, float r, const CheckTriangle& tri, CollisionResult& res);
-	bool checkSphereTriangle(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri,
-	                         CollisionResult& res);
-	bool checkTriangleSphere(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri,
-	                         CollisionResult& res);
 
 	static inline btVector3 BaryCoord(const btVector3& a,
 	                                  const btVector3& b,

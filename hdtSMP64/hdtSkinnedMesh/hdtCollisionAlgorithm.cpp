@@ -192,17 +192,6 @@ namespace hdt
 		return false;
 	}
 
-	bool checkTriangleSphere(const btVector3& s, float r, const CheckTriangle& tri, CollisionResult& res)
-	{
-		auto ret = checkSphereTriangle(s, r, tri, res);
-		if (ret)
-		{
-			res.normOnB = -res.normOnB;
-			std::swap(res.posA, res.posB);
-		}
-		return ret;
-	}
-
 	static bool linePlaneIntersection(btVector3& contact, const btVector3& p0, const btVector3& p1,
 	                                  const btVector3& normal, const btVector3& coord, float radius)
 	{
@@ -224,47 +213,5 @@ namespace hdt
 		// output contact point
 		contact = p0 + dir * x; //Make sure your ray vector is normalized
 		return true;
-	}
-
-	bool checkSphereTriangle(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri,
-	                         CollisionResult& res)
-	{
-		bool collide = checkSphereTriangle(sn, r, tri, res);
-		if (collide) return true;
-
-		auto radiusWithMargin = r + tri.margin;
-		auto diff = sn - so;
-		if (diff.length2() < radiusWithMargin * radiusWithMargin)
-			return false;
-
-		if (tri.prenetration > FLT_EPSILON) // single face
-		{
-			if (diff.normalized().dot(tri.normal) > 0.f) // ignore by direction
-				return false;
-		}
-		btVector3 realC = so;
-		collide = checkSphereTriangle(realC, r, tri, res);
-		if (!collide)
-		{
-			if (!linePlaneIntersection(realC, so, sn, tri.normal, tri.p0, radiusWithMargin))
-				return false;
-			collide = checkSphereTriangle(realC, r, tri, res);
-		}
-
-		if (collide)
-			res.depth += (sn - realC).dot(res.normOnB);
-		return collide && res.depth < FLT_EPSILON;
-	}
-
-	bool checkTriangleSphere(const btVector3& so, const btVector3& sn, float r, const CheckTriangle& tri,
-	                         CollisionResult& res)
-	{
-		auto ret = checkSphereTriangle(so, sn, r, tri, res);
-		if (ret)
-		{
-			res.normOnB = -res.normOnB;
-			std::swap(res.posA, res.posB);
-		}
-		return ret;
 	}
 }
