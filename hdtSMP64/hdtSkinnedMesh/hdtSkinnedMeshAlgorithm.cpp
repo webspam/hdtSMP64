@@ -131,6 +131,119 @@ namespace hdt
 		}
 	};
 
+#if true
+	namespace
+	{
+		inline __m128 cross_product(__m128 const& vec0, __m128 const& vec1) {
+			__m128 tmp0 = _mm_shuffle_ps(vec0, vec0, _MM_SHUFFLE(3, 0, 2, 1));
+			__m128 tmp1 = _mm_shuffle_ps(vec1, vec1, _MM_SHUFFLE(3, 1, 0, 2));
+			__m128 tmp2 = _mm_mul_ps(tmp0, vec1);
+			__m128 tmp3 = _mm_mul_ps(tmp0, tmp1);
+			__m128 tmp4 = _mm_shuffle_ps(tmp2, tmp2, _MM_SHUFFLE(3, 0, 2, 1));
+			return _mm_sub_ps(tmp3, tmp4);
+		}
+	}
+
+	template <bool SwapResults>
+	struct CollisionChecker<PerTriangleShape, SwapResults> : public CollisionCheckBase2<PerTriangleShape, SwapResults>
+	{
+		template <typename... Ts>
+		CollisionChecker(Ts&&... ts)
+			: CollisionCheckBase2(std::forward<Ts>(ts)...)
+		{}
+
+		bool checkCollide(Collider* a, Collider* b, CollisionResult& res)
+		{
+			auto s = v0[a->vertex];
+			auto r = s.marginMultiplier() * sp0->margin;
+			auto p0 = v1[b->vertices[0]];
+			auto p1 = v1[b->vertices[1]];
+			auto p2 = v1[b->vertices[2]];
+			auto margin = (p0.marginMultiplier() + p1.marginMultiplier() + p2.marginMultiplier()) / 3;
+			auto penetration = sp1->penetration * margin;
+			margin *= sp1->margin;
+			if (penetration > -FLT_EPSILON && penetration < FLT_EPSILON)
+			{
+				penetration = 0;
+			}
+
+			// Compute unit normal and (twice) area of triangle
+			auto ab = (p1.pos() - p0.pos()).get128();
+			auto ac = (p2.pos() - p0.pos()).get128();
+			auto normal = cross_product(ab, ac);
+			auto area = _mm_sqrt_ps(_mm_dp_ps(normal, normal, 0x77));
+			if (_mm_cvtss_f32(area) < FLT_EPSILON)
+			{
+				return false;
+			}
+			normal = _mm_div_ps(normal, area);
+			if (penetration < 0)
+			{
+				normal = _mm_sub_ps(_mm_set1_ps(0.0), normal);
+				penetration = -penetration;
+			}
+
+			// Compute distance from point to plane, and projection onto plane
+			auto ap = (s.pos() - p0.pos()).get128();
+			auto distance = _mm_dp_ps(ap, normal, 0x77);
+			auto projection = _mm_mul_ps(normal, distance);
+			projection = _mm_sub_ps(s.pos().get128(), projection);
+
+			// Logic to decide if we're within range of the plane - don't completely understand all the cases here
+			float radiusWithMargin = r + margin;
+			bool isInsideContactPlane;
+			float distanceFromPlane = _mm_cvtss_f32(distance);
+			if (penetration >= FLT_EPSILON)
+			{
+				isInsideContactPlane = distanceFromPlane < radiusWithMargin&& distanceFromPlane >= -penetration;
+			}
+			else
+			{
+				if (distanceFromPlane < 0)
+				{
+					distanceFromPlane = -distanceFromPlane;
+					normal = _mm_sub_ps(_mm_set1_ps(0.0), normal);
+				}
+				isInsideContactPlane = distanceFromPlane > -radiusWithMargin;
+			}
+			if (!isInsideContactPlane)
+			{
+				return false;
+			}
+
+			// Compute (twice) area of each triangle between projection and two triangle points
+			ap = _mm_sub_ps(projection, p0.pos().get128());
+			auto bp = _mm_sub_ps(projection, p1.pos().get128());
+			auto cp = _mm_sub_ps(projection, p2.pos().get128());
+			auto aa = cross_product(bp, cp);
+			ab = cross_product(cp, ap);
+			ac = cross_product(ap, bp);
+			aa = _mm_dp_ps(aa, aa, 0x74);
+			ab = _mm_dp_ps(ab, ab, 0x72);
+			ac = _mm_dp_ps(ac, ac, 0x71);
+			aa = _mm_or_ps(aa, ab);
+			aa = _mm_or_ps(aa, ac);
+			aa = _mm_sqrt_ps(aa);
+
+			// Now if every pair of elements in aa sums to no more than area, then the point is inside the triangle
+			aa = _mm_add_ps(aa, _mm_shuffle_ps(aa, aa, _MM_SHUFFLE(3, 0, 2, 1)));
+			aa = _mm_cmpgt_ps(aa, area);
+			auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
+
+			res.colliderA = a;
+			res.colliderB = b;
+			if (pointInTriangle)
+			{
+				res.normOnB.set128(normal);
+				res.posA = s.pos() - res.normOnB * r;
+				res.posB.set128(projection);
+				res.depth = distanceFromPlane - radiusWithMargin;
+				return res.depth < -FLT_EPSILON;
+			}
+			return false;
+		}
+	};
+#else
 	template <bool SwapResults>
 	struct CollisionChecker<PerTriangleShape, SwapResults> : public CollisionCheckBase2<PerTriangleShape, SwapResults>
 	{
@@ -157,7 +270,8 @@ namespace hdt
 			res.colliderB = b;
 			return ret;
 		}
-	};
+	}; 
+#endif
 
 	// CollisionCheckDispatcher provides a dispatch method to process two lists of colliders. It is needed for
 	// the new (GPU-oriented) algorithm, but we provide a CPU-only version as well.
