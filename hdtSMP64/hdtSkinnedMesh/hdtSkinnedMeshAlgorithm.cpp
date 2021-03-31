@@ -159,10 +159,150 @@ namespace hdt
 		}
 	};
 
+	// CollisionCheckDispatcher provides a dispatch method to process two lists of colliders. It is needed for
+	// the new (GPU-oriented) algorithm, but we provide a CPU-only version as well.
+	template <typename T, bool SwapResults, CollisionCheckAlgorithmType Algorithm>
+	struct CollisionCheckDispatcher : public CollisionChecker<T, SwapResults>
+	{
+		template <typename... Ts>
+		CollisionCheckDispatcher(Ts&&... ts)
+			: CollisionChecker(std::forward<Ts>(ts)...)
+		{}
+
+		void dispatch(ColliderTree* a, ColliderTree* b, const std::vector<Aabb*>& listA, const std::vector<Aabb*>& listB)
+		{
+			CollisionResult result;
+			CollisionResult temp;
+			bool hasResult = false;
+
+			auto abeg = a->aabb;
+			auto bbeg = b->aabb;
+
+			if (listA.size() && listB.size())
+			{
+				for (auto i : listA)
+				{
+					for (auto j : listB)
+					{
+						if (!i->collideWith(*j))
+							continue;
+						if (checkCollide(&a->cbuf[i - abeg], &b->cbuf[j - bbeg], temp))
+						{
+							if (!hasResult || result.depth > temp.depth)
+							{
+								hasResult = true;
+								result = temp;
+							}
+						}
+					}
+				}
+			}
+
+			if (hasResult)
+			{
+				addResult(result);
+			}
+		}
+	};
+
+	// Dispatcher specialization for sphere-triangle collisions on CUDA. Sphere-sphere collisions will
+	// continue to use the CPU dispatcher. Doesn't actually do anything yet (and will fail to compile).
+	template <bool SwapResults>
+	struct CollisionCheckDispatcher<PerTriangleShape, SwapResults, e_CUDA>
+		: public CollisionCheckBase2<PerTriangleShape, SwapResults>
+	{
+
+	};
+
 	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
 	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CPURefactored>
-	struct CollisionCheckAlgorithm;
+	struct CollisionCheckAlgorithm : public CollisionCheckDispatcher<T, SwapResults, Algorithm>
+	{
+		template <typename... Ts>
+		CollisionCheckAlgorithm(Ts&&... ts)
+			: CollisionCheckDispatcher(std::forward<Ts>(ts)...)
+		{}
 
+		int operator()()
+		{
+			static_assert(Algorithm != e_CPU, "Old CPU algorithm specialization missing");
+
+			std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
+			pairs.reserve(c0->colliders.size() + c1->colliders.size());
+			c0->checkCollisionL(c1, pairs);
+			if (pairs.empty()) return 0;
+
+			decltype(auto) func = [this](const std::pair<ColliderTree*, ColliderTree*>& pair)
+			{
+				if (numResults >= SkinnedMeshAlgorithm::MaxCollisionCount)
+					return;
+
+				auto a = pair.first, b = pair.second;
+
+				auto abeg = a->aabb;
+				auto bbeg = b->aabb;
+				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
+				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
+				auto aend = abeg + asize;
+				auto bend = bbeg + bsize;
+
+				Aabb aabbA;
+				auto aabbB = b->aabbMe;
+
+				thread_local std::vector<Aabb*> listA;
+				thread_local std::vector<Aabb*> listB;
+
+				listA.reserve(asize);
+				listB.reserve(bsize);
+
+				// Colliders in A that intersect full bounding box of B. Compute a new bounding box for just those - this
+				// can be MUCH smaller than the original bounding box for A (consider the case where we have two spheres
+				// colliding, offset by an equal amount in all three axes).
+				for (auto i = abeg; i < aend; ++i)
+				{
+					if (i->collideWith(aabbB))
+					{
+						listA.push_back(i);
+						aabbA.merge(*i);
+					}
+				}
+
+				// Colliders in B that intersect the new bounding box for A. Compute a new bounding box for those too.
+				if (listA.size())
+				{
+					aabbB.invalidate();
+					for (auto i = bbeg; i < bend; ++i)
+					{
+						if (i->collideWith(aabbA))
+						{
+							listB.push_back(i);
+							aabbB.merge(*i);
+						}
+					}
+				}
+
+				// Remove any colliders from A that don't intersect the new bounding box for B
+				if (listB.size())
+				{
+					listA.erase(std::remove_if(listA.begin(), listA.end(), [&](Aabb* aabb) { return !aabb->collideWith(aabbB); }), listA.end());
+				}
+
+				// Now go through both lists and do the real collision (if needed).
+				dispatch(a, b, listA, listB);
+
+				listA.clear();
+				listB.clear();
+			};
+
+			if (pairs.size() >= std::thread::hardware_concurrency())
+				concurrency::parallel_for_each(pairs.begin(), pairs.end(), func);
+			else for (auto& i : pairs) func(i);
+
+			return numResults;
+		}
+	};
+
+	// Old algorithm - lower memory use, possibly faster (for CPU), but not at all suited to GPU processing
 	template <typename T, bool SwapResults>
 	struct CollisionCheckAlgorithm<T, SwapResults, e_CPU> : public CollisionChecker<T, SwapResults>
 	{
@@ -258,117 +398,6 @@ namespace hdt
 					}
 				}
 				list.clear();
-
-				if (hasResult)
-				{
-					addResult(result);
-				}
-			};
-
-			if (pairs.size() >= std::thread::hardware_concurrency())
-				concurrency::parallel_for_each(pairs.begin(), pairs.end(), func);
-			else for (auto& i : pairs) func(i);
-
-			return numResults;
-		}
-	};
-
-	template <typename T, bool SwapResults>
-	struct CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored> : public CollisionChecker<T, SwapResults>
-	{
-		template <typename... Ts>
-		CollisionCheckAlgorithm(Ts&&... ts)
-			: CollisionChecker(std::forward<Ts>(ts)...)
-		{}
-
-		int operator()()
-		{
-			std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
-			pairs.reserve(c0->colliders.size() + c1->colliders.size());
-			c0->checkCollisionL(c1, pairs);
-			if (pairs.empty()) return 0;
-
-			decltype(auto) func = [this](const std::pair<ColliderTree*, ColliderTree*>& pair)
-			{
-				if (numResults >= SkinnedMeshAlgorithm::MaxCollisionCount)
-					return;
-
-				auto a = pair.first, b = pair.second;
-
-				auto abeg = a->aabb;
-				auto bbeg = b->aabb;
-				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
-				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
-				auto aend = abeg + asize;
-				auto bend = bbeg + bsize;
-
-				Aabb aabbA;
-				auto aabbB = b->aabbMe;
-
-				CollisionResult result;
-				CollisionResult temp;
-				bool hasResult = false;
-
-				thread_local std::vector<Aabb*> listA;
-				thread_local std::vector<Aabb*> listB;
-
-				listA.reserve(asize);
-				listB.reserve(bsize);
-
-				// Colliders in A that intersect full bounding box of B. Compute a new bounding box for just those - this
-				// can be MUCH smaller than the original bounding box for A (consider the case where we have two spheres
-				// colliding, offset by an equal amount in all three axes).
-				for (auto i = abeg; i < aend; ++i)
-				{
-					if (i->collideWith(aabbB))
-					{
-						listA.push_back(i);
-						aabbA.merge(*i);
-					}
-				}
-
-				// Colliders in B that intersect the new bounding box for A. Compute a new bounding box for those too.
-				if (listA.size())
-				{
-					aabbB.invalidate();
-					for (auto i = bbeg; i < bend; ++i)
-					{
-						if (i->collideWith(aabbA))
-						{
-							listB.push_back(i);
-							aabbB.merge(*i);
-						}
-					}
-				}
-
-				// Now go through both lists and do the real collision (if needed), checking listA against the new B
-				// bounding box at the start of the outer loop, in case it is smaller than the original one.
-				// In a GPU algorithm, we would filter listA the same way, then just send both lists off to the GPU to
-				// brute-force the full quadratic complexity collision check.
-				if (listB.size())
-				{
-					for (auto i : listA)
-					{
-						if (!i->collideWith(aabbB))
-							continue;
-						for (auto j : listB)
-						{
-							if (!i->collideWith(*j))
-								continue;
-							if (checkCollide(&a->cbuf[i - abeg], &b->cbuf[j - bbeg], temp))
-							{
-								if (!hasResult || result.depth > temp.depth)
-								{
-									hasResult = true;
-									result = temp;
-								}
-							}
-						}
-					}
-				}
-
-				listA.clear();
-				listB.clear();
 
 				if (hasResult)
 				{
