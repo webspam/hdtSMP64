@@ -10,13 +10,27 @@ namespace hdt
 
 	static const CollisionResult zero;
 
-	template <class T1, bool SwapResults = false>
-	struct CollisionCheck
+	// Algorithm selection for collision checking.
+	// e_CPU is the original one, optimized for CPU performance.
+	// e_CPURefactored is an alternate CPU one, modified for conversion to GPU but still using CPU in practice.
+	// e_CUDA will (eventually) be an actual GPGPU algorithm.
+	enum CollisionCheckAlgorithmType
+	{
+		e_CPU,
+		e_CPURefactored,
+		e_CUDA
+	};
+
+
+	// CollisionCheckBase1 provides data members and the basic constructor for the target types. Note that we
+	// always collide a vertex shape against something else, so only the second type is templated.
+	template <typename T>
+	struct CollisionCheckBase1
 	{
 		typedef typename PerVertexShape::ShapeProp SP0;
-		typedef typename T1::ShapeProp SP1;
+		typedef typename T::ShapeProp SP1;
 
-		CollisionCheck(PerVertexShape* a, T1* b, CollisionResult* r)
+		CollisionCheckBase1(PerVertexShape* a, T* b, CollisionResult* r)
 		{
 			v0 = a->m_owner->m_vpos.data();
 			v1 = b->m_owner->m_vpos.data();
@@ -37,11 +51,96 @@ namespace hdt
 
 		std::atomic_long numResults;
 		CollisionResult* results;
+	};
+
+	// CollisionCheckBase2 provides the method to add results, swapping the colliders if necessary. This
+	// means we can support triangle-sphere collisions by reversing the input shapes and setting SwapResults
+	// to true, instead of having two almost identical versions of the same lower-level algorithm.
+	template <typename T, bool SwapResults>
+	struct CollisionCheckBase2;
+
+	template <typename T>
+	struct CollisionCheckBase2<T, false> : public CollisionCheckBase1<T>
+	{
+		template <typename... Ts>
+		CollisionCheckBase2(Ts&&... ts)
+			: CollisionCheckBase1(std::forward<Ts>(ts)...)
+		{}
+
+		bool addResult(const CollisionResult& res)
+		{
+			int p = numResults.fetch_add(1);
+			if (p < SkinnedMeshAlgorithm::MaxCollisionCount)
+			{
+				results[p] = res;
+				return true;
+			}
+			return false;
+		}
+	};
+
+	template <typename T>
+	struct CollisionCheckBase2<T, true> : public CollisionCheckBase1<T>
+	{
+		template <typename... Ts>
+		CollisionCheckBase2(Ts&&... ts)
+			: CollisionCheckBase1(std::forward<Ts>(ts)...)
+		{}
+
+		bool addResult(const CollisionResult& res)
+		{
+			int p = numResults.fetch_add(1);
+			if (p < SkinnedMeshAlgorithm::MaxCollisionCount)
+			{
+				results[p].posA = res.posB;
+				results[p].posB = res.posA;
+				results[p].colliderA = res.colliderB;
+				results[p].colliderB = res.colliderA;
+				results[p].normOnB = -res.normOnB;
+				results[p].depth = res.depth;
+				return true;
+			}
+			return false;
+		}
+	};
+
+	// CollisionChecker provides the checkCollide method, which handles a single pair of colliders. This does
+	// the accurate collision check for the CPU algorithms. GPU algorithms will provide their own methods for
+	// this, and should derive directly from CollisionCheckBase2.
+	template <typename T, bool SwapResults>
+	struct CollisionChecker;
+
+	template <bool SwapResults>
+	struct CollisionChecker<PerVertexShape, SwapResults> : public CollisionCheckBase2<PerVertexShape, SwapResults>
+	{
+		template <typename... Ts>
+		CollisionChecker(Ts&&... ts)
+			: CollisionCheckBase2(std::forward<Ts>(ts)...)
+		{}
+		bool checkCollide(Collider* a, Collider* b, CollisionResult& res)
+		{
+			auto s0 = v0[a->vertex];
+			auto r0 = s0.marginMultiplier() * sp0->margin;
+			auto s1 = v0[a->vertex];
+			auto r1 = s1.marginMultiplier() * sp0->margin;
+
+			auto ret = checkSphereSphere(s0.pos(), s1.pos(), r0, r1, res);
+			res.colliderA = a;
+			res.colliderB = b;
+			return ret;
+		}
+	};
+
+	template <bool SwapResults>
+	struct CollisionChecker<PerTriangleShape, SwapResults> : public CollisionCheckBase2<PerTriangleShape, SwapResults>
+	{
+		template <typename... Ts>
+		CollisionChecker(Ts&&... ts)
+			: CollisionCheckBase2(std::forward<Ts>(ts)...)
+		{}
 
 		bool checkCollide(Collider* a, Collider* b, CollisionResult& res)
 		{
-			static_assert(std::is_same<T1, PerTriangleShape>::value, "Must override checkCollide for non-triangle collisions");
-
 			auto s = v0[a->vertex];
 			auto r = s.marginMultiplier() * sp0->margin;
 			auto p0 = v1[b->vertices[0]];
@@ -58,23 +157,19 @@ namespace hdt
 			res.colliderB = b;
 			return ret;
 		}
+	};
 
-		bool addResult(const CollisionResult& res)
-		{
-			int p = numResults.fetch_add(1);
-			if (p < SkinnedMeshAlgorithm::MaxCollisionCount)
-			{
-				results[p] = res;
-				if (SwapResults)
-				{
-					std::swap(results[p].posA, results[p].posB);
-					std::swap(results[p].colliderA, results[p].colliderB);
-					results[p].normOnB = -results[p].normOnB;
-				}
-				return true;
-			}
-			return false;
-		}
+	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
+	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CPURefactored>
+	struct CollisionCheckAlgorithm;
+
+	template <typename T, bool SwapResults>
+	struct CollisionCheckAlgorithm<T, SwapResults, e_CPU> : public CollisionChecker<T, SwapResults>
+	{
+		template <typename... Ts>
+		CollisionCheckAlgorithm(Ts&&... ts)
+			: CollisionChecker(std::forward<Ts>(ts)...)
+		{}
 
 		int operator()()
 		{
@@ -103,7 +198,6 @@ namespace hdt
 				CollisionResult temp;
 				bool hasResult = false;
 
-				// std::string(MSVC implements) has a small internal buffer which decreased memory allocations 
 				thread_local std::vector<Aabb*> list;
 				if (asize > bsize)
 				{
@@ -179,29 +273,126 @@ namespace hdt
 		}
 	};
 
-	template <>
-	bool CollisionCheck<PerVertexShape, false>::checkCollide(Collider* a, Collider* b, CollisionResult& res)
+	template <typename T, bool SwapResults>
+	struct CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored> : public CollisionChecker<T, SwapResults>
 	{
-		auto s0 = v0[a->vertex];
-		auto r0 = s0.marginMultiplier() * sp0->margin;
-		auto s1 = v0[a->vertex];
-		auto r1 = s1.marginMultiplier() * sp0->margin;
+		template <typename... Ts>
+		CollisionCheckAlgorithm(Ts&&... ts)
+			: CollisionChecker(std::forward<Ts>(ts)...)
+		{}
 
-		auto ret = checkSphereSphere(s0.pos(), s1.pos(), r0, r1, res);
-		res.colliderA = a;
-		res.colliderB = b;
-		return ret;
-	}
+		int operator()()
+		{
+			std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
+			pairs.reserve(c0->colliders.size() + c1->colliders.size());
+			c0->checkCollisionL(c1, pairs);
+			if (pairs.empty()) return 0;
+
+			decltype(auto) func = [this](const std::pair<ColliderTree*, ColliderTree*>& pair)
+			{
+				if (numResults >= SkinnedMeshAlgorithm::MaxCollisionCount)
+					return;
+
+				auto a = pair.first, b = pair.second;
+
+				auto abeg = a->aabb;
+				auto bbeg = b->aabb;
+				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
+				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
+				auto aend = abeg + asize;
+				auto bend = bbeg + bsize;
+
+				Aabb aabbA;
+				auto aabbB = b->aabbMe;
+
+				CollisionResult result;
+				CollisionResult temp;
+				bool hasResult = false;
+
+				thread_local std::vector<Aabb*> listA;
+				thread_local std::vector<Aabb*> listB;
+
+				listA.reserve(asize);
+				listB.reserve(bsize);
+
+				// Colliders in A that intersect full bounding box of B. Compute a new bounding box for just those - this
+				// can be MUCH smaller than the original bounding box for A (consider the case where we have two spheres
+				// colliding, offset by an equal amount in all three axes).
+				for (auto i = abeg; i < aend; ++i)
+				{
+					if (i->collideWith(aabbB))
+					{
+						listA.push_back(i);
+						aabbA.merge(*i);
+					}
+				}
+
+				// Colliders in B that intersect the new bounding box for A. Compute a new bounding box for those too.
+				if (listA.size())
+				{
+					aabbB.invalidate();
+					for (auto i = bbeg; i < bend; ++i)
+					{
+						if (i->collideWith(aabbA))
+						{
+							listB.push_back(i);
+							aabbB.merge(*i);
+						}
+					}
+				}
+
+				// Now go through both lists and do the real collision (if needed), checking listA against the new B
+				// bounding box at the start of the outer loop, in case it is smaller than the original one.
+				// In a GPU algorithm, we would filter listA the same way, then just send both lists off to the GPU to
+				// brute-force the full quadratic complexity collision check.
+				if (listB.size())
+				{
+					for (auto i : listA)
+					{
+						if (!i->collideWith(aabbB))
+							continue;
+						for (auto j : listB)
+						{
+							if (!i->collideWith(*j))
+								continue;
+							if (checkCollide(&a->cbuf[i - abeg], &b->cbuf[j - bbeg], temp))
+							{
+								if (!hasResult || result.depth > temp.depth)
+								{
+									hasResult = true;
+									result = temp;
+								}
+							}
+						}
+					}
+				}
+
+				listA.clear();
+				listB.clear();
+
+				if (hasResult)
+				{
+					addResult(result);
+				}
+			};
+
+			if (pairs.size() >= std::thread::hardware_concurrency())
+				concurrency::parallel_for_each(pairs.begin(), pairs.end(), func);
+			else for (auto& i : pairs) func(i);
+
+			return numResults;
+		}
+	};
 
 	template <class T1>
 	int checkCollide(PerVertexShape* a, T1* b, CollisionResult* results)
 	{
-		return CollisionCheck<T1>(a, b, results)();
+		return CollisionCheckAlgorithm<T1>(a, b, results)();
 	}
 
 	int checkCollide(PerTriangleShape* a, PerVertexShape* b, CollisionResult* results)
 	{
-		return CollisionCheck<PerTriangleShape, true>(b, a, results)();
+		return CollisionCheckAlgorithm<PerTriangleShape, true>(b, a, results)();
 	}
 
 	void SkinnedMeshAlgorithm::MergeBuffer::doMerge(SkinnedMeshShape* a, SkinnedMeshShape* b,
