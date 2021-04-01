@@ -64,7 +64,8 @@ namespace hdt
 
 		SpinLock lock;
 		std::unordered_set<SkinnedMeshBody*> bodies;
-		std::unordered_set<PerTriangleShape*> shapes;
+		std::unordered_set<PerVertexShape*> vertex_shapes;
+		std::unordered_set<PerTriangleShape*> triangle_shapes;
 
 		concurrency::parallel_for(0, size, [&](int i)
 		{
@@ -88,10 +89,18 @@ namespace hdt
 
 					auto a = shape0->m_shape->asPerTriangleShape();
 					auto b = shape1->m_shape->asPerTriangleShape();
+					if (a)
+						triangle_shapes.insert(a);
+					else
+						vertex_shapes.insert(shape0->m_shape->asPerVertexShape());
+					if (b)
+						triangle_shapes.insert(b);
+					else
+						vertex_shapes.insert(shape0->m_shape->asPerVertexShape());
 					if (a && b)
 					{
-						shapes.insert(a);
-						shapes.insert(b);
+						vertex_shapes.insert(a->m_verticesCollision);
+						vertex_shapes.insert(b->m_verticesCollision);
 					}
 				}
 			}
@@ -103,10 +112,20 @@ namespace hdt
 			shape->internalUpdate();
 		});
 
-		concurrency::parallel_for_each(shapes.begin(), shapes.end(), [](PerTriangleShape* shape)
+		concurrency::parallel_for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
 		{
-			shape->m_verticesCollision->internalUpdate();
+			shape->internalUpdate();
 		});
+
+		concurrency::parallel_for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
+		{
+			shape->internalUpdate();
+		});
+
+		for (auto body : bodies)
+		{
+			body->m_bulletShape.m_aabb = body->m_shape->m_tree.aabbAll;
+		}
 
 		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
 		                               [&, this](const std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)
