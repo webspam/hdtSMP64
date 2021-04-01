@@ -14,7 +14,11 @@ namespace hdt
 
 		bool hasCuda();
 
+		void assignVertexSpace(std::unordered_set<SkinnedMeshBody*> bodies);
+
 		void perVertexUpdate(std::unordered_set<PerVertexShape*> shapes);
+
+		void perTriangleUpdate(std::unordered_set<PerTriangleShape*> shapes);
 
 	private:
 

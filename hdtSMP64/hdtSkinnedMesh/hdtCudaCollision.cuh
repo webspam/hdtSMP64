@@ -1,13 +1,20 @@
 #pragma once
 
+#include <immintrin.h>
+
 namespace hdt
 {
 	struct cuVector3
 	{
-		float x;
-		float y;
-		float z;
-		float w;
+		union {
+			struct {
+				float x;
+				float y;
+				float z;
+				float w;
+			};
+			__m128 val;
+		};
 	};
 
 	struct cuTriangle
@@ -19,11 +26,18 @@ namespace hdt
 
 	struct cuPerVertexInput
 	{
-		cuVector3 point;
+		int vertexIndex;
 		float margin;
 	};
 
-	struct cuPerVertexOutput
+	struct cuPerTriangleInput
+	{
+		int vertexIndices[3];
+		float margin;
+		float penetration;
+	};
+
+	struct cuAabb
 	{
 		cuVector3 aabbMin;
 		cuVector3 aabbMax;
@@ -35,5 +49,7 @@ namespace hdt
 	template<typename T>
 	void cuFree(T* buf);
 
-	bool cuRunPerVertexUpdate(int n, cuPerVertexInput* input, cuPerVertexOutput* output);
+	bool cuRunPerVertexUpdate(int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData);
+
+	bool cuRunPerTriangleUpdate(int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
 }

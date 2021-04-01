@@ -127,7 +127,7 @@ __kernel void updateVertices(
 			m_bones[i].m_maginMultipler = v.ptr->m_marginMultipler * boneT.getScale();
 		}
 
-		int size = m_vpos.size();
+		int size = m_vertices.size();
 
 		for (int idx = 0; idx < size; ++idx)
 		{
@@ -173,7 +173,6 @@ __kernel void updateVertices(
 		m_bones.resize(m_skinnedBones.size());
 
 		m_shape->clipColliders();
-		m_vpos.resize(m_vertices.size());
 
 		m_isKinematic = true;
 		for (auto& i : m_skinnedBones)
@@ -196,14 +195,13 @@ __kernel void updateVertices(
 			if (flags[i])
 			{
 				m_vertices[numUsed] = m_vertices[i];
-				m_vpos[numUsed] = m_vpos[i];
 				map[i] = numUsed++;
 			}
 		}
 		delete[] flags;
 		m_shape->remapVertices(map.data());
 		m_vertices.resize(numUsed);
-		m_vpos.resize(numUsed);
+		m_vpos.reset(new VertexPos[numUsed]);
 
 		m_useBoundingSphere = m_shape->m_colliders.size() > 10;
 	}

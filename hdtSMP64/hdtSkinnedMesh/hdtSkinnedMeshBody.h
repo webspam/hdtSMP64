@@ -82,7 +82,7 @@ namespace hdt
 		std::vector<Bone> m_bones;
 
 		std::vector<Vertex> m_vertices;
-		std::vector<VertexPos> m_vpos;
+		std::shared_ptr<VertexPos[]> m_vpos;
 
 		std::vector<IDStr> m_tags;
 		std::unordered_set<IDStr> m_canCollideWithTags;

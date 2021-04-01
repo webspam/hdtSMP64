@@ -32,8 +32,8 @@ namespace hdt
 
 		CollisionCheckBase1(PerVertexShape* a, T* b, CollisionResult* r)
 		{
-			v0 = a->m_owner->m_vpos.data();
-			v1 = b->m_owner->m_vpos.data();
+			v0 = a->m_owner->m_vpos.get();
+			v1 = b->m_owner->m_vpos.get();
 			c0 = &a->m_tree;
 			c1 = &b->m_tree;
 			sp0 = &a->m_shapeProp;

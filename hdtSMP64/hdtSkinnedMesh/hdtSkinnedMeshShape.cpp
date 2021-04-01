@@ -194,7 +194,7 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 
 	void PerVertexShape::internalUpdate()
 	{
-		auto& vertices = m_owner->m_vpos;
+		auto vertices = m_owner->m_vpos.get();
 
 		size_t size = m_colliders.size();
 		for (size_t i = 0; i < size; ++i)
@@ -261,7 +261,7 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 
 	void PerTriangleShape::internalUpdate()
 	{
-		auto& vertices = m_owner->m_vpos;
+		auto vertices = m_owner->m_vpos.get();
 
 		size_t size = m_colliders.size();
 		for (size_t i = 0; i < size; ++i)

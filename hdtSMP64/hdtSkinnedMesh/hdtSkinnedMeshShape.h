@@ -29,14 +29,8 @@ namespace hdt
 		virtual void markUsedVertices(bool* flags) = 0;
 		virtual void remapVertices(UINT* map) = 0;
 
-		//inline int getNumColliders(){ return m_colliders.size(); };
 		virtual float getColliderBoneWeight(const Collider* c, int boneIdx) = 0;
 		virtual int getColliderBoneIndex(const Collider* c, int boneIdx) = 0;
-		virtual btVector3 baryCoord(const Collider* c, const btVector3& p) = 0;
-		virtual float baryWeight(const btVector3& w, int boneIdx) = 0;
-
-		//inline float getColliderBoneWeightByIdx(int cidx, int boneIdx){ return getColliderBoneWeight(&m_colliders[cidx], boneIdx); }
-		//inline int getColliderBoneIndexByIdx(int cidx, int boneIdx){ return getColliderBoneIndex(&m_colliders[cidx], boneIdx); }
 
 		SkinnedMeshBody* m_owner;
 		vectorA16<Aabb> m_aabb;
@@ -73,8 +67,6 @@ namespace hdt
 			return m_owner->m_vertices[c->vertex].getBoneIdx(boneIdx);
 		}
 
-		btVector3 baryCoord(const Collider* c, const btVector3& p) override { return btVector3(1, 1, 1); }
-		float baryWeight(const btVector3& w, int boneIdx) override { return 1; }
 		void finishBuild() override;
 		void markUsedVertices(bool* flags) override;
 		void remapVertices(UINT* map) override;
@@ -115,13 +107,6 @@ namespace hdt
 			return m_owner->m_vertices[c->vertices[boneIdx / 4]].getBoneIdx(boneIdx % 4);
 		}
 
-		btVector3 baryCoord(const Collider* c, const btVector3& p) override
-		{
-			return BaryCoord(m_owner->m_vpos[c->vertices[0]].pos(), m_owner->m_vpos[c->vertices[1]].pos(),
-			                 m_owner->m_vpos[c->vertices[2]].pos(), p);
-		}
-
-		float baryWeight(const btVector3& w, int boneIdx) override { return w[boneIdx / 4]; }
 		void finishBuild() override;
 		void markUsedVertices(bool* flags) override;
 		void remapVertices(UINT* map) override;

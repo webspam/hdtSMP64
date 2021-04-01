@@ -108,15 +108,24 @@ namespace hdt
 			else getNearCallback()(pair, *this, dispatchInfo);
 		});
 
+		// If we're using CUDA, replace the original vertex position buffers with pointers into a block of shared
+		// memory. Other kernels will use this.
+		if (CudaInterface::instance()->hasCuda())
+		{
+			CudaInterface::instance()->assignVertexSpace(bodies);
+		}
+
+		// Compute vertex positions
 		concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* shape)
 		{
 			shape->internalUpdate();
 		});
 
-		// Don't use CUDA for this - data transfer time is far too high
-		if (CudaInterface::instance()->hasCuda() && false)
+		// Compute new bounding boxes for each vertex and update AABB trees
+		if (CudaInterface::instance()->hasCuda())
 		{
 			CudaInterface::instance()->perVertexUpdate(vertex_shapes);
+			CudaInterface::instance()->perTriangleUpdate(triangle_shapes);
 		}
 		else
 		{
@@ -124,12 +133,12 @@ namespace hdt
 			{
 				shape->internalUpdate();
 			});
-		}
 
-		concurrency::parallel_for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
-		{
-			shape->internalUpdate();
-		});
+			concurrency::parallel_for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
+			{
+				shape->internalUpdate();
+			});
+		}
 
 		for (auto body : bodies)
 		{
