@@ -128,6 +128,12 @@
     <ClInclude Include="Hooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaCollision.cuh">
+      <Filter>hdtSkinnedMesh</Filter>
+    </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaInterface.h">
+      <Filter>hdtSkinnedMesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
@@ -229,10 +235,18 @@
     <ClCompile Include="hdtSkyrimBody.cpp">
       <Filter>hdtSkyrimProxy</Filter>
     </ClCompile>
+    <ClCompile Include="hdtSkinnedMesh\hdtCudaInterface.cpp">
+      <Filter>hdtSkinnedMesh</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="export.def">
       <Filter>Source Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="hdtSkinnedMesh\hdtCudaCollision.cu">
+      <Filter>hdtSkinnedMesh</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

@@ -141,9 +141,6 @@ __kernel void updateVertices(
 			if (flg & 0b1000) posMargin += calcVertexState(p, m_bones[v.getBoneIdx(3)], setAll3(w));
 			m_vpos[idx].set(posMargin);
 		}
-
-		m_shape->internalUpdate();
-		m_bulletShape.m_aabb = m_shape->m_tree.aabbAll;
 	}
 
 	float SkinnedMeshBody::flexible(const Vertex& v)

@@ -45,6 +45,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 10.2.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -116,7 +117,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
-      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;detours.lib;cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\Dev\bullet3\lib\Release;D:\Dev\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference>
@@ -161,6 +162,8 @@
     <ClInclude Include="hdtSkinnedMesh\hdtCollisionAlgorithm.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtConeTwistConstraint.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtConstraintGroup.h" />
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaCollision.cuh" />
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaInterface.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtDispatcher.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtGroupConstraintSolver.h" />
@@ -198,6 +201,7 @@
     <ClCompile Include="hdtSkinnedMesh\hdtCollisionAlgorithm.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtConeTwistConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtConstraintGroup.cpp" />
+    <ClCompile Include="hdtSkinnedMesh\hdtCudaInterface.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtDispatcher.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGroupConstraintSolver.cpp" />
@@ -231,7 +235,11 @@
   <ItemGroup>
     <None Include="export.def" />
   </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="hdtSkinnedMesh\hdtCudaCollision.cu" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 10.2.targets" />
   </ImportGroup>
 </Project>

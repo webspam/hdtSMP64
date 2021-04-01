@@ -1,6 +1,7 @@
 #include "hdtDispatcher.h"
 #include "hdtSkinnedMeshBody.h"
 #include "hdtSkinnedMeshAlgorithm.h"
+#include "hdtCudaInterface.h"
 
 #include <LinearMath/btPoolAllocator.h>
 
@@ -112,10 +113,18 @@ namespace hdt
 			shape->internalUpdate();
 		});
 
-		concurrency::parallel_for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
+		// Don't use CUDA for this - data transfer time is far too high
+		if (CudaInterface::instance()->hasCuda() && false)
 		{
-			shape->internalUpdate();
-		});
+			CudaInterface::instance()->perVertexUpdate(vertex_shapes);
+		}
+		else
+		{
+			concurrency::parallel_for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
+			{
+				shape->internalUpdate();
+			});
+		}
 
 		concurrency::parallel_for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
 		{
