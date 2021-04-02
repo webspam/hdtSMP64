@@ -12,6 +12,7 @@
 namespace hdt
 {
 	class SkinnedMeshShape;
+	class CudaBody;
 
 	class SkinnedMeshBody
 		: public btCollisionObject
@@ -89,6 +90,8 @@ namespace hdt
 		std::unordered_set<IDStr> m_noCollideWithTags;
 		std::vector<SkinnedMeshBone*> m_canCollideWithBones;
 		std::vector<SkinnedMeshBone*> m_noCollideWithBones;
+
+		std::shared_ptr<CudaBody> m_cudaBody;
 
 		float flexible(const Vertex& v);
 

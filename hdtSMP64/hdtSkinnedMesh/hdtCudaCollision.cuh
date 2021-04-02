@@ -1,20 +1,19 @@
 #pragma once
 
+#include <memory>
 #include <immintrin.h>
 
 namespace hdt
 {
-	struct cuVector3
+	union cuVector3
 	{
-		union {
-			struct {
-				float x;
-				float y;
-				float z;
-				float w;
-			};
-			__m128 val;
+		struct {
+			float x;
+			float y;
+			float z;
+			float w;
 		};
+		__m128 val;
 	};
 
 	struct cuTriangle
@@ -43,6 +42,10 @@ namespace hdt
 		cuVector3 aabbMax;
 	};
 
+	void cuCreateStream(void** ptr);
+
+	void cuDestroyStream(void* ptr);
+
 	template<typename T>
 	void cuGetBuffer(T** buf, int size);
 	
@@ -52,4 +55,6 @@ namespace hdt
 	bool cuRunPerVertexUpdate(int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData);
 
 	bool cuRunPerTriangleUpdate(int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
+
+	bool cuSynchronize();
 }

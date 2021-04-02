@@ -74,6 +74,18 @@ namespace hdt
         }
     }
 
+    void cuCreateStream(void** ptr)
+    {
+        *ptr = new cudaStream_t;
+        cudaStreamCreate(reinterpret_cast<cudaStream_t*>(*ptr));
+    }
+
+    void cuDestroyStream(void* ptr)
+    {
+        cudaStreamDestroy(*reinterpret_cast<cudaStream_t*>(ptr));
+        delete reinterpret_cast<cudaStream_t*>(ptr);
+    }
+
     template<typename T>
     void cuGetBuffer(T** buf, int size)
     {
@@ -91,7 +103,7 @@ namespace hdt
         int numBlocks = (n - 1) / 512 + 1;
 
         kernelPerVertexUpdate << <numBlocks, 512 >> > (n, input, output, vertexData);
-        return cudaPeekAtLastError() == cudaSuccess && cudaDeviceSynchronize() == cudaSuccess;
+        return cudaPeekAtLastError() == cudaSuccess;
     }
 
 
@@ -100,7 +112,12 @@ namespace hdt
         int numBlocks = (n - 1) / 512 + 1;
 
         kernelPerTriangleUpdate << <numBlocks, 512 >> > (n, input, output, vertexData);
-        return cudaPeekAtLastError() == cudaSuccess && cudaDeviceSynchronize() == cudaSuccess;
+        return cudaPeekAtLastError() == cudaSuccess;
+    }
+
+    bool cuSynchronize()
+    {
+        return cudaDeviceSynchronize() == cudaSuccess;
     }
 
     template void cuGetBuffer<cuVector3>(cuVector3**, int);

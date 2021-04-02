@@ -108,11 +108,51 @@ namespace hdt
 			else getNearCallback()(pair, *this, dispatchInfo);
 		});
 
-		// If we're using CUDA, replace the original vertex position buffers with pointers into a block of shared
-		// memory. Other kernels will use this.
+
 		if (CudaInterface::instance()->hasCuda())
 		{
-			CudaInterface::instance()->assignVertexSpace(bodies);
+			// Create CUDA bodies for any new mesh bodies
+			std::vector<SkinnedMeshBody*> newBodies;
+			newBodies.reserve(bodies.size());
+			for (auto body : bodies)
+			{
+				if (!body->m_cudaBody)
+				{
+					newBodies.push_back(body);
+				}
+			}
+			concurrency::parallel_for_each(newBodies.begin(), newBodies.end(), [](SkinnedMeshBody* body)
+			{
+				body->m_cudaBody.reset(new CudaBody(body));
+			});
+
+			std::vector<PerTriangleShape*> newTriangleShapes;
+			newTriangleShapes.reserve(triangle_shapes.size());
+			for (auto shape : triangle_shapes)
+			{
+				if (!shape->m_cudaShape)
+				{
+					newTriangleShapes.push_back(shape);
+				}
+			}
+			concurrency::parallel_for_each(newTriangleShapes.begin(), newTriangleShapes.end(), [](PerTriangleShape* shape)
+			{
+				shape->m_cudaShape.reset(new CudaPerTriangleShape(shape));
+			});
+
+			std::vector<PerVertexShape*> newVertexShapes;
+			newVertexShapes.reserve(vertex_shapes.size());
+			for (auto shape : vertex_shapes)
+			{
+				if (!shape->m_cudaShape)
+				{
+					newVertexShapes.push_back(shape);
+				}
+			}
+			concurrency::parallel_for_each(newVertexShapes.begin(), newVertexShapes.end(), [](PerVertexShape* shape)
+			{
+				shape->m_cudaShape.reset(new CudaPerVertexShape(shape));
+			});
 		}
 
 		// Compute vertex positions
@@ -124,8 +164,25 @@ namespace hdt
 		// Compute new bounding boxes for each vertex and update AABB trees
 		if (CudaInterface::instance()->hasCuda())
 		{
-			CudaInterface::instance()->perVertexUpdate(vertex_shapes);
-			CudaInterface::instance()->perTriangleUpdate(triangle_shapes);
+			std::for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
+			{
+				shape->m_cudaShape->launch();
+			});
+			std::for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
+			{
+				shape->m_cudaShape->launch();
+			});
+
+			CudaInterface::instance()->synchronize();
+
+			std::for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
+			{
+				shape->m_tree.updateAabb();
+			});
+			std::for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
+			{
+				shape->m_tree.updateAabb();
+			});
 		}
 		else
 		{

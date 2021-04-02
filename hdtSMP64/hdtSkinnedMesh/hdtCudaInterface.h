@@ -4,6 +4,44 @@
 
 namespace hdt
 {
+	class CudaBody
+	{
+		friend class CudaPerTriangleShape;
+		friend class CudaPerVertexShape;
+	public:
+		CudaBody(SkinnedMeshBody* body);
+
+	private:
+		class Imp;
+		std::shared_ptr<Imp> m_imp;
+	};
+	
+	class CudaPerTriangleShape
+	{
+		friend class CudaBody;
+	public:
+		CudaPerTriangleShape(PerTriangleShape* shape);
+
+		void launch();
+
+	private:
+		class Imp;
+		std::shared_ptr<Imp> m_imp;
+	};
+
+	class CudaPerVertexShape
+	{
+		friend class CudaBody;
+	public:
+		CudaPerVertexShape(PerVertexShape* shape);
+
+		void launch();
+
+	private:
+		class Imp;
+		std::shared_ptr<Imp> m_imp;
+	};
+
 	class CudaInterface
 	{
 		struct CudaBuffers;
@@ -14,16 +52,10 @@ namespace hdt
 
 		bool hasCuda();
 
-		void assignVertexSpace(std::unordered_set<SkinnedMeshBody*> bodies);
-
-		void perVertexUpdate(std::unordered_set<PerVertexShape*> shapes);
-
-		void perTriangleUpdate(std::unordered_set<PerTriangleShape*> shapes);
+		void synchronize();
 
 	private:
 
 		CudaInterface();
-
-		std::unique_ptr<CudaBuffers> m_buffers;
 	};
 }

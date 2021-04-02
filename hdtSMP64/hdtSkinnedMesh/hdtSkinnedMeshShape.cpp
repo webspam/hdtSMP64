@@ -188,8 +188,8 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 		m_owner->setCollisionFlags(m_tree.isKinematic ? btCollisionObject::CF_KINEMATIC_OBJECT : 0);
 
 		m_tree.exportColliders(m_colliders);
-		m_aabb.resize(m_colliders.size());
-		m_tree.remapColliders(m_colliders.data(), m_aabb.data());
+		m_aabb.reset(new Aabb[m_colliders.size()]);
+		m_tree.remapColliders(m_colliders.data(), m_aabb.get());
 	}
 
 	void PerVertexShape::internalUpdate()
@@ -302,8 +302,8 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 		m_owner->setCollisionFlags(m_tree.isKinematic ? btCollisionObject::CF_KINEMATIC_OBJECT : 0);
 
 		m_tree.exportColliders(m_colliders);
-		m_aabb.resize(m_colliders.size());
-		m_tree.remapColliders(m_colliders.data(), m_aabb.data());
+		m_aabb.reset(new Aabb[m_colliders.size()]);
+		m_tree.remapColliders(m_colliders.data(), m_aabb.get());
 
 		Ref<PerTriangleShape> holder = this;
 		m_verticesCollision = new PerVertexShape(m_owner);

@@ -248,4 +248,11 @@ namespace hdt
 		for (auto& i : children)
 			i.remapColliders(start, startAabb);
 	}
+
+	void ColliderTree::relocateAabb(Aabb* newAabb)
+	{
+		for (auto& i : children)
+			i.relocateAabb(newAabb + (i.aabb - aabb));
+		aabb = newAabb;
+	}
 }

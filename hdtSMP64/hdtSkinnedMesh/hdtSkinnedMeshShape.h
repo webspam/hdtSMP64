@@ -8,6 +8,8 @@ namespace hdt
 {
 	class PerVertexShape;
 	class PerTriangleShape;
+	class CudaPerVertexShape;
+	class CudaPerTriangleShape;
 
 	class SkinnedMeshShape : public RefObject
 	{
@@ -33,7 +35,7 @@ namespace hdt
 		virtual int getColliderBoneIndex(const Collider* c, int boneIdx) = 0;
 
 		SkinnedMeshBody* m_owner;
-		vectorA16<Aabb> m_aabb;
+		std::shared_ptr<Aabb[]> m_aabb;
 		vectorA16<Collider> m_colliders;
 		ColliderTree m_tree;
 		float m_windEffect = 0.f;
@@ -78,6 +80,8 @@ namespace hdt
 			float margin = 1.0f;
 		} m_shapeProp;
 
+		std::shared_ptr<CudaPerVertexShape> m_cudaShape;
+
 #ifdef ENABLE_CL
 		static hdtCLKernel		m_kernel;
 		virtual void internalUpdateCL();
@@ -120,6 +124,8 @@ namespace hdt
 		} m_shapeProp;
 
 		Ref<PerVertexShape> m_verticesCollision;
+
+		std::shared_ptr<CudaPerTriangleShape> m_cudaShape;
 
 #ifdef ENABLE_CL
 		static hdtCLKernel		m_kernel;
