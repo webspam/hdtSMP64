@@ -117,7 +117,7 @@ __kernel void updateVertices(
 		return _mm_mul_ps(w, p.get128());
 	}
 
-	void SkinnedMeshBody::internalUpdate()
+	void SkinnedMeshBody::updateBones()
 	{
 		for (size_t i = 0; i < m_skinnedBones.size(); ++i)
 		{
@@ -126,6 +126,10 @@ __kernel void updateVertices(
 			m_bones[i].m_vertexToWorld = btMatrix4x3T(boneT) * v.vertexToBone;
 			m_bones[i].m_maginMultipler = v.ptr->m_marginMultipler * boneT.getScale();
 		}
+	}
+	void SkinnedMeshBody::internalUpdate()
+	{
+		updateBones();
 
 		int size = m_vertices.size();
 
@@ -170,7 +174,7 @@ __kernel void updateVertices(
 
 	void SkinnedMeshBody::finishBuild()
 	{
-		m_bones.resize(m_skinnedBones.size());
+		m_bones.reset(new Bone[m_skinnedBones.size()]);
 
 		m_shape->clipColliders();
 

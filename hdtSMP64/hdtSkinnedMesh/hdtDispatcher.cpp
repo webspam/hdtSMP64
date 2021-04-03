@@ -116,61 +116,63 @@ namespace hdt
 			newBodies.reserve(bodies.size());
 			for (auto body : bodies)
 			{
-				if (!body->m_cudaBody)
+				if (!body->m_cudaObject)
 				{
 					newBodies.push_back(body);
 				}
 			}
 			concurrency::parallel_for_each(newBodies.begin(), newBodies.end(), [](SkinnedMeshBody* body)
 			{
-				body->m_cudaBody.reset(new CudaBody(body));
+				body->m_cudaObject.reset(new CudaBody(body));
 			});
 
 			std::vector<PerTriangleShape*> newTriangleShapes;
 			newTriangleShapes.reserve(triangle_shapes.size());
 			for (auto shape : triangle_shapes)
 			{
-				if (!shape->m_cudaShape)
+				if (!shape->m_cudaObject)
 				{
 					newTriangleShapes.push_back(shape);
 				}
 			}
 			concurrency::parallel_for_each(newTriangleShapes.begin(), newTriangleShapes.end(), [](PerTriangleShape* shape)
 			{
-				shape->m_cudaShape.reset(new CudaPerTriangleShape(shape));
+				shape->m_cudaObject.reset(new CudaPerTriangleShape(shape));
 			});
 
 			std::vector<PerVertexShape*> newVertexShapes;
 			newVertexShapes.reserve(vertex_shapes.size());
 			for (auto shape : vertex_shapes)
 			{
-				if (!shape->m_cudaShape)
+				if (!shape->m_cudaObject)
 				{
 					newVertexShapes.push_back(shape);
 				}
 			}
 			concurrency::parallel_for_each(newVertexShapes.begin(), newVertexShapes.end(), [](PerVertexShape* shape)
 			{
-				shape->m_cudaShape.reset(new CudaPerVertexShape(shape));
+				shape->m_cudaObject.reset(new CudaPerVertexShape(shape));
 			});
 		}
-
-		// Compute vertex positions
-		concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* shape)
-		{
-			shape->internalUpdate();
-		});
 
 		// Compute new bounding boxes for each vertex and update AABB trees
 		if (CudaInterface::instance()->hasCuda())
 		{
+			concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* body)
+			{
+				body->updateBones();
+			});
+			std::for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* body)
+			{
+				body->m_cudaObject->launch();
+			});
 			std::for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
 			{
-				shape->m_cudaShape->launch();
+				shape->m_cudaObject->launch();
 			});
 			std::for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
 			{
-				shape->m_cudaShape->launch();
+				shape->m_cudaObject->launch();
 			});
 
 			CudaInterface::instance()->synchronize();
@@ -186,11 +188,14 @@ namespace hdt
 		}
 		else
 		{
+			concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* body)
+			{
+				body->internalUpdate();
+			});
 			concurrency::parallel_for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
 			{
 				shape->internalUpdate();
 			});
-
 			concurrency::parallel_for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
 			{
 				shape->internalUpdate();

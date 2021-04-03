@@ -42,6 +42,19 @@ namespace hdt
 		cuVector3 aabbMax;
 	};
 
+	struct cuBone
+	{
+		cuVector3 transform[4];
+		cuVector3 marginMultiplier; // Note only w component actually used
+	};
+
+	struct cuVertex
+	{
+		cuVector3 position;
+		float weights[4];
+		uint32_t bones[4];
+	};
+
 	void cuCreateStream(void** ptr);
 
 	void cuDestroyStream(void* ptr);
@@ -52,9 +65,11 @@ namespace hdt
 	template<typename T>
 	void cuFree(T* buf);
 
-	bool cuRunPerVertexUpdate(int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData);
+	bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData);
 
-	bool cuRunPerTriangleUpdate(int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
+	bool cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData);
+
+	bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
 
 	bool cuSynchronize();
 }

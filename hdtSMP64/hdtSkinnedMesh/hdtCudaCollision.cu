@@ -74,6 +74,45 @@ namespace hdt
         }
     }
 
+    __device__ cuVector3& operator+=(cuVector3& v1, cuVector3& v2)
+    {
+        v1.x += v2.x;
+        v1.y += v2.y;
+        v1.z += v2.z;
+        v1.w += v2.w;
+        return v1;
+    }
+
+    __device__ cuVector3 calcVertexState(cuVector3& skinPos, cuBone& bone, float w)
+    {
+        cuVector3 result;
+        result.x = bone.transform[0].x * skinPos.x + bone.transform[1].x * skinPos.y + bone.transform[2].x * skinPos.z + bone.transform[3].x;
+        result.y = bone.transform[0].y * skinPos.x + bone.transform[1].y * skinPos.y + bone.transform[2].y * skinPos.z + bone.transform[3].y;
+        result.z = bone.transform[0].z * skinPos.x + bone.transform[1].z * skinPos.y + bone.transform[2].z * skinPos.z + bone.transform[3].z;
+        result.w = bone.marginMultiplier.w;
+        result.x *= w;
+        result.y *= w;
+        result.z *= w;
+        result.w *= w;
+        return result;
+    }
+
+    __global__
+        void kernelBodyUpdate(int n, cuVertex* in, cuVector3* out, cuBone* boneData)
+    {
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
+        int stride = blockDim.x * gridDim.x;
+
+        for (int i = index; i < n; i += stride)
+        {
+            out[i] = cuVector3();
+            for (int j = 0; j < 4; ++j)
+            {
+                out[i] += calcVertexState(in[i].position, boneData[in[i].bones[j]], in[i].weights[j]);
+            }
+        }
+    }
+
     void cuCreateStream(void** ptr)
     {
         *ptr = new cudaStream_t;
@@ -98,20 +137,31 @@ namespace hdt
         cudaFree(buf);
     }
 
-    bool cuRunPerVertexUpdate(int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData)
+    bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData)
     {
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / 512 + 1;
 
-        kernelPerVertexUpdate << <numBlocks, 512 >> > (n, input, output, vertexData);
+        kernelBodyUpdate <<<numBlocks, 512, 0, *s >>> (n, input, output, boneData);
+        return cudaPeekAtLastError() == cudaSuccess;
+    }
+
+    bool cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData)
+    {
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+        int numBlocks = (n - 1) / 512 + 1;
+
+        kernelPerVertexUpdate <<<numBlocks, 512, 0, *s >>> (n, input, output, vertexData);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
 
-    bool cuRunPerTriangleUpdate(int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData)
+    bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData)
     {
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / 512 + 1;
 
-        kernelPerTriangleUpdate << <numBlocks, 512 >> > (n, input, output, vertexData);
+        kernelPerTriangleUpdate <<<numBlocks, 512, 0, *s >>> (n, input, output, vertexData);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
@@ -124,9 +174,13 @@ namespace hdt
     template void cuGetBuffer<cuPerVertexInput>(cuPerVertexInput**, int);
     template void cuGetBuffer<cuPerTriangleInput>(cuPerTriangleInput**, int);
     template void cuGetBuffer<cuAabb>(cuAabb**, int);
+    template void cuGetBuffer<cuBone>(cuBone**, int);
+    template void cuGetBuffer<cuVertex>(cuVertex**, int);
 
     template void cuFree<cuVector3>(cuVector3*);
     template void cuFree<cuPerVertexInput>(cuPerVertexInput*);
     template void cuFree<cuPerTriangleInput>(cuPerTriangleInput*);
     template void cuFree<cuAabb>(cuAabb*);
+    template void cuFree<cuBone>(cuBone*);
+    template void cuFree<cuVertex>(cuVertex*);
 }

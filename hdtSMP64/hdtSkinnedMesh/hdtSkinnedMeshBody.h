@@ -77,10 +77,11 @@ namespace hdt
 		int addBone(SkinnedMeshBone* bone, const btQsTransform& verticesToBone, const BoundingSphere& boundingSphere);
 
 		void finishBuild();
+		void updateBones();
 		virtual void internalUpdate();
 
 		std::vector<SkinnedBone> m_skinnedBones;
-		std::vector<Bone> m_bones;
+		std::shared_ptr<Bone[]> m_bones;
 
 		std::vector<Vertex> m_vertices;
 		std::shared_ptr<VertexPos[]> m_vpos;
@@ -91,7 +92,7 @@ namespace hdt
 		std::vector<SkinnedMeshBone*> m_canCollideWithBones;
 		std::vector<SkinnedMeshBone*> m_noCollideWithBones;
 
-		std::shared_ptr<CudaBody> m_cudaBody;
+		std::shared_ptr<CudaBody> m_cudaObject;
 
 		float flexible(const Vertex& v);
 

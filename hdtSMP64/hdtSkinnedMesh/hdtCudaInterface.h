@@ -10,6 +10,7 @@ namespace hdt
 		friend class CudaPerVertexShape;
 	public:
 		CudaBody(SkinnedMeshBody* body);
+		void launch();
 
 	private:
 		class Imp;
@@ -18,27 +19,25 @@ namespace hdt
 	
 	class CudaPerTriangleShape
 	{
-		friend class CudaBody;
 	public:
-		CudaPerTriangleShape(PerTriangleShape* shape);
+		class Imp;
 
+		CudaPerTriangleShape(PerTriangleShape* shape);
 		void launch();
 
 	private:
-		class Imp;
 		std::shared_ptr<Imp> m_imp;
 	};
 
 	class CudaPerVertexShape
 	{
-		friend class CudaBody;
 	public:
-		CudaPerVertexShape(PerVertexShape* shape);
+		class Imp;
 
+		CudaPerVertexShape(PerVertexShape* shape);
 		void launch();
 
 	private:
-		class Imp;
 		std::shared_ptr<Imp> m_imp;
 	};
 

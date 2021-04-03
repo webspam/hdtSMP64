@@ -55,6 +55,9 @@ namespace hdt
 			{
 				cuDestroyStream(m_stream);
 			}
+
+			void* get() { return m_stream; }
+
 		private:
 			void* m_stream;
 		};
@@ -67,15 +70,33 @@ namespace hdt
 	public:
 
 		Imp(SkinnedMeshBody* body)
-			: m_vertexBuffer(body->m_vertices.size())
+			: m_numVertices(body->m_vertices.size()),
+			m_bones(body->m_skinnedBones.size()),
+			m_vertexData(body->m_vertices.size()),
+			m_vertexBuffer(body->m_vertices.size())
 		{
-			static_assert(sizeof(cuVector3) == sizeof(btVector3));
+			std::copy(body->m_vertices.begin(), body->m_vertices.end(), reinterpret_cast<Vertex*>(m_vertexData.get()));
+			body->m_bones.reset(reinterpret_cast<Bone*>(m_bones.get()), NullDeleter<Bone[]>());
 			body->m_vpos.reset(reinterpret_cast<VertexPos*>(m_vertexBuffer.get()), NullDeleter<VertexPos[]>());
+		}
+
+		void launch()
+		{
+			cuRunBodyUpdate(
+				m_stream.get(),
+				m_numVertices,
+				m_vertexData,
+				m_vertexBuffer,
+				m_bones);
 		}
 
 	private:
 
 		CudaStream m_stream;
+
+		int m_numVertices;
+		CudaBuffer<cuBone> m_bones;
+		CudaBuffer<cuVertex> m_vertexData;
 		CudaBuffer<cuVector3> m_vertexBuffer;
 	};
 
@@ -83,13 +104,18 @@ namespace hdt
 		: m_imp(new Imp(body))
 	{}
 
+	void CudaBody::launch()
+	{
+		m_imp->launch();
+	}
+
 	class CudaPerTriangleShape::Imp
 	{
 	public:
 
 		Imp(PerTriangleShape* shape)
 			: m_numColliders(shape->m_colliders.size()),
-			m_body(shape->m_owner->m_cudaBody->m_imp),
+			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size())
 		{
@@ -103,7 +129,6 @@ namespace hdt
 			}
 
 			Aabb* aabb = reinterpret_cast<Aabb*>(m_output.get());
-			std::copy(shape->m_aabb.get(), shape->m_aabb.get() + shape->m_colliders.size(), aabb);
 			shape->m_tree.relocateAabb(aabb);
 			shape->m_aabb.reset(aabb, NullDeleter<Aabb[]>());
 		}
@@ -111,6 +136,7 @@ namespace hdt
 		void launch()
 		{
 			cuRunPerTriangleUpdate(
+				m_body->m_stream.get(),
 				m_numColliders,
 				m_input,
 				m_output,
@@ -141,7 +167,7 @@ namespace hdt
 
 		Imp(PerVertexShape* shape)
 			: m_numColliders(shape->m_colliders.size()),
-			m_body(shape->m_owner->m_cudaBody->m_imp),
+			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size())
 		{
@@ -152,7 +178,6 @@ namespace hdt
 			}
 
 			Aabb* aabb = reinterpret_cast<Aabb*>(m_output.get());
-			std::copy(shape->m_aabb.get(), shape->m_aabb.get() + shape->m_colliders.size(), aabb);
 			shape->m_tree.relocateAabb(aabb);
 			shape->m_aabb.reset(aabb, NullDeleter<Aabb[]>());
 		}
@@ -160,6 +185,7 @@ namespace hdt
 		void launch()
 		{
 			cuRunPerVertexUpdate(
+				m_body->m_stream.get(),
 				m_numColliders,
 				m_input,
 				m_output,
@@ -192,7 +218,7 @@ namespace hdt
 
 	bool CudaInterface::hasCuda()
 	{
-		return true;
+		return false;
 	}
 
 	void CudaInterface::synchronize()
