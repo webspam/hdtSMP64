@@ -177,19 +177,6 @@ namespace hdt
 
 			CudaInterface::instance()->synchronize();
 
-			std::for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* body)
-			{
-				body->m_cudaObject->getResults();
-			});
-			std::for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
-			{
-				shape->m_cudaObject->getResults();
-			});
-			std::for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
-			{
-				shape->m_cudaObject->getResults();
-			});
-
 			std::for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
 			{
 				shape->m_tree.updateAabb();

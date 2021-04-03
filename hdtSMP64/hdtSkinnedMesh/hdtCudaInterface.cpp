@@ -34,6 +34,7 @@ namespace hdt
 			}
 
 			void* get() { return m_stream; }
+			operator void* () { return m_stream; }
 
 		private:
 			void* m_stream;
@@ -58,14 +59,14 @@ namespace hdt
 				cuFreeHost(m_hostData);
 			}
 
-			void toDevice(CudaStream* stream = nullptr)
+			void toDevice(CudaStream& stream)
 			{
-				cuCopyToDevice(m_deviceData, m_hostData, m_size);
+				cuCopyToDevice(m_deviceData, m_hostData, m_size, stream);
 			}
 
-			void toHost()
+			void toHost(CudaStream& stream)
 			{
-				cuCopyToHost(m_hostData, m_deviceData, m_size);
+				cuCopyToHost(m_hostData, m_deviceData, m_size, stream);
 			}
 
 			operator HostT* () { return m_hostData; }
@@ -94,7 +95,7 @@ namespace hdt
 			m_vertexBuffer(body->m_vertices.size())
 		{
 			std::copy(body->m_vertices.begin(), body->m_vertices.end(), m_vertexData.get());
-			m_vertexData.toDevice();
+			m_vertexData.toDevice(m_stream);
 
 			body->m_bones.reset(m_bones.get(), NullDeleter<Bone[]>());
 			body->m_vpos.reset(m_vertexBuffer.get(), NullDeleter<VertexPos[]>());
@@ -102,18 +103,14 @@ namespace hdt
 
 		void launch()
 		{
-			m_bones.toDevice();
+			m_bones.toDevice(m_stream);
 			cuRunBodyUpdate(
-				m_stream.get(),
+				m_stream,
 				m_numVertices,
 				m_vertexData.getD(),
 				m_vertexBuffer.getD(),
 				m_bones.getD());
-		}
-
-		void getResults()
-		{
-			m_vertexBuffer.toHost();
+			m_vertexBuffer.toHost(m_stream);
 		}
 
 	private:
@@ -135,11 +132,6 @@ namespace hdt
 		m_imp->launch();
 	}
 
-	void CudaBody::getResults()
-	{
-		m_imp->getResults();
-	}
-
 	class CudaPerTriangleShape::Imp
 	{
 	public:
@@ -158,7 +150,7 @@ namespace hdt
 				m_input[i].margin = shape->m_shapeProp.margin;
 				m_input[i].penetration = shape->m_shapeProp.penetration;
 			}
-			m_input.toDevice();
+			m_input.toDevice(m_body->m_stream);
 
 			Aabb* aabb = m_output.get();
 			shape->m_tree.relocateAabb(aabb);
@@ -168,16 +160,12 @@ namespace hdt
 		void launch()
 		{
 			cuRunPerTriangleUpdate(
-				m_body->m_stream.get(),
+				m_body->m_stream,
 				m_numColliders,
 				m_input.getD(),
 				m_output.getD(),
 				m_body->m_vertexBuffer.getD());
-		}
-
-		void getResults()
-		{
-			m_output.toHost();
+			m_output.toHost(m_body->m_stream);
 		}
 
 	private:
@@ -198,11 +186,6 @@ namespace hdt
 		m_imp->launch();
 	}
 
-	void CudaPerTriangleShape::getResults()
-	{
-		m_imp->getResults();
-	}
-
 	class CudaPerVertexShape::Imp
 	{
 	public:
@@ -218,7 +201,7 @@ namespace hdt
 				m_input[i].vertexIndex = shape->m_colliders[i].vertex;
 				m_input[i].margin = shape->m_shapeProp.margin;
 			}
-			m_input.toDevice();
+			m_input.toDevice(m_body->m_stream);
 
 			Aabb* aabb = m_output.get();
 			shape->m_tree.relocateAabb(aabb);
@@ -228,16 +211,12 @@ namespace hdt
 		void launch()
 		{
 			cuRunPerVertexUpdate(
-				m_body->m_stream.get(),
+				m_body->m_stream,
 				m_numColliders,
 				m_input.getD(),
 				m_output.getD(),
 				m_body->m_vertexBuffer.getD());
-		}
-
-		void getResults()
-		{
-			m_output.toHost();
+			m_output.toHost(m_body->m_stream);
 		}
 
 	private:
@@ -258,11 +237,6 @@ namespace hdt
 		m_imp->launch();
 	}
 
-	void CudaPerVertexShape::getResults()
-	{
-		m_imp->getResults();
-	}
-
 	CudaInterface* CudaInterface::instance()
 	{
 		static CudaInterface s_instance;
@@ -271,7 +245,7 @@ namespace hdt
 
 	bool CudaInterface::hasCuda()
 	{
-		return false;
+		return true;
 	}
 
 	void CudaInterface::synchronize()

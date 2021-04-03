@@ -145,14 +145,16 @@ namespace hdt
         cudaFreeHost(buf);
     }
 
-    void cuCopyToDevice(void* dst, void* src, size_t n)
+    void cuCopyToDevice(void* dst, void* src, size_t n, void* stream)
     {
-        cudaMemcpy(dst, src, n, cudaMemcpyHostToDevice);
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+        cudaMemcpyAsync(dst, src, n, cudaMemcpyHostToDevice, *s);
     }
 
-    void cuCopyToHost(void* dst, void* src, size_t n)
+    void cuCopyToHost(void* dst, void* src, size_t n, void* stream)
     {
-        cudaMemcpy(dst, src, n, cudaMemcpyDeviceToHost);
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+        cudaMemcpyAsync(dst, src, n, cudaMemcpyDeviceToHost, *s);
     }
 
     bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData)

@@ -67,9 +67,9 @@ namespace hdt
 
 	void cuFreeHost(void* buf);
 
-	void cuCopyToDevice(void* dst, void* src, size_t n);
+	void cuCopyToDevice(void* dst, void* src, size_t n, void* stream);
 
-	void cuCopyToHost(void* dst, void* src, size_t n);
+	void cuCopyToHost(void* dst, void* src, size_t n, void* stream);
 
 	bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData);
 
