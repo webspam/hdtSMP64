@@ -185,8 +185,17 @@ namespace hdt
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
-    bool cuSynchronize()
+    bool cuSynchronize(void* stream)
     {
-        return cudaDeviceSynchronize() == cudaSuccess;
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+
+        if (s)
+        {
+            return cudaStreamSynchronize(*s);
+        }
+        else
+        {
+            return cudaDeviceSynchronize() == cudaSuccess;
+        }
     }
 }

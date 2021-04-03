@@ -11,6 +11,7 @@ namespace hdt
 	public:
 		CudaBody(SkinnedMeshBody* body);
 		void launch();
+		void synchronize();
 
 	private:
 		class Imp;

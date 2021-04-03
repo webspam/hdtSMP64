@@ -110,6 +110,11 @@ namespace hdt
 				m_vertexData.getD(),
 				m_vertexBuffer.getD(),
 				m_bones.getD());
+		}
+
+		void synchronize()
+		{
+			cuSynchronize(m_stream);
 			m_vertexBuffer.toHost(m_stream);
 		}
 
@@ -130,6 +135,11 @@ namespace hdt
 	void CudaBody::launch()
 	{
 		m_imp->launch();
+	}
+
+	void CudaBody::synchronize()
+	{
+		m_imp->synchronize();
 	}
 
 	class CudaPerTriangleShape::Imp
@@ -245,7 +255,7 @@ namespace hdt
 
 	bool CudaInterface::hasCuda()
 	{
-		return true;
+		return false;
 	}
 
 	void CudaInterface::synchronize()

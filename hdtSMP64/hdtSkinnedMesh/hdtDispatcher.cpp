@@ -64,18 +64,18 @@ namespace hdt
 		auto pairs = pairCache->getOverlappingPairArrayPtr();
 
 		SpinLock lock;
-		std::unordered_set<SkinnedMeshBody*> bodies;
-		std::unordered_set<PerVertexShape*> vertex_shapes;
-		std::unordered_set<PerTriangleShape*> triangle_shapes;
 
+		using UpdateMap = std::unordered_map<SkinnedMeshBody*, std::pair<PerVertexShape*, PerTriangleShape*> >;
+		UpdateMap to_update;
+
+		// Find bodies and meshes that need collision checking. We want to keep them together in a map so they can
+		// be grouped by CUDA stream
 		concurrency::parallel_for(0, size, [&](int i)
 		{
 			auto& pair = pairs[i];
 
-			auto shape0 = dynamic_cast<SkinnedMeshBody*>(static_cast<btCollisionObject*>(pair.m_pProxy0->m_clientObject)
-			);
-			auto shape1 = dynamic_cast<SkinnedMeshBody*>(static_cast<btCollisionObject*>(pair.m_pProxy1->m_clientObject)
-			);
+			auto shape0 = dynamic_cast<SkinnedMeshBody*>(static_cast<btCollisionObject*>(pair.m_pProxy0->m_clientObject));
+			auto shape1 = dynamic_cast<SkinnedMeshBody*>(static_cast<btCollisionObject*>(pair.m_pProxy1->m_clientObject));
 
 			if (shape0 || shape1)
 			{
@@ -83,128 +83,113 @@ namespace hdt
 				{
 					HDT_LOCK_GUARD(l, lock);
 
-					bodies.insert(shape0);
-					bodies.insert(shape1);
+					auto it0 = to_update.insert({ shape0, {nullptr, nullptr} });
+					auto it1 = to_update.insert({ shape1, {nullptr, nullptr} });
 
 					m_pairs.push_back(std::make_pair(shape0, shape1));
 
 					auto a = shape0->m_shape->asPerTriangleShape();
 					auto b = shape1->m_shape->asPerTriangleShape();
 					if (a)
-						triangle_shapes.insert(a);
+						it0.first->second.second = a;
 					else
-						vertex_shapes.insert(shape0->m_shape->asPerVertexShape());
+						it0.first->second.first = shape0->m_shape->asPerVertexShape();
 					if (b)
-						triangle_shapes.insert(b);
+						it1.first->second.second = b;
 					else
-						vertex_shapes.insert(shape0->m_shape->asPerVertexShape());
+						it1.first->second.first = shape1->m_shape->asPerVertexShape();
 					if (a && b)
 					{
-						vertex_shapes.insert(a->m_verticesCollision);
-						vertex_shapes.insert(b->m_verticesCollision);
+						it0.first->second.first = a->m_verticesCollision;
+						it1.first->second.first = b->m_verticesCollision;
 					}
 				}
 			}
 			else getNearCallback()(pair, *this, dispatchInfo);
 		});
 
-
 		if (CudaInterface::instance()->hasCuda())
 		{
-			// Create CUDA bodies for any new mesh bodies
-			std::vector<SkinnedMeshBody*> newBodies;
-			newBodies.reserve(bodies.size());
-			for (auto body : bodies)
+			// First create any CUDA objects that don't exist already
+			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				if (!body->m_cudaObject)
+				if (!o.first->m_cudaObject)
 				{
-					newBodies.push_back(body);
+					o.first->m_cudaObject.reset(new CudaBody(o.first));
 				}
-			}
-			concurrency::parallel_for_each(newBodies.begin(), newBodies.end(), [](SkinnedMeshBody* body)
-			{
-				body->m_cudaObject.reset(new CudaBody(body));
+				if (o.second.first && !o.second.first->m_cudaObject)
+				{
+					o.second.first->m_cudaObject.reset(new CudaPerVertexShape(o.second.first));
+				}
+				if (o.second.second && !o.second.second->m_cudaObject)
+				{
+					o.second.second->m_cudaObject.reset(new CudaPerTriangleShape(o.second.second));
+				}
 			});
 
-			std::vector<PerTriangleShape*> newTriangleShapes;
-			newTriangleShapes.reserve(triangle_shapes.size());
-			for (auto shape : triangle_shapes)
+			// Update bone transforms and launch the vertex calculation kernel as soon as the transforms are ready
+			// for each body. Note this does _not_ transfer vertex data back to the host.
+			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				if (!shape->m_cudaObject)
-				{
-					newTriangleShapes.push_back(shape);
-				}
-			}
-			concurrency::parallel_for_each(newTriangleShapes.begin(), newTriangleShapes.end(), [](PerTriangleShape* shape)
-			{
-				shape->m_cudaObject.reset(new CudaPerTriangleShape(shape));
+				o.first->updateBones();
+				o.first->m_cudaObject->launch();
 			});
 
-			std::vector<PerVertexShape*> newVertexShapes;
-			newVertexShapes.reserve(vertex_shapes.size());
-			for (auto shape : vertex_shapes)
+			// Launch per-triangle kernels. Performance is significantly better grouping kernels by type like this -
+			// presumably it makes better use of instruction caches on the GPU.
+			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				if (!shape->m_cudaObject)
+				if (o.second.second)
 				{
-					newVertexShapes.push_back(shape);
+					o.second.second->m_cudaObject->launch();
 				}
-			}
-			concurrency::parallel_for_each(newVertexShapes.begin(), newVertexShapes.end(), [](PerVertexShape* shape)
-			{
-				shape->m_cudaObject.reset(new CudaPerVertexShape(shape));
 			});
-		}
 
-		// Compute new bounding boxes for each vertex and update AABB trees
-		if (CudaInterface::instance()->hasCuda())
-		{
-			concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* body)
+			// Launch per-vertex kernels.
+			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				body->updateBones();
+				if (o.second.first)
+				{
+					o.second.first->m_cudaObject->launch();
+				}
 			});
-			std::for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* body)
+
+			// Do the sequential part of the AABB tree updates.
+			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				body->m_cudaObject->launch();
-			});
-			std::for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
-			{
-				shape->m_cudaObject->launch();
-			});
-			std::for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
-			{
-				shape->m_cudaObject->launch();
+				// Synchronize just the stream for this body (this is why we wanted bodies and meshes grouped
+				// together). This will also trigger transfer of vertex data back to the host. We may be able
+				// to get rid of that completely if we move the main collision detection algorithm to GPU.
+				o.first->m_cudaObject->synchronize();
+
+				if (o.second.first)
+				{
+					o.second.first->m_tree.updateAabb();
+				}
+				if (o.second.second)
+				{
+					o.second.second->m_tree.updateAabb();
+				}
+				o.first->m_bulletShape.m_aabb = o.first->m_shape->m_tree.aabbAll;
 			});
 
 			CudaInterface::instance()->synchronize();
-
-			std::for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
-			{
-				shape->m_tree.updateAabb();
-			});
-			std::for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
-			{
-				shape->m_tree.updateAabb();
-			});
 		}
 		else
 		{
-			concurrency::parallel_for_each(bodies.begin(), bodies.end(), [](SkinnedMeshBody* body)
+			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				body->internalUpdate();
+				o.first->internalUpdate();
+				if (o.second.first)
+				{
+					o.second.first->internalUpdate();
+				}
+				if (o.second.second)
+				{
+					o.second.second->internalUpdate();
+				}
+				o.first->m_bulletShape.m_aabb = o.first->m_shape->m_tree.aabbAll;
 			});
-			concurrency::parallel_for_each(vertex_shapes.begin(), vertex_shapes.end(), [](PerVertexShape* shape)
-			{
-				shape->internalUpdate();
-			});
-			concurrency::parallel_for_each(triangle_shapes.begin(), triangle_shapes.end(), [](PerTriangleShape* shape)
-			{
-				shape->internalUpdate();
-			});
-		}
-
-		for (auto body : bodies)
-		{
-			body->m_bulletShape.m_aabb = body->m_shape->m_tree.aabbAll;
 		}
 
 		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
