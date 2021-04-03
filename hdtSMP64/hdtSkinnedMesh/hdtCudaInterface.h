@@ -11,6 +11,7 @@ namespace hdt
 	public:
 		CudaBody(SkinnedMeshBody* body);
 		void launch();
+		void getResults();
 
 	private:
 		class Imp;
@@ -24,6 +25,7 @@ namespace hdt
 
 		CudaPerTriangleShape(PerTriangleShape* shape);
 		void launch();
+		void getResults();
 
 	private:
 		std::shared_ptr<Imp> m_imp;
@@ -36,6 +38,7 @@ namespace hdt
 
 		CudaPerVertexShape(PerVertexShape* shape);
 		void launch();
+		void getResults();
 
 	private:
 		std::shared_ptr<Imp> m_imp;

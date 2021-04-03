@@ -59,11 +59,17 @@ namespace hdt
 
 	void cuDestroyStream(void* ptr);
 
-	template<typename T>
-	void cuGetBuffer(T** buf, int size);
-	
-	template<typename T>
-	void cuFree(T* buf);
+	void cuGetDeviceBuffer(void** buf, int size);
+
+	void cuGetHostBuffer(void** buf, int size);
+
+	void cuFreeDevice(void* buf);
+
+	void cuFreeHost(void* buf);
+
+	void cuCopyToDevice(void* dst, void* src, size_t n);
+
+	void cuCopyToHost(void* dst, void* src, size_t n);
 
 	bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData);
 

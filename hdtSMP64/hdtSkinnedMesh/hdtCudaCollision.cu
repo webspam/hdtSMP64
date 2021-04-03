@@ -31,14 +31,14 @@ namespace hdt
     }
 
     __global__
-        void kernelPerVertexUpdate(int n, cuPerVertexInput* in, cuAabb* out, cuVector3* vertexData)
+        void kernelPerVertexUpdate(int n, const cuPerVertexInput* __restrict__ in, cuAabb* __restrict__ out, const cuVector3* __restrict__ vertexData)
     {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         int stride = blockDim.x * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            cuVector3& v = vertexData[in[i].vertexIndex];
+            const cuVector3& v = vertexData[in[i].vertexIndex];
             float margin = v.w * in[i].margin;
 
             out[i].aabbMin.x = v.x - margin;
@@ -51,16 +51,16 @@ namespace hdt
     }
 
     __global__
-        void kernelPerTriangleUpdate(int n, cuPerTriangleInput* in, cuAabb* out, cuVector3* vertexData)
+        void kernelPerTriangleUpdate(int n, const cuPerTriangleInput* __restrict__ in, cuAabb* __restrict__ out, const cuVector3* __restrict__ vertexData)
     {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         int stride = blockDim.x * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            cuVector3& v0 = vertexData[in[i].vertexIndices[0]];
-            cuVector3& v1 = vertexData[in[i].vertexIndices[1]];
-            cuVector3& v2 = vertexData[in[i].vertexIndices[2]];
+            const cuVector3& v0 = vertexData[in[i].vertexIndices[0]];
+            const cuVector3& v1 = vertexData[in[i].vertexIndices[1]];
+            const cuVector3& v2 = vertexData[in[i].vertexIndices[2]];
 
             float penetration = abs(in[i].penetration);
             float margin = max((v0.w + v1.w + v2.w) * in[i].margin / 3, penetration);
@@ -83,7 +83,7 @@ namespace hdt
         return v1;
     }
 
-    __device__ cuVector3 calcVertexState(cuVector3& skinPos, cuBone& bone, float w)
+    __device__ cuVector3 calcVertexState(const cuVector3& skinPos, const cuBone& bone, float w)
     {
         cuVector3 result;
         result.x = bone.transform[0].x * skinPos.x + bone.transform[1].x * skinPos.y + bone.transform[2].x * skinPos.z + bone.transform[3].x;
@@ -98,15 +98,15 @@ namespace hdt
     }
 
     __global__
-        void kernelBodyUpdate(int n, cuVertex* in, cuVector3* out, cuBone* boneData)
+        void kernelBodyUpdate(int n, const cuVertex* __restrict__ in, cuVector3* __restrict__ out, const cuBone* __restrict__ boneData)
     {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         int stride = blockDim.x * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            out[i] = cuVector3();
-            for (int j = 0; j < 4; ++j)
+            out[i] = calcVertexState(in[i].position, boneData[in[i].bones[0]], in[i].weights[0]);
+            for (int j = 1; j < 4; ++j)
             {
                 out[i] += calcVertexState(in[i].position, boneData[in[i].bones[j]], in[i].weights[j]);
             }
@@ -125,16 +125,34 @@ namespace hdt
         delete reinterpret_cast<cudaStream_t*>(ptr);
     }
 
-    template<typename T>
-    void cuGetBuffer(T** buf, int size)
+    void cuGetDeviceBuffer(void** buf, int size)
     {
-        cudaMallocManaged(buf, size * sizeof(T));
+        cudaMalloc(buf, size);
     }
 
-    template<typename T>
-    void cuFree(T* buf)
+    void cuGetHostBuffer(void** buf, int size)
+    {
+        cudaMallocHost(buf, size);
+    }
+
+    void cuFreeDevice(void* buf)
     {
         cudaFree(buf);
+    }
+
+    void cuFreeHost(void* buf)
+    {
+        cudaFreeHost(buf);
+    }
+
+    void cuCopyToDevice(void* dst, void* src, size_t n)
+    {
+        cudaMemcpy(dst, src, n, cudaMemcpyHostToDevice);
+    }
+
+    void cuCopyToHost(void* dst, void* src, size_t n)
+    {
+        cudaMemcpy(dst, src, n, cudaMemcpyDeviceToHost);
     }
 
     bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData)
@@ -169,18 +187,4 @@ namespace hdt
     {
         return cudaDeviceSynchronize() == cudaSuccess;
     }
-
-    template void cuGetBuffer<cuVector3>(cuVector3**, int);
-    template void cuGetBuffer<cuPerVertexInput>(cuPerVertexInput**, int);
-    template void cuGetBuffer<cuPerTriangleInput>(cuPerTriangleInput**, int);
-    template void cuGetBuffer<cuAabb>(cuAabb**, int);
-    template void cuGetBuffer<cuBone>(cuBone**, int);
-    template void cuGetBuffer<cuVertex>(cuVertex**, int);
-
-    template void cuFree<cuVector3>(cuVector3*);
-    template void cuFree<cuPerVertexInput>(cuPerVertexInput*);
-    template void cuFree<cuPerTriangleInput>(cuPerTriangleInput*);
-    template void cuFree<cuAabb>(cuAabb*);
-    template void cuFree<cuBone>(cuBone*);
-    template void cuFree<cuVertex>(cuVertex*);
 }

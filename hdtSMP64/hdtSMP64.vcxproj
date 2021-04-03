@@ -124,6 +124,9 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_noAVX|x64'">
     <ClCompile>
@@ -201,7 +204,9 @@
     <ClCompile Include="hdtSkinnedMesh\hdtCollisionAlgorithm.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtConeTwistConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtConstraintGroup.cpp" />
-    <ClCompile Include="hdtSkinnedMesh\hdtCudaInterface.cpp" />
+    <ClCompile Include="hdtSkinnedMesh\hdtCudaInterface.cpp">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Include="hdtSkinnedMesh\hdtDispatcher.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGroupConstraintSolver.cpp" />
