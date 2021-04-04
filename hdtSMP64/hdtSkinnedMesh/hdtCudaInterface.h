@@ -12,6 +12,8 @@ namespace hdt
 		CudaBody(SkinnedMeshBody* body);
 		void launch();
 		void synchronize();
+		void waitForAaabData();
+		void launchTransfer();
 
 	private:
 		class Imp;

@@ -110,7 +110,8 @@ namespace hdt
 
 		if (CudaInterface::instance()->hasCuda())
 		{
-			// First create any CUDA objects that don't exist already
+			// First create any CUDA objects that don't exist already. Each body has its own stream, and per-vertex
+			// and per-triangle updates for it will be launched in the same stream.
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				if (!o.first->m_cudaObject)
@@ -128,15 +129,15 @@ namespace hdt
 			});
 
 			// Update bone transforms and launch the vertex calculation kernel as soon as the transforms are ready
-			// for each body. Note this does _not_ transfer vertex data back to the host.
+			// for each body.
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				o.first->updateBones();
 				o.first->m_cudaObject->launch();
 			});
 
-			// Launch per-triangle kernels. Performance is significantly better grouping kernels by type like this -
-			// presumably it makes better use of instruction caches on the GPU.
+			// Launch per-triangle kernels. Performance is significantly better grouping kernels by type like this
+			// instead of setting up each complete stream in turn - presumably because launch overhead is reduced.
 			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				if (o.second.second)
@@ -145,22 +146,26 @@ namespace hdt
 				}
 			});
 
-			// Launch per-vertex kernels.
+			// Launch per-vertex kernels and vertex transfers. The transfer isn't a kernel launch so there shouldn't
+			// be any cost to interleaving these.
 			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				if (o.second.first)
 				{
 					o.second.first->m_cudaObject->launch();
 				}
+				o.first->m_cudaObject->launchTransfer();
 			});
 
 			// Do the sequential part of the AABB tree updates.
+			// TODO: Would like to have this concurrent with the actual collision processing, but currently
+			// we have to wait for all the tree updates before any collision can be done.
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				// Synchronize just the stream for this body (this is why we wanted bodies and meshes grouped
 				// together). This will also trigger transfer of vertex data back to the host. We may be able
 				// to get rid of that completely if we move the main collision detection algorithm to GPU.
-				o.first->m_cudaObject->synchronize();
+				o.first->m_cudaObject->waitForAaabData();
 
 				if (o.second.first)
 				{
@@ -172,8 +177,6 @@ namespace hdt
 				}
 				o.first->m_bulletShape.m_aabb = o.first->m_shape->m_tree.aabbAll;
 			});
-
-			CudaInterface::instance()->synchronize();
 		}
 		else
 		{
@@ -192,12 +195,20 @@ namespace hdt
 			});
 		}
 
+		// Now we can process the collisions, synchronizing each pair with both its bodies just before processing.
 		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
-		                               [&, this](const std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)
-		                               {
-			                               if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
-				                               SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
-		                               });
+			[this](std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)
+			{
+				if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
+				{
+					if (CudaInterface::instance()->hasCuda())
+					{
+						i.first->m_cudaObject->synchronize();
+						i.second->m_cudaObject->synchronize();
+					}
+					SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
+				}
+			});
 
 		m_pairs.clear();
 	}

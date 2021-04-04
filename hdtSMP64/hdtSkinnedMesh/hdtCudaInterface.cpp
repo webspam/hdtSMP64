@@ -40,6 +40,33 @@ namespace hdt
 			void* m_stream;
 		};
 
+		class CudaEvent
+		{
+		public:
+			CudaEvent()
+			{
+				cuCreateEvent(&m_event);
+			}
+
+			~CudaEvent()
+			{
+				cuDestroyEvent(m_event);
+			}
+
+			void record(CudaStream& stream)
+			{
+				cuRecordEvent(m_event, stream);
+			}
+
+			void wait()
+			{
+				cuWaitEvent(m_event);
+			}
+
+		private:
+			void* m_event;
+		};
+
 		template <typename CudaT, typename HostT = CudaT>
 		class CudaBuffer
 		{
@@ -115,12 +142,23 @@ namespace hdt
 		void synchronize()
 		{
 			cuSynchronize(m_stream);
+		}
+
+		void launchTransfer()
+		{
+			m_event.record(m_stream);
 			m_vertexBuffer.toHost(m_stream);
+		}
+
+		void waitForAabbData()
+		{
+			m_event.wait();
 		}
 
 	private:
 
 		CudaStream m_stream;
+		CudaEvent m_event;
 
 		int m_numVertices;
 		CudaBuffer<cuBone, Bone> m_bones;
@@ -140,6 +178,16 @@ namespace hdt
 	void CudaBody::synchronize()
 	{
 		m_imp->synchronize();
+	}
+
+	void CudaBody::waitForAaabData()
+	{
+		m_imp->waitForAabbData();
+	}
+
+	void CudaBody::launchTransfer()
+	{
+		m_imp->launchTransfer();
 	}
 
 	class CudaPerTriangleShape::Imp
@@ -255,7 +303,7 @@ namespace hdt
 
 	bool CudaInterface::hasCuda()
 	{
-		return false;
+		return true;
 	}
 
 	void CudaInterface::synchronize()
@@ -264,5 +312,7 @@ namespace hdt
 	}
 
 	CudaInterface::CudaInterface()
-	{}
+	{
+		cuInitialize();
+	}
 }

@@ -198,4 +198,34 @@ namespace hdt
             return cudaDeviceSynchronize() == cudaSuccess;
         }
     }
+
+    void cuCreateEvent(void** ptr)
+    {
+        *ptr = new cudaEvent_t;
+        cudaEventCreate(reinterpret_cast<cudaEvent_t*>(*ptr));
+    }
+
+    void cuDestroyEvent(void* ptr)
+    {
+        cudaEventDestroy(*reinterpret_cast<cudaEvent_t*>(ptr));
+        delete reinterpret_cast<cudaEvent_t*>(ptr);
+    }
+
+    void cuRecordEvent(void* ptr, void* stream)
+    {
+        cudaEvent_t* e = reinterpret_cast<cudaEvent_t*>(ptr);
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+        cudaEventRecord(*e, *s);
+    }
+
+    void cuWaitEvent(void* ptr)
+    {
+        cudaEvent_t* e = reinterpret_cast<cudaEvent_t*>(ptr);
+        cudaEventSynchronize(*e);
+    }
+
+    void cuInitialize()
+    {
+        cudaSetDeviceFlags(cudaDeviceScheduleYield);
+    }
 }

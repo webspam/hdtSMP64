@@ -78,4 +78,14 @@ namespace hdt
 	bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
 
 	bool cuSynchronize(void* stream = nullptr);
+
+	void cuCreateEvent(void** ptr);
+
+	void cuDestroyEvent(void* ptr);
+
+	void cuRecordEvent(void* ptr, void* stream);
+
+	void cuWaitEvent(void* ptr);
+
+	void cuInitialize();
 }
