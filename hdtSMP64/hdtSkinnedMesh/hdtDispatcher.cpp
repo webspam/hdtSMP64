@@ -201,11 +201,6 @@ namespace hdt
 			{
 				if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
 				{
-					if (CudaInterface::instance()->hasCuda())
-					{
-						i.first->m_cudaObject->synchronize();
-						i.second->m_cudaObject->synchronize();
-					}
 					SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
 				}
 			});

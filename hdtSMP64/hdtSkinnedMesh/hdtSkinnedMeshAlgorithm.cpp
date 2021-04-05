@@ -1,5 +1,6 @@
 #include "hdtSkinnedMeshAlgorithm.h"
 #include "hdtCollider.h"
+#include "hdtCudaInterface.h"
 
 namespace hdt
 {
@@ -31,6 +32,7 @@ namespace hdt
 		typedef typename T::ShapeProp SP1;
 
 		CollisionCheckBase1(PerVertexShape* a, T* b, CollisionResult* r)
+			: shapeA(a), shapeB(b)
 		{
 			v0 = a->m_owner->m_vpos.get();
 			v1 = b->m_owner->m_vpos.get();
@@ -41,6 +43,9 @@ namespace hdt
 			results = r;
 			numResults = 0;
 		}
+
+		PerVertexShape* shapeA;
+		T* shapeB;
 
 		VertexPos* v0;
 		VertexPos* v1;
@@ -319,15 +324,6 @@ namespace hdt
 		}
 	};
 
-	// Dispatcher specialization for sphere-triangle collisions on CUDA. Sphere-sphere collisions will
-	// continue to use the CPU dispatcher. Doesn't actually do anything yet (and will fail to compile).
-	template <bool SwapResults>
-	struct CollisionCheckDispatcher<PerTriangleShape, SwapResults, e_CUDA>
-		: public CollisionCheckBase2<PerTriangleShape, SwapResults>
-	{
-
-	};
-
 	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
 	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CPURefactored>
 	struct CollisionCheckAlgorithm : public CollisionCheckDispatcher<T, SwapResults, Algorithm>
@@ -345,6 +341,15 @@ namespace hdt
 			pairs.reserve(c0->colliders.size() + c1->colliders.size());
 			c0->checkCollisionL(c1, pairs);
 			if (pairs.empty()) return 0;
+
+			if (shapeA->m_owner->m_cudaObject)
+			{
+				shapeA->m_owner->m_cudaObject->synchronize();
+			}
+			if (shapeB->m_owner->m_cudaObject)
+			{
+				shapeB->m_owner->m_cudaObject->synchronize();
+			}
 
 			decltype(auto) func = [this](const std::pair<ColliderTree*, ColliderTree*>& pair)
 			{
@@ -411,6 +416,59 @@ namespace hdt
 			if (pairs.size() >= std::thread::hardware_concurrency())
 				concurrency::parallel_for_each(pairs.begin(), pairs.end(), func);
 			else for (auto& i : pairs) func(i);
+
+			return numResults;
+		}
+	};
+
+	template <typename T, bool SwapResults>
+	struct CollisionCheckAlgorithm<T, SwapResults, e_CUDA> : public CollisionCheckBase2<T, SwapResults>
+	{
+		template <typename... Ts>
+		CollisionCheckAlgorithm(Ts&&... ts)
+			: CollisionCheckBase2(std::forward<Ts>(ts)...)
+		{}
+
+		int operator()()
+		{
+			std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
+			pairs.reserve(c0->colliders.size() + c1->colliders.size());
+			c0->checkCollisionL(c1, pairs);
+			if (pairs.empty()) return 0;
+
+			CollisionResult* results;
+			CudaCollisionPair collisionPair(pairs.size(), &results);
+
+			// Launch a kernel for each pair of collision trees
+			for (auto pair : pairs)
+			{
+				auto a = pair.first;
+				auto b = pair.second;
+
+				auto offsetA = a->cbuf - shapeA->m_colliders.data();
+				auto offsetB = b->cbuf - shapeB->m_colliders.data();
+				auto sizeA = b->isKinematic ? a->dynCollider : a->numCollider;
+				auto sizeB = a->isKinematic ? b->dynCollider : b->numCollider;
+
+				collisionPair.launch(
+					shapeA->m_cudaObject.get(),
+					shapeB->m_cudaObject.get(),
+					offsetA,
+					offsetB,
+					sizeA,
+					sizeB);
+			}
+
+			// Get the results
+			collisionPair.launchTransfer();
+			collisionPair.synchronize();
+			for (int i = 0; i < pairs.size(); ++i)
+			{
+				if (results[i].depth)
+				{
+					addResult(results[i]);
+				}
+			}
 
 			return numResults;
 		}

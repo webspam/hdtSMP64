@@ -111,8 +111,6 @@ namespace hdt
 
 	class CudaBody::Imp
 	{
-		friend class CudaPerTriangleShape::Imp;
-		friend class CudaPerVertexShape::Imp;
 	public:
 
 		Imp(SkinnedMeshBody* body)
@@ -155,15 +153,16 @@ namespace hdt
 			m_event.wait();
 		}
 
+		CudaStream m_stream;
+		CudaBuffer<cuVector3, VertexPos> m_vertexBuffer;
+
 	private:
 
-		CudaStream m_stream;
 		CudaEvent m_event;
 
 		int m_numVertices;
 		CudaBuffer<cuBone, Bone> m_bones;
 		CudaBuffer<cuVertex, Vertex> m_vertexData;
-		CudaBuffer<cuVector3, VertexPos> m_vertexBuffer;
 	};
 
 	CudaBody::CudaBody(SkinnedMeshBody* body)
@@ -226,12 +225,13 @@ namespace hdt
 			m_output.toHost(m_body->m_stream);
 		}
 
+		CudaBuffer<cuPerTriangleInput> m_input;
+
 	private:
 
 		std::shared_ptr<CudaBody::Imp> m_body;
 
 		int m_numColliders;
-		CudaBuffer<cuPerTriangleInput> m_input;
 		CudaBuffer<cuAabb, Aabb> m_output;
 	};
 
@@ -277,12 +277,13 @@ namespace hdt
 			m_output.toHost(m_body->m_stream);
 		}
 
+		CudaBuffer<cuPerVertexInput> m_input;
+
 	private:
 
 		std::shared_ptr<CudaBody::Imp> m_body;
 
 		int m_numColliders;
-		CudaBuffer<cuPerVertexInput> m_input;
 		CudaBuffer<cuAabb, Aabb> m_output;
 	};
 
@@ -293,6 +294,86 @@ namespace hdt
 	void CudaPerVertexShape::launch()
 	{
 		m_imp->launch();
+	}
+
+	class CudaCollisionPair::Imp
+	{
+	public:
+
+		Imp(int numCollisionPairs, CollisionResult** results)
+			: m_numCollisionPairs(numCollisionPairs),
+			m_nextPair(0),
+			m_resultBuffer(numCollisionPairs)
+		{
+			*results = m_resultBuffer.get();
+		}
+
+		template<typename T>
+		void launch(
+			CudaPerVertexShape* shapeA,
+			T* shapeB,
+			int offsetA,
+			int offsetB,
+			int sizeA,
+			int sizeB)
+		{
+			auto colliderBufA = shapeA->m_imp->m_input.getD() + offsetA;
+			auto colliderBufB = shapeB->m_imp->m_input.getD() + offsetB;
+			auto result = m_resultBuffer.getD() + m_nextPair;
+
+			// TODO: Actually launch something here!
+
+			++m_nextPair;
+		}
+
+		void launchTransfer()
+		{
+			m_resultBuffer.toHost(m_stream);
+		}
+
+		void synchronize()
+		{
+			cuSynchronize(m_stream);
+		}
+
+	private:
+
+		int m_numCollisionPairs;
+		int m_nextPair;
+
+		CudaStream m_stream;
+		CudaBuffer<CollisionResult> m_resultBuffer;
+	};
+
+	CudaCollisionPair::CudaCollisionPair(int numCollisionPairs, CollisionResult** results)
+		: m_imp(new Imp(numCollisionPairs, results))
+	{}
+
+	template<typename T>
+	void CudaCollisionPair::launch(
+		CudaPerVertexShape* shapeA,
+		T* shapeB,
+		int offsetA,
+		int offsetB,
+		int sizeA,
+		int sizeB)
+	{
+		m_imp->launch(shapeA, shapeB, offsetA, offsetB, sizeA, sizeB);
+	}
+
+	template
+	void CudaCollisionPair::launch<CudaPerVertexShape>(CudaPerVertexShape*, CudaPerVertexShape*, int, int, int, int);
+	template
+	void CudaCollisionPair::launch<CudaPerTriangleShape>(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);
+
+	void CudaCollisionPair::launchTransfer()
+	{
+		m_imp->launchTransfer();
+	}
+
+	void CudaCollisionPair::synchronize()
+	{
+		m_imp->synchronize();
 	}
 
 	CudaInterface* CudaInterface::instance()

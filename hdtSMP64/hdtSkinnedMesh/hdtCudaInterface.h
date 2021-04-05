@@ -22,6 +22,7 @@ namespace hdt
 	
 	class CudaPerTriangleShape
 	{
+		friend class CudaCollisionPair;
 	public:
 		class Imp;
 
@@ -34,6 +35,7 @@ namespace hdt
 
 	class CudaPerVertexShape
 	{
+		friend class CudaCollisionPair;
 	public:
 		class Imp;
 
@@ -41,6 +43,29 @@ namespace hdt
 		void launch();
 
 	private:
+		std::shared_ptr<Imp> m_imp;
+	};
+
+	class CudaCollisionPair
+	{
+	public:
+		CudaCollisionPair(int numCollisionPairs, CollisionResult** results);
+
+		template<typename T>
+		void launch(
+			CudaPerVertexShape* shapeA,
+			T* shapeB,
+			int offsetA,
+			int offsetB,
+			int sizeA,
+			int sizeB);
+
+		void launchTransfer();
+
+		void synchronize();
+
+	private:
+		class Imp;
 		std::shared_ptr<Imp> m_imp;
 	};
 
