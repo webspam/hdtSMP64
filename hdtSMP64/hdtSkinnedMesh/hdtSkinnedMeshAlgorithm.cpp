@@ -2,6 +2,8 @@
 #include "hdtCollider.h"
 #include "hdtCudaInterface.h"
 
+#include <numeric>
+
 namespace hdt
 {
 	SkinnedMeshAlgorithm::SkinnedMeshAlgorithm(const btCollisionAlgorithmConstructionInfo& ci)
@@ -332,7 +334,7 @@ namespace hdt
 		CollisionCheckAlgorithm(Ts&&... ts)
 			: CollisionCheckDispatcher(std::forward<Ts>(ts)...)
 		{}
-
+		
 		int operator()()
 		{
 			static_assert(Algorithm != e_CPU, "Old CPU algorithm specialization missing");
@@ -464,8 +466,14 @@ namespace hdt
 			collisionPair.synchronize();
 			for (int i = 0; i < pairs.size(); ++i)
 			{
-				if (results[i].depth)
+				if (results[i].depth <= 0)
 				{
+					// Kernel doesn't know real collider addresses, so it sets colliders referenced to 0.
+					// We need to convert them to corresponding addresses in the real host-side data.
+					int ciA = results[i].colliderA - static_cast<Collider*>(0);
+					int ciB = results[i].colliderB - static_cast<Collider*>(0);
+					results[i].colliderA = pairs[i].first->cbuf + ciA;
+					results[i].colliderB = pairs[i].second->cbuf + ciB;
 					addResult(results[i]);
 				}
 			}
@@ -590,6 +598,12 @@ namespace hdt
 	{
 		return CollisionCheckAlgorithm<T1>(a, b, results)();
 	}
+
+	// FIXME: This is temporary, while we only have CUDA collision working for vertex-vertex.
+/*	int checkCollide(PerVertexShape* a, PerVertexShape* b, CollisionResult* results)
+	{
+		return CollisionCheckAlgorithm<PerVertexShape, false, e_CUDA>(a, b, results)();
+	}*/
 
 	int checkCollide(PerTriangleShape* a, PerVertexShape* b, CollisionResult* results)
 	{

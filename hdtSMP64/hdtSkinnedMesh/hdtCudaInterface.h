@@ -81,6 +81,8 @@ namespace hdt
 
 		void synchronize();
 
+		void clearBufferPool();
+
 	private:
 
 		CudaInterface();

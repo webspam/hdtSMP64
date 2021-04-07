@@ -55,6 +55,33 @@ namespace hdt
 		uint32_t bones[4];
 	};
 
+	// Never actually used, just need its size for setting results
+	struct alignas(16) cuCollider
+	{
+		int vertexIndices[3];
+		float flexible;
+	};
+
+	struct cuCollisionResult
+	{
+		cuVector3 posA;
+		cuVector3 posB;
+		cuVector3 normOnB;
+		cuCollider* colliderA;
+		cuCollider* colliderB;
+		float depth;
+	};
+
+	struct cuCollisionSetup
+	{
+		int sizeA;
+		int sizeB;
+		cuPerVertexInput* colliderBufA;
+		cuPerVertexInput* colliderBufB;
+		cuVector3* vertexDataA;
+		cuVector3* vertexDataB;
+	};
+
 	void cuCreateStream(void** ptr);
 
 	void cuDestroyStream(void* ptr);
@@ -77,6 +104,10 @@ namespace hdt
 
 	bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
 
+	bool cuRunCollision(void* stream, int n, cuCollisionSetup* setup, cuCollisionResult* output);
+
+	bool cuRunCollision(void* stream, int nA, int nB, cuPerVertexInput* inA, cuPerTriangleInput* inB, cuCollisionResult* output, cuVector3* vertexDataA, cuVector3* vertexDataB);
+
 	bool cuSynchronize(void* stream = nullptr);
 
 	void cuCreateEvent(void** ptr);
@@ -88,4 +119,6 @@ namespace hdt
 	void cuWaitEvent(void* ptr);
 
 	void cuInitialize();
+
+	constexpr int cuBlockSize() { return 1024; }
 }

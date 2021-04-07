@@ -195,6 +195,8 @@ namespace hdt
 			});
 		}
 
+		CudaInterface::instance()->clearBufferPool();
+
 		// Now we can process the collisions, synchronizing each pair with both its bodies just before processing.
 		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
 			[this](std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)

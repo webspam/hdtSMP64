@@ -14,6 +14,24 @@ namespace hdt
     }
 
     __device__
+        void add(const cuVector3& v1, const cuVector3& v2, cuVector3& result)
+    {
+        result.x = v1.x + v2.x;
+        result.y = v1.y + v2.y;
+        result.z = v1.z + v2.z;
+        result.w = v1.w + v2.w;
+    }
+
+    __device__
+        void multiply(const cuVector3& v, float c, cuVector3& result)
+    {
+        result.x = v.x * c;
+        result.y = v.y * c;
+        result.z = v.z * c;
+        result.w = v.w * c;
+    }
+
+    __device__
         void crossProduct(const cuVector3& v1, const cuVector3& v2, cuVector3& result)
     {
         result.x = v1.y * v2.z - v1.z * v2.y;
@@ -113,6 +131,89 @@ namespace hdt
         }
     }
 
+    __global__
+        void kernelVertexVertexCollision(
+            int n,
+            const cuCollisionSetup* __restrict__ setup,
+            cuCollisionResult* output)
+    {
+        extern __shared__ float sdata[];
+
+        for (int block = blockIdx.x; block < n; block += gridDim.x)
+        {
+            int nA = setup[block].sizeA;
+            int nB = setup[block].sizeB;
+            const cuPerVertexInput* __restrict__ inA = setup[block].colliderBufA;
+            const cuPerVertexInput* __restrict__ inB = setup[block].colliderBufB;
+            const cuVector3* __restrict__ vertexDataA = setup[block].vertexDataA;
+            const cuVector3* __restrict__ vertexDataB = setup[block].vertexDataB;
+
+            // Depth should always be negative for collisions. Initialize it to 1 to signify no collision
+            // detected.
+            int tid = threadIdx.x;
+            cuCollisionResult temp;
+            temp.depth = 1;
+
+            // First process each block, and keep the deepest one in temp
+            for (int i = tid; i < nA * nB; i += blockDim.x)
+            {
+                const cuPerVertexInput& inputA = inA[i % nA];
+                const cuPerVertexInput& inputB = inB[i / nA];
+                const cuVector3& vA = vertexDataA[inputA.vertexIndex];
+                const cuVector3& vB = vertexDataB[inputB.vertexIndex];
+
+                float rA = vA.w * inputA.margin;
+                float rB = vB.w * inputA.margin; // FIXME: Suspect this ought to be inputB, but the original code was this way
+                float bound2 = (rA + rB) * (rA + rB);
+                cuVector3 diff;
+                subtract(vA, vB, diff);
+                float dist2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+                float len = sqrt(dist2);
+                float dist = len - (rA + rB);
+                if (dist2 <= bound2 && (dist < temp.depth))
+                {
+                    if (len <= FLT_EPSILON)
+                    {
+                        diff = { 1, 0, 0, 0 };
+                    }
+                    else
+                    {
+                        normalize(diff);
+                    }
+                    temp.depth = dist;
+                    temp.normOnB = diff;
+                    multiply(diff, rA, temp.posA);
+                    multiply(diff, rB, temp.posB);
+                    subtract(vA, temp.posA, temp.posA);
+                    add(vB, temp.posB, temp.posB);
+                    temp.colliderA = static_cast<cuCollider*>(0) + i % nA;
+                    temp.colliderB = static_cast<cuCollider*>(0) + i / nA;
+                }
+            }
+
+            // Set the best depth in shared data
+            sdata[tid] = temp.depth;
+
+            // Now do a reduce operation so we end up with the minimum depth in the first element
+            __syncthreads();
+            for (int s = blockDim.x / 2; s > 0; s >>= 1)
+            {
+                if (tid < s && sdata[tid] > sdata[tid + s])
+                {
+                    sdata[tid] = sdata[tid + s];
+                }
+                __syncthreads();
+            }
+
+            // If our depth is equal to the minimum, set the result. Atomic exchange ensures that only one
+            // thread can do this even if there are several with the same depth.
+            if (sdata[0] == temp.depth && atomicExch(sdata, 2) == temp.depth)
+            {
+                output[block] = temp;
+            }
+        }
+    }
+
     void cuCreateStream(void** ptr)
     {
         *ptr = new cudaStream_t;
@@ -160,18 +261,18 @@ namespace hdt
     bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / 512 + 1;
+        int numBlocks = (n - 1) / cuBlockSize() + 1;
 
-        kernelBodyUpdate <<<numBlocks, 512, 0, *s >>> (n, input, output, boneData);
+        kernelBodyUpdate <<<numBlocks, cuBlockSize(), 0, *s >>> (n, input, output, boneData);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
     bool cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / 512 + 1;
+        int numBlocks = (n - 1) / cuBlockSize() + 1;
 
-        kernelPerVertexUpdate <<<numBlocks, 512, 0, *s >>> (n, input, output, vertexData);
+        kernelPerVertexUpdate <<<numBlocks, cuBlockSize(), 0, *s >>> (n, input, output, vertexData);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
@@ -179,10 +280,23 @@ namespace hdt
     bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / 512 + 1;
+        int numBlocks = (n - 1) / cuBlockSize() + 1;
 
-        kernelPerTriangleUpdate <<<numBlocks, 512, 0, *s >>> (n, input, output, vertexData);
+        kernelPerTriangleUpdate <<<numBlocks, cuBlockSize(), 0, *s >>> (n, input, output, vertexData);
         return cudaPeekAtLastError() == cudaSuccess;
+    }
+
+    bool cuRunCollision(void* stream, int n, cuCollisionSetup* setup, cuCollisionResult* output)
+    {
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+
+        kernelVertexVertexCollision <<<n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >>> (n, setup, output);
+        return cudaPeekAtLastError() == cudaSuccess;
+    }
+
+    bool cuRunCollision(void* stream, int nA, int nB, cuPerVertexInput* inA, cuPerTriangleInput* inB, cuCollisionResult* output, cuVector3* vertexDataA, cuVector3* vertexDataB)
+    {
+        return true;
     }
 
     bool cuSynchronize(void* stream)

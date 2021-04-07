@@ -67,6 +67,7 @@ namespace hdt
 			void* m_event;
 		};
 
+		// CUDA buffer for long-lived objects
 		template <typename CudaT, typename HostT = CudaT>
 		class CudaBuffer
 		{
@@ -104,6 +105,135 @@ namespace hdt
 		private:
 
 			int m_size;
+			CudaT* m_deviceData;
+			HostT* m_hostData;
+		};
+
+		// Memory pool for small short-lived objects. This can grow arbitrarily in size, to the maximum required
+		// in a single frame. All allocations get cleared at the end of the frame.
+		class CudaBufferPool
+		{
+			using Buffers = std::pair<void*, void*>;
+			using Record = std::tuple<size_t, size_t, Buffers>;
+
+			// Granularity for allocating blocks that won't fit a single page (however, this memory pool is
+			// REALLY not designed for large allocations and using them is likely to leak memory badly)
+			static constexpr size_t largeBlockSize = 1 << 20;
+
+			// Page size for normal allocations
+			static constexpr size_t pageSize = 1 << 24;
+
+			// Granularity of small allocations, should match CUDA memory transaction size
+			static constexpr size_t alignment = 128;
+
+		public:
+
+			static CudaBufferPool* instance()
+			{
+				static CudaBufferPool s_instance;
+				return &s_instance;
+			}
+
+			std::pair<void*, void*> getBuffer(size_t size)
+			{
+				// FIXME: Locking for the whole method is lazy - should do something finer grained
+				std::lock_guard l(m_lock);
+
+				auto s = getSize(size);
+				std::vector<Record>::iterator it;
+				for (it = m_buffers.begin(); it != m_buffers.end(); ++it)
+				{
+					if (std::get<0>(*it) + s <= std::get<1>(*it))
+					{
+						break;
+					}
+				}
+				if (it == m_buffers.end())
+				{
+					size_t newSize = std::max(pageSize, blockSize(size));
+					m_buffers.push_back({ 0, newSize, {0,0} });
+					cuGetDeviceBuffer(&(std::get<2>(m_buffers.back()).first), newSize);
+					cuGetHostBuffer(&(std::get<2>(m_buffers.back()).second), newSize);
+					it = m_buffers.end() - 1;
+				}
+				Buffers result = {
+					static_cast<uint8_t*>(std::get<2>(*it).first) + std::get<0>(*it),
+					static_cast<uint8_t*>(std::get<2>(*it).second) + std::get<0>(*it)
+				};
+				std::get<0>(*it) += s;
+				return result;
+			}
+
+			void clear()
+			{
+				for (auto& record : m_buffers)
+				{
+					std::get<0>(record) = 0;
+				}
+			}
+
+		private:
+
+			constexpr size_t getSize(size_t size)
+			{
+				return alignment * ((size - 1) / alignment + 1);
+			}
+
+			constexpr size_t blockSize(size_t size)
+			{
+				return largeBlockSize * ((size - 1) / largeBlockSize + 1);
+			}
+
+			CudaBufferPool()
+			{}
+
+			~CudaBufferPool()
+			{
+				for (auto record : m_buffers)
+				{
+					cuFreeDevice(std::get<2>(record).first);
+					cuFreeHost(std::get<2>(record).second);
+				}
+			}
+
+			std::vector<Record> m_buffers;
+			std::mutex m_lock;
+		};
+
+		// CUDA buffer for short-lived per-frame objects. There is no way to deallocate these explicitly - they
+		// remain manually until the buffer pool is cleared at the end of the frame, and then all become unsafe.
+		template <typename CudaT, typename HostT = CudaT>
+		class CudaPooledBuffer
+		{
+		public:
+
+			CudaPooledBuffer(size_t n)
+				: m_size(n * sizeof(CudaT))
+			{
+				static_assert(sizeof(CudaT) == sizeof(HostT), "Device and host types different sizes");
+				auto buffers = CudaBufferPool::instance()->getBuffer(m_size);
+				m_deviceData = reinterpret_cast<CudaT*>(buffers.first);
+				m_hostData = reinterpret_cast<HostT*>(buffers.second);
+			}
+
+			void toDevice(CudaStream& stream)
+			{
+				cuCopyToDevice(m_deviceData, m_hostData, m_size, stream);
+			}
+
+			void toHost(CudaStream& stream)
+			{
+				cuCopyToHost(m_hostData, m_deviceData, m_size, stream);
+			}
+
+			operator HostT* () { return m_hostData; }
+			HostT* get() { return m_hostData; }
+
+			CudaT* getD() { return m_deviceData; }
+
+		private:
+
+			size_t m_size;
 			CudaT* m_deviceData;
 			HostT* m_hostData;
 		};
@@ -226,10 +356,9 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerTriangleInput> m_input;
+		std::shared_ptr<CudaBody::Imp> m_body;
 
 	private:
-
-		std::shared_ptr<CudaBody::Imp> m_body;
 
 		int m_numColliders;
 		CudaBuffer<cuAabb, Aabb> m_output;
@@ -278,10 +407,9 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerVertexInput> m_input;
+		std::shared_ptr<CudaBody::Imp> m_body;
 
 	private:
-
-		std::shared_ptr<CudaBody::Imp> m_body;
 
 		int m_numColliders;
 		CudaBuffer<cuAabb, Aabb> m_output;
@@ -303,7 +431,8 @@ namespace hdt
 		Imp(int numCollisionPairs, CollisionResult** results)
 			: m_numCollisionPairs(numCollisionPairs),
 			m_nextPair(0),
-			m_resultBuffer(numCollisionPairs)
+			m_resultBuffer(numCollisionPairs),
+			m_setupBuffer(numCollisionPairs)
 		{
 			*results = m_resultBuffer.get();
 		}
@@ -317,17 +446,26 @@ namespace hdt
 			int sizeA,
 			int sizeB)
 		{
+			static_assert(sizeof(cuCollider) == sizeof(Collider));
+
 			auto colliderBufA = shapeA->m_imp->m_input.getD() + offsetA;
 			auto colliderBufB = shapeB->m_imp->m_input.getD() + offsetB;
-			auto result = m_resultBuffer.getD() + m_nextPair;
 
-			// TODO: Actually launch something here!
-
+			m_setupBuffer[m_nextPair] = {
+				sizeA,
+				sizeB,
+				shapeA->m_imp->m_input.getD() + offsetA,
+				shapeB->m_imp->m_input.getD() + offsetB,
+				shapeA->m_imp->m_body->m_vertexBuffer.getD(),
+				shapeB->m_imp->m_body->m_vertexBuffer.getD()
+			};
 			++m_nextPair;
 		}
 
 		void launchTransfer()
 		{
+			m_setupBuffer.toDevice(m_stream);
+			cuRunCollision(m_stream, m_nextPair, m_setupBuffer.getD(), m_resultBuffer.getD());
 			m_resultBuffer.toHost(m_stream);
 		}
 
@@ -342,7 +480,8 @@ namespace hdt
 		int m_nextPair;
 
 		CudaStream m_stream;
-		CudaBuffer<CollisionResult> m_resultBuffer;
+		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
+		CudaPooledBuffer<cuCollisionSetup> m_setupBuffer;
 	};
 
 	CudaCollisionPair::CudaCollisionPair(int numCollisionPairs, CollisionResult** results)
@@ -363,8 +502,8 @@ namespace hdt
 
 	template
 	void CudaCollisionPair::launch<CudaPerVertexShape>(CudaPerVertexShape*, CudaPerVertexShape*, int, int, int, int);
-	template
-	void CudaCollisionPair::launch<CudaPerTriangleShape>(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);
+/*	template
+	void CudaCollisionPair::launch<CudaPerTriangleShape>(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);*/
 
 	void CudaCollisionPair::launchTransfer()
 	{
@@ -390,6 +529,11 @@ namespace hdt
 	void CudaInterface::synchronize()
 	{
 		cuSynchronize();
+	}
+
+	void CudaInterface::clearBufferPool()
+	{
+		CudaBufferPool::instance()->clear();
 	}
 
 	CudaInterface::CudaInterface()
