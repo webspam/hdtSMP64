@@ -439,7 +439,7 @@ namespace hdt
 			if (pairs.empty()) return 0;
 
 			CollisionResult* results;
-			CudaCollisionPair collisionPair(pairs.size(), &results);
+			CudaCollisionPair<T::CudaType> collisionPair(pairs.size(), &results);
 
 			// Launch a kernel for each pair of collision trees
 			for (auto pair : pairs)
@@ -600,10 +600,10 @@ namespace hdt
 	}
 
 	// FIXME: This is temporary, while we only have CUDA collision working for vertex-vertex.
-/*	int checkCollide(PerVertexShape* a, PerVertexShape* b, CollisionResult* results)
+	int checkCollide(PerVertexShape* a, PerVertexShape* b, CollisionResult* results)
 	{
 		return CollisionCheckAlgorithm<PerVertexShape, false, e_CUDA>(a, b, results)();
-	}*/
+	}
 
 	int checkCollide(PerTriangleShape* a, PerVertexShape* b, CollisionResult* results)
 	{

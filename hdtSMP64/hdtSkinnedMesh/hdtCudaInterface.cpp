@@ -424,7 +424,8 @@ namespace hdt
 		m_imp->launch();
 	}
 
-	class CudaCollisionPair::Imp
+	template <typename T>
+	class CudaCollisionPair<T>::Imp
 	{
 	public:
 
@@ -437,7 +438,6 @@ namespace hdt
 			*results = m_resultBuffer.get();
 		}
 
-		template<typename T>
 		void launch(
 			CudaPerVertexShape* shapeA,
 			T* shapeB,
@@ -481,15 +481,16 @@ namespace hdt
 
 		CudaStream m_stream;
 		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
-		CudaPooledBuffer<cuCollisionSetup> m_setupBuffer;
+		CudaPooledBuffer<cuCollisionSetup<T>> m_setupBuffer;
 	};
 
-	CudaCollisionPair::CudaCollisionPair(int numCollisionPairs, CollisionResult** results)
+	template <typename T>
+	CudaCollisionPair<T>::CudaCollisionPair(int numCollisionPairs, CollisionResult** results)
 		: m_imp(new Imp(numCollisionPairs, results))
 	{}
 
-	template<typename T>
-	void CudaCollisionPair::launch(
+	template <typename T>
+	void CudaCollisionPair<T>::launch(
 		CudaPerVertexShape* shapeA,
 		T* shapeB,
 		int offsetA,
@@ -500,17 +501,23 @@ namespace hdt
 		m_imp->launch(shapeA, shapeB, offsetA, offsetB, sizeA, sizeB);
 	}
 
-	template
-	void CudaCollisionPair::launch<CudaPerVertexShape>(CudaPerVertexShape*, CudaPerVertexShape*, int, int, int, int);
-/*	template
-	void CudaCollisionPair::launch<CudaPerTriangleShape>(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);*/
+	template CudaCollisionPair<CudaPerVertexShape>::CudaCollisionPair(int, CollisionResult**);
+	template CudaCollisionPair<CudaPerTriangleShape>::CudaCollisionPair(int, CollisionResult**);
+	template void CudaCollisionPair<CudaPerVertexShape>::launch(CudaPerVertexShape*, CudaPerVertexShape*, int, int, int, int);
+	template void CudaCollisionPair<CudaPerTriangleShape>::launch(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);
+	template void CudaCollisionPair<CudaPerVertexShape>::synchronize();
+	template void CudaCollisionPair<CudaPerTriangleShape>::synchronize();
+	template void CudaCollisionPair<CudaPerVertexShape>::launchTransfer();
+	template void CudaCollisionPair<CudaPerTriangleShape>::launchTransfer();
 
-	void CudaCollisionPair::launchTransfer()
+	template <typename T>
+	void CudaCollisionPair<T>::launchTransfer()
 	{
 		m_imp->launchTransfer();
 	}
 
-	void CudaCollisionPair::synchronize()
+	template <typename T>
+	void CudaCollisionPair<T>::synchronize()
 	{
 		m_imp->synchronize();
 	}

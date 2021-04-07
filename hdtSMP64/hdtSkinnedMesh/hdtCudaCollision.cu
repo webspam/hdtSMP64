@@ -132,9 +132,9 @@ namespace hdt
     }
 
     __global__
-        void kernelVertexVertexCollision(
+        void kernelVertexCollision(
             int n,
-            const cuCollisionSetup* __restrict__ setup,
+            const cuCollisionSetup<CudaPerVertexShape>* __restrict__ setup,
             cuCollisionResult* output)
     {
         extern __shared__ float sdata[];
@@ -286,17 +286,22 @@ namespace hdt
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
-    bool cuRunCollision(void* stream, int n, cuCollisionSetup* setup, cuCollisionResult* output)
+    template<>
+    bool cuRunCollision<CudaPerVertexShape>(void* stream, int n, cuCollisionSetup<CudaPerVertexShape>* setup, cuCollisionResult* output)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        kernelVertexVertexCollision <<<n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >>> (n, setup, output);
+        kernelVertexCollision <<<n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >>> (n, setup, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
-    bool cuRunCollision(void* stream, int nA, int nB, cuPerVertexInput* inA, cuPerTriangleInput* inB, cuCollisionResult* output, cuVector3* vertexDataA, cuVector3* vertexDataB)
+    template<>
+    bool cuRunCollision<CudaPerTriangleShape>(void* stream, int n, cuCollisionSetup<CudaPerTriangleShape>* setup, cuCollisionResult* output)
     {
-        return true;
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+
+//        kernelVertexCollision << <n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >> > (n, setup, output);
+        return cudaPeekAtLastError() == cudaSuccess;
     }
 
     bool cuSynchronize(void* stream)

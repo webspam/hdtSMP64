@@ -51,6 +51,8 @@ namespace hdt
 	class PerVertexShape : public SkinnedMeshShape
 	{
 	public:
+		using CudaType = CudaPerVertexShape;
+
 		PerVertexShape(SkinnedMeshBody* body);
 		virtual ~PerVertexShape();
 
@@ -92,6 +94,8 @@ namespace hdt
 	class PerTriangleShape : public SkinnedMeshShape
 	{
 	public:
+		using CudaType = CudaPerTriangleShape;
+
 		PerTriangleShape(SkinnedMeshBody* body);
 		virtual ~PerTriangleShape();
 

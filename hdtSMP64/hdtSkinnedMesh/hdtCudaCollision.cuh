@@ -5,6 +5,9 @@
 
 namespace hdt
 {
+	class CudaPerVertexShape;
+	class CudaPerTriangleShape;
+
 	union cuVector3
 	{
 		struct {
@@ -72,12 +75,27 @@ namespace hdt
 		float depth;
 	};
 
-	struct cuCollisionSetup
+	template<typename T>
+	struct cuCollisionSetup;
+
+	template<>
+	struct cuCollisionSetup<CudaPerVertexShape>
 	{
 		int sizeA;
 		int sizeB;
 		cuPerVertexInput* colliderBufA;
 		cuPerVertexInput* colliderBufB;
+		cuVector3* vertexDataA;
+		cuVector3* vertexDataB;
+	};
+
+	template<>
+	struct cuCollisionSetup<CudaPerTriangleShape>
+	{
+		int sizeA;
+		int sizeB;
+		cuPerVertexInput* colliderBufA;
+		cuPerTriangleInput* colliderBufB;
 		cuVector3* vertexDataA;
 		cuVector3* vertexDataB;
 	};
@@ -104,9 +122,8 @@ namespace hdt
 
 	bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
 
-	bool cuRunCollision(void* stream, int n, cuCollisionSetup* setup, cuCollisionResult* output);
-
-	bool cuRunCollision(void* stream, int nA, int nB, cuPerVertexInput* inA, cuPerTriangleInput* inB, cuCollisionResult* output, cuVector3* vertexDataA, cuVector3* vertexDataB);
+	template <typename T>
+	bool cuRunCollision(void* stream, int n, cuCollisionSetup<T>* setup, cuCollisionResult* output);
 
 	bool cuSynchronize(void* stream = nullptr);
 
