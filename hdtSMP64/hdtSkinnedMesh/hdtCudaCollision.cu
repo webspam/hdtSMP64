@@ -131,11 +131,64 @@ namespace hdt
         }
     }
 
-    __global__
-        void kernelVertexCollision(
-            int n,
-            const cuCollisionSetup<CudaPerVertexShape>* __restrict__ setup,
-            cuCollisionResult* output)
+    // collidePair does the actual collision between two colliders, always a vertex and some other type. It
+    // should modify output if and only if there is a collision.
+    __device__ bool collidePair(
+        const cuPerVertexInput& __restrict__ inputA,
+        const cuPerVertexInput& __restrict__ inputB,
+        const cuVector3* __restrict__ vertexDataA,
+        const cuVector3* __restrict__ vertexDataB,
+        cuCollisionResult& output)
+    {
+        const cuVector3& vA = vertexDataA[inputA.vertexIndex];
+        const cuVector3& vB = vertexDataB[inputB.vertexIndex];
+
+        float rA = vA.w * inputA.margin;
+        float rB = vB.w * inputA.margin; // FIXME: Suspect this ought to be inputB, but the original code was this way
+        float bound2 = (rA + rB) * (rA + rB);
+        cuVector3 diff;
+        subtract(vA, vB, diff);
+        float dist2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+        float len = sqrt(dist2);
+        float dist = len - (rA + rB);
+        if (dist2 <= bound2 && (dist < output.depth))
+        {
+            if (len <= FLT_EPSILON)
+            {
+                diff = { 1, 0, 0, 0 };
+            }
+            else
+            {
+                normalize(diff);
+            }
+            output.depth = dist;
+            output.normOnB = diff;
+            multiply(diff, rA, output.posA);
+            multiply(diff, rB, output.posB);
+            subtract(vA, output.posA, output.posA);
+            add(vB, output.posB, output.posB);
+            return true;
+        }
+        return false;
+    }
+
+    __device__ bool collidePair(
+        const cuPerVertexInput& __restrict__ inputA,
+        const cuPerTriangleInput& __restrict__ inputB,
+        const cuVector3* __restrict__ vertexDataA,
+        const cuVector3* __restrict__ vertexDataB,
+        cuCollisionResult& output)
+    {
+        return false;
+    }
+
+    // kernelCollision does the supporting work for threading the collision checks and making sure that only
+    // the deepest result is kept.
+    template <typename T>
+    __global__ void kernelCollision(
+        int n,
+        const cuCollisionSetup<T>* __restrict__ setup,
+        cuCollisionResult* output)
     {
         extern __shared__ float sdata[];
 
@@ -144,57 +197,29 @@ namespace hdt
             int nA = setup[block].sizeA;
             int nB = setup[block].sizeB;
             const cuPerVertexInput* __restrict__ inA = setup[block].colliderBufA;
-            const cuPerVertexInput* __restrict__ inB = setup[block].colliderBufB;
+            const auto* __restrict__ inB = setup[block].colliderBufB;
             const cuVector3* __restrict__ vertexDataA = setup[block].vertexDataA;
             const cuVector3* __restrict__ vertexDataB = setup[block].vertexDataB;
 
-            // Depth should always be negative for collisions. Initialize it to 1 to signify no collision
-            // detected.
+            // Depth should always be negative for collisions. We'll use positive values to signify no
+            // collision, and later for mutual exclusion.
             int tid = threadIdx.x;
             cuCollisionResult temp;
             temp.depth = 1;
 
-            // First process each block, and keep the deepest one in temp
             for (int i = tid; i < nA * nB; i += blockDim.x)
             {
-                const cuPerVertexInput& inputA = inA[i % nA];
-                const cuPerVertexInput& inputB = inB[i / nA];
-                const cuVector3& vA = vertexDataA[inputA.vertexIndex];
-                const cuVector3& vB = vertexDataB[inputB.vertexIndex];
-
-                float rA = vA.w * inputA.margin;
-                float rB = vB.w * inputA.margin; // FIXME: Suspect this ought to be inputB, but the original code was this way
-                float bound2 = (rA + rB) * (rA + rB);
-                cuVector3 diff;
-                subtract(vA, vB, diff);
-                float dist2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
-                float len = sqrt(dist2);
-                float dist = len - (rA + rB);
-                if (dist2 <= bound2 && (dist < temp.depth))
+                if (collidePair(inA[i % nA], inB[i / nA], vertexDataA, vertexDataB, temp))
                 {
-                    if (len <= FLT_EPSILON)
-                    {
-                        diff = { 1, 0, 0, 0 };
-                    }
-                    else
-                    {
-                        normalize(diff);
-                    }
-                    temp.depth = dist;
-                    temp.normOnB = diff;
-                    multiply(diff, rA, temp.posA);
-                    multiply(diff, rB, temp.posB);
-                    subtract(vA, temp.posA, temp.posA);
-                    add(vB, temp.posB, temp.posB);
                     temp.colliderA = static_cast<cuCollider*>(0) + i % nA;
                     temp.colliderB = static_cast<cuCollider*>(0) + i / nA;
                 }
             }
 
-            // Set the best depth in shared data
+            // Set the best depth for this thread in shared memory
             sdata[tid] = temp.depth;
 
-            // Now do a reduce operation so we end up with the minimum depth in the first element
+            // Now reduce to find the minimum depth, and store it in the first element
             __syncthreads();
             for (int s = blockDim.x / 2; s > 0; s >>= 1)
             {
@@ -205,8 +230,8 @@ namespace hdt
                 __syncthreads();
             }
 
-            // If our depth is equal to the minimum, set the result. Atomic exchange ensures that only one
-            // thread can do this even if there are several with the same depth.
+            // If the depth of this thread is equal to the minimum, try to set the result. Do an atomic
+            // exchange with the first value to ensure that only one thread gets to do this in case of ties.
             if (sdata[0] == temp.depth && atomicExch(sdata, 2) == temp.depth)
             {
                 output[block] = temp;
@@ -286,21 +311,12 @@ namespace hdt
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
-    template<>
-    bool cuRunCollision<CudaPerVertexShape>(void* stream, int n, cuCollisionSetup<CudaPerVertexShape>* setup, cuCollisionResult* output)
+    template<typename T>
+    bool cuRunCollision(void* stream, int n, cuCollisionSetup<T>* setup, cuCollisionResult* output)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        kernelVertexCollision <<<n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >>> (n, setup, output);
-        return cudaPeekAtLastError() == cudaSuccess;
-    }
-
-    template<>
-    bool cuRunCollision<CudaPerTriangleShape>(void* stream, int n, cuCollisionSetup<CudaPerTriangleShape>* setup, cuCollisionResult* output)
-    {
-        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-
-//        kernelVertexCollision << <n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >> > (n, setup, output);
+        kernelCollision <<<n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >>> (n, setup, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
@@ -347,4 +363,7 @@ namespace hdt
     {
         cudaSetDeviceFlags(cudaDeviceScheduleYield);
     }
+
+    template bool cuRunCollision<CudaPerVertexShape>(void*, int, cuCollisionSetup<CudaPerVertexShape>*, cuCollisionResult*);
+    template bool cuRunCollision<CudaPerTriangleShape>(void*, int, cuCollisionSetup<CudaPerTriangleShape>*, cuCollisionResult*);
 }

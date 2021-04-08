@@ -616,10 +616,10 @@ namespace hdt
 		for (int i = 0; i < count; ++i)
 		{
 			auto& res = collision[i];
-			if (res.depth >= -FLT_EPSILON) break;
+			if (res.depth >= -FLT_EPSILON) continue;
 
 			auto flexible = std::max(res.colliderA->flexible, res.colliderB->flexible);
-			if (flexible < FLT_EPSILON) return;
+			if (flexible < FLT_EPSILON) continue;
 
 			for (int ib = 0; ib < a->getBonePerCollider(); ++ib)
 			{
