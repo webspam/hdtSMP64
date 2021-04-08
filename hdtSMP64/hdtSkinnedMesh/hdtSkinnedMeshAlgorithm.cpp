@@ -129,7 +129,7 @@ namespace hdt
 			auto s0 = v0[a->vertex];
 			auto r0 = s0.marginMultiplier() * sp0->margin;
 			auto s1 = v0[a->vertex];
-			auto r1 = s1.marginMultiplier() * sp0->margin;
+			auto r1 = s1.marginMultiplier() * sp1->margin;
 
 			auto ret = checkSphereSphere(s0.pos(), s1.pos(), r0, r1, res);
 			res.colliderA = a;
@@ -211,7 +211,7 @@ namespace hdt
 					distanceFromPlane = -distanceFromPlane;
 					normal = _mm_sub_ps(_mm_set1_ps(0.0), normal);
 				}
-				isInsideContactPlane = distanceFromPlane > -radiusWithMargin;
+				isInsideContactPlane = distanceFromPlane < radiusWithMargin;
 			}
 			if (!isInsideContactPlane)
 			{

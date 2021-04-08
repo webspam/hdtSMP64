@@ -144,7 +144,7 @@ namespace hdt
         const cuVector3& vB = vertexDataB[inputB.vertexIndex];
 
         float rA = vA.w * inputA.margin;
-        float rB = vB.w * inputA.margin; // FIXME: Suspect this ought to be inputB, but the original code was this way
+        float rB = vB.w * inputB.margin;
         float bound2 = (rA + rB) * (rA + rB);
         cuVector3 diff;
         subtract(vA, vB, diff);
