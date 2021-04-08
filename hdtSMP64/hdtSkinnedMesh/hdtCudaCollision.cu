@@ -40,9 +40,21 @@ namespace hdt
     }
 
     __device__
+        float dotProduct(const cuVector3& v1, const cuVector3& v2)
+    {
+        return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+    }
+
+    __device__
+        float magnitude(const cuVector3& v)
+    {
+        return sqrt(dotProduct(v, v));
+    }
+
+    __device__
         void normalize(cuVector3& v)
     {
-        float mag = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+        float mag = magnitude(v);
         v.x /= mag;
         v.y /= mag;
         v.z /= mag;
@@ -148,7 +160,7 @@ namespace hdt
         float bound2 = (rA + rB) * (rA + rB);
         cuVector3 diff;
         subtract(vA, vB, diff);
-        float dist2 = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
+        float dist2 = dotProduct(diff, diff);
         float len = sqrt(dist2);
         float dist = len - (rA + rB);
         if (dist2 <= bound2 && (dist < output.depth))
@@ -179,7 +191,101 @@ namespace hdt
         const cuVector3* __restrict__ vertexDataB,
         cuCollisionResult& output)
     {
-        return false;
+        cuVector3 s = vertexDataA[inputA.vertexIndex];
+        float r = s.w * inputA.margin;
+        cuVector3 p0 = vertexDataB[inputB.vertexIndices[0]];
+        cuVector3 p1 = vertexDataB[inputB.vertexIndices[1]];
+        cuVector3 p2 = vertexDataB[inputB.vertexIndices[2]];
+        float margin = (p0.w + p1.w + p2.w) / 3.0;
+        float penetration = inputB.penetration * margin;
+        margin *= inputB.margin;
+        if (penetration > -FLT_EPSILON && penetration < FLT_EPSILON)
+        {
+            penetration = 0;
+        }
+
+        // Compute unit normal and twice area of triangle
+        cuVector3 ab;
+        cuVector3 ac;
+        subtract(p1, p0, ab);
+        subtract(p2, p0, ac);
+        cuVector3 normal;
+        crossProduct(ab, ac, normal);
+        float area = magnitude(normal);
+        if (area < FLT_EPSILON)
+        {
+            return false;
+        }
+        multiply(normal, 1.0 / area, normal);
+
+        // Reverse normal direction if penetration is negative
+        if (penetration < 0)
+        {
+            multiply(normal, -1.0, normal);
+            penetration = -penetration;
+        }
+
+        // Compute distance from point to plane and its projection onto the plane
+        cuVector3 ap;
+        subtract(s, p0, ap);
+        float distance = dotProduct(ap, normal);
+        cuVector3 projection;
+        multiply(normal, distance, projection);
+        subtract(s, projection, projection);
+
+        // Determine whether the point is close enough to the plane
+        float radiusWithMargin = r + margin;
+        if (penetration >= FLT_EPSILON)
+        {
+            if (distance >= radiusWithMargin || distance < -penetration)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (distance < 0)
+            {
+                distance = -distance;
+                multiply(normal, -1, normal);
+            }
+            if (distance >= radiusWithMargin)
+            {
+                return false;
+            }
+        }
+
+        // Compute twice the area of each triangle formed by the projection
+        cuVector3 bp;
+        cuVector3 cp;
+        subtract(projection, p0, ap);
+        subtract(projection, p1, bp);
+        subtract(projection, p2, cp);
+        cuVector3 aa;
+        crossProduct(bp, cp, aa);
+        crossProduct(cp, ap, ab);
+        crossProduct(ap, bp, ac);
+        float areaA = magnitude(aa);
+        float areaB = magnitude(ab);
+        float areaC = magnitude(ac);
+        if (areaA + areaB > area || areaB + areaC > area || areaC + areaA > area)
+        {
+            return false;
+        }
+
+        float depth = distance - radiusWithMargin;
+        if (depth >= -FLT_EPSILON)
+        {
+            return false;
+        }
+
+        // FIXME: posA doesn't take the margin into account here
+        output.normOnB = normal;
+        output.posB = projection;
+        multiply(normal, r, projection);
+        subtract(s, projection, output.posA);
+        output.depth = depth;
+        return true;
     }
 
     // kernelCollision does the supporting work for threading the collision checks and making sure that only

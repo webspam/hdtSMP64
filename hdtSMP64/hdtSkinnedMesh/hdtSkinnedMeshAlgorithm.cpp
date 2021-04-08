@@ -237,6 +237,7 @@ namespace hdt
 			aa = _mm_cmpgt_ps(aa, area);
 			auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
 
+			// FIXME: posA doesn't take the margin into account here
 			res.colliderA = a;
 			res.colliderB = b;
 			if (pointInTriangle)
@@ -597,12 +598,6 @@ namespace hdt
 	int checkCollide(PerVertexShape* a, T1* b, CollisionResult* results)
 	{
 		return CollisionCheckAlgorithm<T1>(a, b, results)();
-	}
-
-	// FIXME: This is temporary, while we only have CUDA collision working for vertex-vertex.
-	int checkCollide(PerVertexShape* a, PerVertexShape* b, CollisionResult* results)
-	{
-		return CollisionCheckAlgorithm<PerVertexShape, false, e_CUDA>(a, b, results)();
 	}
 
 	int checkCollide(PerTriangleShape* a, PerVertexShape* b, CollisionResult* results)
