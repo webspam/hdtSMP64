@@ -345,6 +345,7 @@ namespace hdt
 			c0->checkCollisionL(c1, pairs);
 			if (pairs.empty()) return 0;
 
+			// Make sure the vertex data is available, if we're using CUDA vertex calculations with CPU collision checking
 			if (shapeA->m_owner->m_cudaObject)
 			{
 				shapeA->m_owner->m_cudaObject->synchronize();
@@ -453,7 +454,7 @@ namespace hdt
 				auto sizeA = b->isKinematic ? a->dynCollider : a->numCollider;
 				auto sizeB = a->isKinematic ? b->dynCollider : b->numCollider;
 
-				collisionPair.launch(
+				collisionPair.addPair(
 					shapeA->m_cudaObject.get(),
 					shapeB->m_cudaObject.get(),
 					offsetA,
@@ -463,7 +464,7 @@ namespace hdt
 			}
 
 			// Get the results
-			collisionPair.launchTransfer();
+			collisionPair.launch();
 			collisionPair.synchronize();
 			for (int i = 0; i < pairs.size(); ++i)
 			{

@@ -5,6 +5,9 @@
 
 #include <LinearMath/btPoolAllocator.h>
 
+// The dispatcher will use CUDA if possible. This should be set if the hdtSkinnedMeshAlgorithm is also using the GPU algorithm.
+//#define USE_GPU_COLLISION
+
 namespace hdt
 {
 	void CollisionDispatcher::clearAllManifold()
@@ -83,25 +86,25 @@ namespace hdt
 				{
 					HDT_LOCK_GUARD(l, lock);
 
-					auto it0 = to_update.insert({ shape0, {nullptr, nullptr} });
-					auto it1 = to_update.insert({ shape1, {nullptr, nullptr} });
+					auto it0 = to_update.insert({ shape0, {nullptr, nullptr} }).first;
+					auto it1 = to_update.insert({ shape1, {nullptr, nullptr} }).first;
 
 					m_pairs.push_back(std::make_pair(shape0, shape1));
 
 					auto a = shape0->m_shape->asPerTriangleShape();
 					auto b = shape1->m_shape->asPerTriangleShape();
 					if (a)
-						it0.first->second.second = a;
+						it0->second.second = a;
 					else
-						it0.first->second.first = shape0->m_shape->asPerVertexShape();
+						it0->second.first = shape0->m_shape->asPerVertexShape();
 					if (b)
-						it1.first->second.second = b;
+						it1->second.second = b;
 					else
-						it1.first->second.first = shape1->m_shape->asPerVertexShape();
+						it1->second.first = shape1->m_shape->asPerVertexShape();
 					if (a && b)
 					{
-						it0.first->second.first = a->m_verticesCollision;
-						it1.first->second.first = b->m_verticesCollision;
+						it0->second.first = a->m_verticesCollision;
+						it1->second.first = b->m_verticesCollision;
 					}
 				}
 			}
@@ -154,7 +157,12 @@ namespace hdt
 				{
 					o.second.first->m_cudaObject->launch();
 				}
+
+#ifndef USE_GPU_COLLISION
+				// Vertex transfer is only needed if we're doing CPU collision with vertex data computed on
+				// the GPU. We can skip this for GPU-based collisions.
 				o.first->m_cudaObject->launchTransfer();
+#endif
 			});
 
 			// Do the sequential part of the AABB tree updates.
@@ -162,10 +170,14 @@ namespace hdt
 			// we have to wait for all the tree updates before any collision can be done.
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				// Synchronize just the stream for this body (this is why we wanted bodies and meshes grouped
-				// together). This will also trigger transfer of vertex data back to the host. We may be able
-				// to get rid of that completely if we move the main collision detection algorithm to GPU.
+				// Synchronize just the stream for this body. For CPU collision we wait for just the AABB
+				// data. For GPU collision that event never gets set, but there's no vertex transfer so we
+				// can just synchronize the whole stream.
+#ifdef USE_GPU_COLLISION
+				o.first->m_cudaObject->synchronize();
+#else
 				o.first->m_cudaObject->waitForAaabData();
+#endif
 
 				if (o.second.first)
 				{
@@ -197,7 +209,7 @@ namespace hdt
 
 		CudaInterface::instance()->clearBufferPool();
 
-		// Now we can process the collisions, synchronizing each pair with both its bodies just before processing.
+		// Now we can process the collisions
 		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
 			[this](std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)
 			{

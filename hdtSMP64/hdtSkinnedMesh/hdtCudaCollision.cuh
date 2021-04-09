@@ -85,6 +85,8 @@ namespace hdt
 		int sizeB;
 		cuPerVertexInput* colliderBufA;
 		cuPerVertexInput* colliderBufB;
+		cuAabb* boundingBoxesA;
+		cuAabb* boundingBoxesB;
 		cuVector3* vertexDataA;
 		cuVector3* vertexDataB;
 	};
@@ -96,6 +98,8 @@ namespace hdt
 		int sizeB;
 		cuPerVertexInput* colliderBufA;
 		cuPerTriangleInput* colliderBufB;
+		cuAabb* boundingBoxesA;
+		cuAabb* boundingBoxesB;
 		cuVector3* vertexDataA;
 		cuVector3* vertexDataB;
 	};
@@ -136,6 +140,4 @@ namespace hdt
 	void cuWaitEvent(void* ptr);
 
 	void cuInitialize();
-
-	constexpr int cuBlockSize() { return 1024; }
 }

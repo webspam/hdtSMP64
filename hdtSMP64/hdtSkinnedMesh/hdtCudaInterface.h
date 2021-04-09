@@ -54,7 +54,7 @@ namespace hdt
 	public:
 		CudaCollisionPair(int numCollisionPairs, CollisionResult** results);
 
-		void launch(
+		void addPair(
 			CudaPerVertexShape* shapeA,
 			T* shapeB,
 			int offsetA,
@@ -62,7 +62,7 @@ namespace hdt
 			int sizeA,
 			int sizeB);
 
-		void launchTransfer();
+		void launch();
 
 		void synchronize();
 

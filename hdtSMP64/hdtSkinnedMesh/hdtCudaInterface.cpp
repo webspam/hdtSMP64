@@ -114,7 +114,7 @@ namespace hdt
 		class CudaBufferPool
 		{
 			using Buffers = std::pair<void*, void*>;
-			using Record = std::tuple<size_t, size_t, Buffers>;
+			using Record = std::tuple<size_t, const size_t, Buffers>;
 
 			// Granularity for allocating blocks that won't fit a single page (however, this memory pool is
 			// REALLY not designed for large allocations and using them is likely to leak memory badly)
@@ -356,12 +356,12 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerTriangleInput> m_input;
+		CudaBuffer<cuAabb, Aabb> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 
 	private:
 
 		int m_numColliders;
-		CudaBuffer<cuAabb, Aabb> m_output;
 	};
 
 	CudaPerTriangleShape::CudaPerTriangleShape(PerTriangleShape* shape)
@@ -407,12 +407,12 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerVertexInput> m_input;
+		CudaBuffer<cuAabb, Aabb> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 
 	private:
 
 		int m_numColliders;
-		CudaBuffer<cuAabb, Aabb> m_output;
 	};
 
 	CudaPerVertexShape::CudaPerVertexShape(PerVertexShape* shape)
@@ -438,7 +438,7 @@ namespace hdt
 			*results = m_resultBuffer.get();
 		}
 
-		void launch(
+		void addPair(
 			CudaPerVertexShape* shapeA,
 			T* shapeB,
 			int offsetA,
@@ -448,21 +448,20 @@ namespace hdt
 		{
 			static_assert(sizeof(cuCollider) == sizeof(Collider));
 
-			auto colliderBufA = shapeA->m_imp->m_input.getD() + offsetA;
-			auto colliderBufB = shapeB->m_imp->m_input.getD() + offsetB;
-
 			m_setupBuffer[m_nextPair] = {
 				sizeA,
 				sizeB,
 				shapeA->m_imp->m_input.getD() + offsetA,
 				shapeB->m_imp->m_input.getD() + offsetB,
+				shapeA->m_imp->m_output.getD() + offsetA,
+				shapeB->m_imp->m_output.getD() + offsetB,
 				shapeA->m_imp->m_body->m_vertexBuffer.getD(),
 				shapeB->m_imp->m_body->m_vertexBuffer.getD()
 			};
 			++m_nextPair;
 		}
 
-		void launchTransfer()
+		void launch()
 		{
 			m_setupBuffer.toDevice(m_stream);
 			cuRunCollision(m_stream, m_nextPair, m_setupBuffer.getD(), m_resultBuffer.getD());
@@ -490,7 +489,7 @@ namespace hdt
 	{}
 
 	template <typename T>
-	void CudaCollisionPair<T>::launch(
+	void CudaCollisionPair<T>::addPair(
 		CudaPerVertexShape* shapeA,
 		T* shapeB,
 		int offsetA,
@@ -498,22 +497,22 @@ namespace hdt
 		int sizeA,
 		int sizeB)
 	{
-		m_imp->launch(shapeA, shapeB, offsetA, offsetB, sizeA, sizeB);
+		m_imp->addPair(shapeA, shapeB, offsetA, offsetB, sizeA, sizeB);
 	}
 
 	template CudaCollisionPair<CudaPerVertexShape>::CudaCollisionPair(int, CollisionResult**);
 	template CudaCollisionPair<CudaPerTriangleShape>::CudaCollisionPair(int, CollisionResult**);
-	template void CudaCollisionPair<CudaPerVertexShape>::launch(CudaPerVertexShape*, CudaPerVertexShape*, int, int, int, int);
-	template void CudaCollisionPair<CudaPerTriangleShape>::launch(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);
+	template void CudaCollisionPair<CudaPerVertexShape>::addPair(CudaPerVertexShape*, CudaPerVertexShape*, int, int, int, int);
+	template void CudaCollisionPair<CudaPerTriangleShape>::addPair(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);
 	template void CudaCollisionPair<CudaPerVertexShape>::synchronize();
 	template void CudaCollisionPair<CudaPerTriangleShape>::synchronize();
-	template void CudaCollisionPair<CudaPerVertexShape>::launchTransfer();
-	template void CudaCollisionPair<CudaPerTriangleShape>::launchTransfer();
+	template void CudaCollisionPair<CudaPerVertexShape>::launch();
+	template void CudaCollisionPair<CudaPerTriangleShape>::launch();
 
 	template <typename T>
-	void CudaCollisionPair<T>::launchTransfer()
+	void CudaCollisionPair<T>::launch()
 	{
-		m_imp->launchTransfer();
+		m_imp->launch();
 	}
 
 	template <typename T>

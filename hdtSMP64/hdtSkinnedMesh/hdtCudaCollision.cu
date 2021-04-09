@@ -4,6 +4,17 @@
 
 namespace hdt
 {
+    constexpr int cuBlockSize() { return 1024; }
+
+    template<typename T>
+    constexpr int collisionBlockSize();
+
+    // Per-triangle collisions currently use too many registers, so we need to reduce the block size
+    template<>
+    constexpr int collisionBlockSize<CudaPerVertexShape>() { return 1024; }
+    template<>
+    constexpr int collisionBlockSize<CudaPerTriangleShape>() { return 768; }
+
     __device__
         void subtract(const cuVector3& v1, const cuVector3& v2, cuVector3& result)
     {
@@ -58,6 +69,17 @@ namespace hdt
         v.x /= mag;
         v.y /= mag;
         v.z /= mag;
+    }
+
+    __device__
+        bool boundingBoxCollision(const cuAabb& b1, const cuAabb& b2)
+    {
+        return !(b1.aabbMin.x > b2.aabbMax.x ||
+            b1.aabbMin.y > b2.aabbMax.y ||
+            b1.aabbMin.z > b2.aabbMax.z ||
+            b1.aabbMax.x < b2.aabbMin.x ||
+            b1.aabbMax.y < b2.aabbMin.y ||
+            b1.aabbMax.z < b2.aabbMin.z);
     }
 
     __global__
@@ -255,6 +277,13 @@ namespace hdt
             }
         }
 
+        // Don't bother to do any more if depth isn't negative, or we already have a deeper collision
+        float depth = distance - radiusWithMargin;
+        if (depth >= -FLT_EPSILON || depth >= output.depth)
+        {
+            return false;
+        }
+
         // Compute twice the area of each triangle formed by the projection
         cuVector3 bp;
         cuVector3 cp;
@@ -269,12 +298,6 @@ namespace hdt
         float areaB = magnitude(ab);
         float areaC = magnitude(ac);
         if (areaA + areaB > area || areaB + areaC > area || areaC + areaA > area)
-        {
-            return false;
-        }
-
-        float depth = distance - radiusWithMargin;
-        if (depth >= -FLT_EPSILON)
         {
             return false;
         }
@@ -302,10 +325,12 @@ namespace hdt
         {
             int nA = setup[block].sizeA;
             int nB = setup[block].sizeB;
-            const cuPerVertexInput* __restrict__ inA = setup[block].colliderBufA;
-            const auto* __restrict__ inB = setup[block].colliderBufB;
-            const cuVector3* __restrict__ vertexDataA = setup[block].vertexDataA;
-            const cuVector3* __restrict__ vertexDataB = setup[block].vertexDataB;
+            const cuPerVertexInput* inA = setup[block].colliderBufA;
+            const auto* inB = setup[block].colliderBufB;
+            const cuVector3* vertexDataA = setup[block].vertexDataA;
+            const cuVector3* vertexDataB = setup[block].vertexDataB;
+            const cuAabb* boundingBoxesA = setup[block].boundingBoxesA;
+            const cuAabb* boundingBoxesB = setup[block].boundingBoxesB;
 
             // Depth should always be negative for collisions. We'll use positive values to signify no
             // collision, and later for mutual exclusion.
@@ -313,12 +338,25 @@ namespace hdt
             cuCollisionResult temp;
             temp.depth = 1;
 
-            for (int i = tid; i < nA * nB; i += blockDim.x)
+            int nPairs = nA * nB;
+            for (int i = tid; i < nPairs; i += blockDim.x)
             {
-                if (collidePair(inA[i % nA], inB[i / nA], vertexDataA, vertexDataB, temp))
+                int iA = i % nA;
+                int iB = i / nA;
+
+                // Skip pairs with no bounding box collision. Doing this in a loop ought to reduce divergence
+                // when pairs with such collisions are quite sparse.
+                while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
                 {
-                    temp.colliderA = static_cast<cuCollider*>(0) + i % nA;
-                    temp.colliderB = static_cast<cuCollider*>(0) + i / nA;
+                    i += blockDim.x;
+                    iA = i % nA;
+                    iB = i / nA;
+                }
+
+                if (i < nPairs && collidePair(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
+                {
+                    temp.colliderA = static_cast<cuCollider*>(0) + iA;
+                    temp.colliderB = static_cast<cuCollider*>(0) + iB;
                 }
             }
 
@@ -422,7 +460,7 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        kernelCollision <<<n, cuBlockSize(), cuBlockSize() * sizeof(float), *s >>> (n, setup, output);
+        kernelCollision <<<n, collisionBlockSize<T>(), collisionBlockSize<T>() * sizeof(float), *s >>> (n, setup, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
