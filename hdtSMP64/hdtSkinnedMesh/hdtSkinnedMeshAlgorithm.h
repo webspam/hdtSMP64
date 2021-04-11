@@ -3,6 +3,11 @@
 #include "hdtSkinnedMeshShape.h"
 #include "hdtDispatcher.h"
 
+// Define this to do actual collision checking on GPU. This is currently slow and has very inconsistent
+// framerate. If not defined, the GPU will still be used if available for vertex and bounding box
+// calculations, but collision will be done on the CPU.
+#define USE_GPU_COLLISION
+
 namespace hdt
 {
 	class SkinnedMeshAlgorithm : public btCollisionAlgorithm

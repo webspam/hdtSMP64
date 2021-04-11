@@ -2,6 +2,10 @@
 
 #include "math.h"
 
+// Check collider bounding boxes on the GPU. This reduces the total amount of work, but is bad for
+// divergence and increases register usage.
+#define GPU_BOUNDING_BOX_CHECK
+
 namespace hdt
 {
     constexpr int cuBlockSize() { return 1024; }
@@ -9,11 +13,11 @@ namespace hdt
     template<typename T>
     constexpr int collisionBlockSize();
 
-    // Per-triangle collisions currently use too many registers, so we need to reduce the block size
+    // Collision checking is quite register-hungry, so we may need to reduce the block size for it here
     template<>
-    constexpr int collisionBlockSize<CudaPerVertexShape>() { return 1024; }
+    constexpr int collisionBlockSize<cuPerVertexInput>() { return 1024; }
     template<>
-    constexpr int collisionBlockSize<CudaPerTriangleShape>() { return 768; }
+    constexpr int collisionBlockSize<cuPerTriangleInput>() { return 1024; }
 
     __device__
         void subtract(const cuVector3& v1, const cuVector3& v2, cuVector3& result)
@@ -316,7 +320,13 @@ namespace hdt
     template <typename T>
     __global__ void kernelCollision(
         int n,
-        const cuCollisionSetup<T>* __restrict__ setup,
+        const cuCollisionSetup* __restrict__ setup,
+        const cuPerVertexInput* __restrict__ inA,
+        const T* __restrict__ inB,
+        const cuAabb* __restrict__ boundingBoxesA,
+        const cuAabb* __restrict__ boundingBoxesB,
+        const cuVector3* __restrict__ vertexDataA,
+        const cuVector3* __restrict__ vertexDataB,
         cuCollisionResult* output)
     {
         extern __shared__ float sdata[];
@@ -325,12 +335,8 @@ namespace hdt
         {
             int nA = setup[block].sizeA;
             int nB = setup[block].sizeB;
-            const cuPerVertexInput* inA = setup[block].colliderBufA;
-            const auto* inB = setup[block].colliderBufB;
-            const cuVector3* vertexDataA = setup[block].vertexDataA;
-            const cuVector3* vertexDataB = setup[block].vertexDataB;
-            const cuAabb* boundingBoxesA = setup[block].boundingBoxesA;
-            const cuAabb* boundingBoxesB = setup[block].boundingBoxesB;
+            int* indicesA = setup[block].indicesA;
+            int* indicesB = setup[block].indicesB;
 
             // Depth should always be negative for collisions. We'll use positive values to signify no
             // collision, and later for mutual exclusion.
@@ -341,17 +347,24 @@ namespace hdt
             int nPairs = nA * nB;
             for (int i = tid; i < nPairs; i += blockDim.x)
             {
-                int iA = i % nA;
-                int iB = i / nA;
+                int iA = indicesA[i % nA];
+                int iB = indicesB[i / nA];
 
-                // Skip pairs with no bounding box collision. Doing this in a loop ought to reduce divergence
-                // when pairs with such collisions are quite sparse.
-                while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
+                // Skip pairs until we find one with a bounding box collision. This should increase the
+                // number of full checks done in parallel, and reduce divergence overall. Note we only do
+                // this at all if there are more pairs than threads - if there's only enough work for a
+                // single iteration (very common), there's no benefit to trying to reduce it.
+#ifdef GPU_BOUNDING_BOX_CHECK
+                if (nPairs > blockDim.x)
                 {
-                    i += blockDim.x;
-                    iA = i % nA;
-                    iB = i / nA;
+                    while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
+                    {
+                        i += blockDim.x;
+                        iA = indicesA[i % nA];
+                        iB = indicesB[i / nA];
+                    }
                 }
+#endif
 
                 if (i < nPairs && collidePair(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
                 {
@@ -456,11 +469,22 @@ namespace hdt
     }
 
     template<typename T>
-    bool cuRunCollision(void* stream, int n, cuCollisionSetup<T>* setup, cuCollisionResult* output)
+    bool cuRunCollision(
+        void* stream,
+        int n,
+        cuCollisionSetup* setup,
+        cuPerVertexInput* inA,
+        T* inB,
+        cuAabb* boundingBoxesA,
+        cuAabb* boundingBoxesB,
+        cuVector3* vertexDataA,
+        cuVector3* vertexDataB,
+        cuCollisionResult* output)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        kernelCollision <<<n, collisionBlockSize<T>(), collisionBlockSize<T>() * sizeof(float), *s >>> (n, setup, output);
+        kernelCollision <<<n, collisionBlockSize<T>(), collisionBlockSize<T>() * sizeof(float), *s >>> (
+            n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
@@ -508,6 +532,13 @@ namespace hdt
         cudaSetDeviceFlags(cudaDeviceScheduleYield);
     }
 
-    template bool cuRunCollision<CudaPerVertexShape>(void*, int, cuCollisionSetup<CudaPerVertexShape>*, cuCollisionResult*);
-    template bool cuRunCollision<CudaPerTriangleShape>(void*, int, cuCollisionSetup<CudaPerTriangleShape>*, cuCollisionResult*);
+    int cuDeviceCount()
+    {
+        int count;
+        cudaGetDeviceCount(&count);
+        return count;
+    }
+
+    template bool cuRunCollision<cuPerVertexInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerVertexInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template bool cuRunCollision<cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
 }

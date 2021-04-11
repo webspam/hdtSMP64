@@ -429,18 +429,26 @@ namespace hdt
 	{
 	public:
 
-		Imp(int numCollisionPairs, CollisionResult** results)
-			: m_numCollisionPairs(numCollisionPairs),
+		Imp(
+			CudaPerVertexShape* shapeA,
+			T* shapeB,
+			int numCollisionPairs,
+			int numColliders,
+			CollisionResult** results,
+			int** indexData)
+			: m_shapeA(shapeA),
+			m_shapeB(shapeB),
+			m_numCollisionPairs(numCollisionPairs),
 			m_nextPair(0),
 			m_resultBuffer(numCollisionPairs),
-			m_setupBuffer(numCollisionPairs)
+			m_setupBuffer(numCollisionPairs),
+			m_indexBuffer(numColliders)
 		{
 			*results = m_resultBuffer.get();
+			*indexData = m_indexBuffer.get();
 		}
 
 		void addPair(
-			CudaPerVertexShape* shapeA,
-			T* shapeB,
 			int offsetA,
 			int offsetB,
 			int sizeA,
@@ -451,20 +459,31 @@ namespace hdt
 			m_setupBuffer[m_nextPair] = {
 				sizeA,
 				sizeB,
-				shapeA->m_imp->m_input.getD() + offsetA,
-				shapeB->m_imp->m_input.getD() + offsetB,
-				shapeA->m_imp->m_output.getD() + offsetA,
-				shapeB->m_imp->m_output.getD() + offsetB,
-				shapeA->m_imp->m_body->m_vertexBuffer.getD(),
-				shapeB->m_imp->m_body->m_vertexBuffer.getD()
+				m_indexBuffer.getD() + offsetA,
+				m_indexBuffer.getD() + offsetB
 			};
 			++m_nextPair;
+		}
+
+		void sendVertexLists()
+		{
+			m_indexBuffer.toDevice(m_stream);
 		}
 
 		void launch()
 		{
 			m_setupBuffer.toDevice(m_stream);
-			cuRunCollision(m_stream, m_nextPair, m_setupBuffer.getD(), m_resultBuffer.getD());
+			cuRunCollision(
+				m_stream,
+				m_nextPair,
+				m_setupBuffer.getD(),
+				m_shapeA->m_imp->m_input.getD(),
+				m_shapeB->m_imp->m_input.getD(),
+				m_shapeA->m_imp->m_output.getD(),
+				m_shapeB->m_imp->m_output.getD(),
+				m_shapeA->m_imp->m_body->m_vertexBuffer.getD(),
+				m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
+				m_resultBuffer.getD());
 			m_resultBuffer.toHost(m_stream);
 		}
 
@@ -475,39 +494,43 @@ namespace hdt
 
 	private:
 
+		CudaPerVertexShape* m_shapeA;
+		T* m_shapeB;
 		int m_numCollisionPairs;
 		int m_nextPair;
 
 		CudaStream m_stream;
 		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
-		CudaPooledBuffer<cuCollisionSetup<T>> m_setupBuffer;
+		CudaPooledBuffer<cuCollisionSetup> m_setupBuffer;
+		CudaPooledBuffer<int> m_indexBuffer;
 	};
 
 	template <typename T>
-	CudaCollisionPair<T>::CudaCollisionPair(int numCollisionPairs, CollisionResult** results)
-		: m_imp(new Imp(numCollisionPairs, results))
+	CudaCollisionPair<T>::CudaCollisionPair(
+		CudaPerVertexShape* shapeA,
+		T* shapeB, 
+		int numCollisionPairs,
+		int numColliders,
+		CollisionResult** results,
+		int** indexData)
+		: m_imp(new Imp(shapeA, shapeB, numCollisionPairs, numColliders, results, indexData))
 	{}
 
 	template <typename T>
 	void CudaCollisionPair<T>::addPair(
-		CudaPerVertexShape* shapeA,
-		T* shapeB,
 		int offsetA,
 		int offsetB,
 		int sizeA,
 		int sizeB)
 	{
-		m_imp->addPair(shapeA, shapeB, offsetA, offsetB, sizeA, sizeB);
+		m_imp->addPair(offsetA, offsetB, sizeA, sizeB);
 	}
 
-	template CudaCollisionPair<CudaPerVertexShape>::CudaCollisionPair(int, CollisionResult**);
-	template CudaCollisionPair<CudaPerTriangleShape>::CudaCollisionPair(int, CollisionResult**);
-	template void CudaCollisionPair<CudaPerVertexShape>::addPair(CudaPerVertexShape*, CudaPerVertexShape*, int, int, int, int);
-	template void CudaCollisionPair<CudaPerTriangleShape>::addPair(CudaPerVertexShape*, CudaPerTriangleShape*, int, int, int, int);
-	template void CudaCollisionPair<CudaPerVertexShape>::synchronize();
-	template void CudaCollisionPair<CudaPerTriangleShape>::synchronize();
-	template void CudaCollisionPair<CudaPerVertexShape>::launch();
-	template void CudaCollisionPair<CudaPerTriangleShape>::launch();
+	template <typename T>
+	void CudaCollisionPair<T>::sendVertexLists()
+	{
+		m_imp->sendVertexLists();
+	}
 
 	template <typename T>
 	void CudaCollisionPair<T>::launch()
@@ -529,7 +552,7 @@ namespace hdt
 
 	bool CudaInterface::hasCuda()
 	{
-		return true;
+		return cuDeviceCount() > 0;
 	}
 
 	void CudaInterface::synchronize()
@@ -546,4 +569,7 @@ namespace hdt
 	{
 		cuInitialize();
 	}
+
+	template class CudaCollisionPair<CudaPerVertexShape>;
+	template class CudaCollisionPair<CudaPerTriangleShape>;
 }

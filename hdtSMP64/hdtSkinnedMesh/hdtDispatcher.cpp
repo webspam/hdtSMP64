@@ -5,9 +5,6 @@
 
 #include <LinearMath/btPoolAllocator.h>
 
-// The dispatcher will use CUDA if possible. This should be set if the hdtSkinnedMeshAlgorithm is also using the GPU algorithm.
-//#define USE_GPU_COLLISION
-
 namespace hdt
 {
 	void CollisionDispatcher::clearAllManifold()

@@ -52,15 +52,21 @@ namespace hdt
 	class CudaCollisionPair
 	{
 	public:
-		CudaCollisionPair(int numCollisionPairs, CollisionResult** results);
-
-		void addPair(
+		CudaCollisionPair(
 			CudaPerVertexShape* shapeA,
 			T* shapeB,
+			int numCollisionPairs,
+			int numColliders,
+			CollisionResult** results,
+			int** indexData);
+
+		void addPair(
 			int offsetA,
 			int offsetB,
 			int sizeA,
 			int sizeB);
+
+		void sendVertexLists();
 
 		void launch();
 

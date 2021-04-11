@@ -16,7 +16,7 @@ namespace hdt
 	// Algorithm selection for collision checking.
 	// e_CPU is the original one, optimized for CPU performance.
 	// e_CPURefactored is an alternate CPU one, modified for conversion to GPU but still using CPU in practice.
-	// e_CUDA will (eventually) be an actual GPGPU algorithm.
+	// e_CUDA does collision on the GPU, but is currently still slow.
 	enum CollisionCheckAlgorithmType
 	{
 		e_CPU,
@@ -24,6 +24,11 @@ namespace hdt
 		e_CUDA
 	};
 
+#ifdef USE_GPU_COLLISION
+#define DEFAULT_COLLISION_ALGORITHM e_CUDA
+#else
+#define DEFAULT_COLLISION_ALGORITHM e_CPURefactored
+#endif
 
 	// CollisionCheckBase1 provides data members and the basic constructor for the target types. Note that we
 	// always collide a vertex shape against something else, so only the second type is templated.
@@ -328,7 +333,7 @@ namespace hdt
 	};
 
 	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
-	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CPURefactored>
+	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = DEFAULT_COLLISION_ALGORITHM>
 	struct CollisionCheckAlgorithm : public CollisionCheckDispatcher<T, SwapResults, Algorithm>
 	{
 		template <typename... Ts>
@@ -440,33 +445,111 @@ namespace hdt
 			c0->checkCollisionL(c1, pairs);
 			if (pairs.empty()) return 0;
 
-			CollisionResult* results;
-			CudaCollisionPair<T::CudaType> collisionPair(pairs.size(), &results);
-
-			// Launch a kernel for each pair of collision trees
-			for (auto pair : pairs)
+			// Work out how many colliders will actually be needed for each pair
+			int npairs = pairs.size();
+			std::vector<int> counts(npairs * 2);
+			concurrency::parallel_for(0, npairs, [&](int i)
 			{
-				auto a = pair.first;
-				auto b = pair.second;
+				auto a = pairs[i].first;
+				auto b = pairs[i].second;
 
-				auto offsetA = a->cbuf - shapeA->m_colliders.data();
-				auto offsetB = b->cbuf - shapeB->m_colliders.data();
-				auto sizeA = b->isKinematic ? a->dynCollider : a->numCollider;
-				auto sizeB = a->isKinematic ? b->dynCollider : b->numCollider;
+				auto abeg = a->aabb;
+				auto bbeg = b->aabb;
+				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
+				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
+				auto aend = abeg + asize;
+				auto bend = bbeg + bsize;
+				auto aabbA = a->aabbMe;
+				auto aabbB = b->aabbMe;
 
+				int count = 0;
+				for (auto c = abeg; c != aend; ++c)
+				{
+					if (c->collideWith(aabbB))
+					{
+						++count;
+					}
+				}
+				counts[i] = count;
+				count = 0;
+				for (auto c = bbeg; c != bend; ++c)
+				{
+					if (c->collideWith(aabbA))
+					{
+						++count;
+					}
+				}
+				counts[i + npairs] = count;
+			});
+
+			// Calculate offset of data for each pair in vertex index buffer
+			std::vector<int> offsets(counts.size() + 1);
+			offsets[0] = 0;
+			std::partial_sum(counts.begin(), counts.end(), offsets.begin() + 1);
+
+			// Create buffers for collision processing
+			CollisionResult* results;
+			int* indexData;
+			CudaCollisionPair<T::CudaType> collisionPair(
+				shapeA->m_cudaObject.get(),
+				shapeB->m_cudaObject.get(),
+				pairs.size(),
+				offsets.back(),
+				&results,
+				&indexData);
+
+			// Copy valid collider indices into the buffer
+			concurrency::parallel_for(0, npairs, [&](int i)
+			{
+				auto a = pairs[i].first;
+				auto b = pairs[i].second;
+
+				auto abeg = a->aabb;
+				auto bbeg = b->aabb;
+				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
+				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
+				auto aend = abeg + asize;
+				auto bend = bbeg + bsize;
+				auto aabbA = a->aabbMe;
+				auto aabbB = b->aabbMe;
+
+				auto vertexStartA = a->cbuf - shapeA->m_colliders.data();
+				auto vertexStartB = b->cbuf - shapeB->m_colliders.data();
+
+				int* addr = indexData + offsets[i];
+				for (auto c = abeg; c != aend; ++c)
+				{
+					if (c->collideWith(aabbB))
+					{
+						*(addr++) = vertexStartA + (c - abeg);
+					}
+				}
+				addr = indexData + offsets[i + npairs];
+				for (auto c = bbeg; c != bend; ++c)
+				{
+					if (c->collideWith(aabbA))
+					{
+						*(addr++) = vertexStartB + (c - bbeg);
+					}
+				}
+			});
+
+			collisionPair.sendVertexLists();
+
+			// Set up data for each pair of collision trees
+			for (int i = 0; i < npairs; ++i)
+			{
 				collisionPair.addPair(
-					shapeA->m_cudaObject.get(),
-					shapeB->m_cudaObject.get(),
-					offsetA,
-					offsetB,
-					sizeA,
-					sizeB);
+					offsets[i],
+					offsets[i + npairs],
+					counts[i],
+					counts[i + npairs]);
 			}
 
-			// Get the results
+			// Run the kernel and get the results
 			collisionPair.launch();
 			collisionPair.synchronize();
-			for (int i = 0; i < pairs.size(); ++i)
+			for (int i = 0; i < npairs; ++i)
 			{
 				if (results[i].depth <= 0)
 				{
@@ -474,8 +557,8 @@ namespace hdt
 					// We need to convert them to corresponding addresses in the real host-side data.
 					int ciA = results[i].colliderA - static_cast<Collider*>(0);
 					int ciB = results[i].colliderB - static_cast<Collider*>(0);
-					results[i].colliderA = pairs[i].first->cbuf + ciA;
-					results[i].colliderB = pairs[i].second->cbuf + ciB;
+					results[i].colliderA = shapeA->m_colliders.data() + ciA;
+					results[i].colliderB = shapeB->m_colliders.data() + ciB;
 					addResult(results[i]);
 				}
 			}
