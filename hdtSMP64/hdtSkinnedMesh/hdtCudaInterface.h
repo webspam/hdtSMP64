@@ -13,7 +13,7 @@ namespace hdt
 		void launch();
 		void synchronize();
 		void waitForAaabData();
-		void launchTransfer();
+		void recordState();
 
 	private:
 		class Imp;
@@ -29,6 +29,8 @@ namespace hdt
 
 		CudaPerTriangleShape(PerTriangleShape* shape);
 		void launch();
+		void launchTransfer();
+		void updateTree();
 
 	private:
 		std::shared_ptr<Imp> m_imp;
@@ -43,6 +45,8 @@ namespace hdt
 
 		CudaPerVertexShape(PerVertexShape* shape);
 		void launch();
+		void launchTransfer();
+		void updateTree();
 
 	private:
 		std::shared_ptr<Imp> m_imp;

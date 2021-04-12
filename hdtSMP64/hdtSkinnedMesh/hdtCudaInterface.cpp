@@ -272,10 +272,9 @@ namespace hdt
 			cuSynchronize(m_stream);
 		}
 
-		void launchTransfer()
+		void recordState()
 		{
 			m_event.record(m_stream);
-			m_vertexBuffer.toHost(m_stream);
 		}
 
 		void waitForAabbData()
@@ -314,10 +313,79 @@ namespace hdt
 		m_imp->waitForAabbData();
 	}
 
-	void CudaBody::launchTransfer()
+	void CudaBody::recordState()
 	{
-		m_imp->launchTransfer();
+		m_imp->recordState();
 	}
+
+	class CudaColliderTree
+	{
+		using NodePair = std::pair<int, int>;
+
+		ColliderTree* m_tree;
+		int m_numNodes;
+
+	public:
+
+		CudaColliderTree(ColliderTree* tree, CudaStream& stream)
+			: m_tree(tree),
+			m_numNodes(nodeCount(*tree)),
+			m_nodeData(m_numNodes),
+			m_nodeAabbs(m_numNodes)
+		{
+			std::vector<NodePair> nodeData;
+			buildNodeData(*tree, m_nodeData.get());
+			m_nodeData.toDevice(stream);
+		}
+
+		void launch(CudaStream& stream, cuAabb* boundingBoxes)
+		{
+			cuRunBoundingBoxReduce(stream, m_numNodes, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD());
+			m_nodeAabbs.toHost(stream);
+		}
+
+		void update()
+		{
+			updateBoundingBoxes(*m_tree, m_nodeAabbs);
+		}
+
+		CudaBuffer<NodePair> m_nodeData;
+		CudaBuffer<cuAabb, Aabb> m_nodeAabbs;
+
+	private:
+
+		static int nodeCount(ColliderTree& tree)
+		{
+			int count = 1;
+			for (auto& child : tree.children)
+			{
+				count += nodeCount(child);
+			}
+			return count;
+		}
+
+		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData)
+		{
+			*nodeData++ = { tree.aabb - m_tree->aabb, tree.numCollider };
+			for (auto& child : tree.children)
+			{
+				nodeData = buildNodeData(child, nodeData);
+			}
+			return nodeData;
+		}
+
+		Aabb* updateBoundingBoxes(ColliderTree& tree, Aabb* boundingBoxes)
+		{
+			tree.aabbMe = *boundingBoxes++;
+			tree.aabbAll = tree.aabbMe;
+			for (auto& child : tree.children)
+			{
+				boundingBoxes = updateBoundingBoxes(child, boundingBoxes);
+				tree.aabbAll.merge(child.aabbAll);
+			}
+			return boundingBoxes;
+		}
+	};
 
 	class CudaPerTriangleShape::Imp
 	{
@@ -327,7 +395,8 @@ namespace hdt
 			: m_numColliders(shape->m_colliders.size()),
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
-			m_output(shape->m_colliders.size())
+			m_output(shape->m_colliders.size()),
+			m_tree(&shape->m_tree, m_body->m_stream)
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
@@ -338,6 +407,7 @@ namespace hdt
 				m_input[i].penetration = shape->m_shapeProp.penetration;
 			}
 			m_input.toDevice(m_body->m_stream);
+			m_tree.m_nodeData.toDevice(m_body->m_stream);
 
 			Aabb* aabb = m_output.get();
 			shape->m_tree.relocateAabb(aabb);
@@ -352,16 +422,27 @@ namespace hdt
 				m_input.getD(),
 				m_output.getD(),
 				m_body->m_vertexBuffer.getD());
+			m_tree.launch(m_body->m_stream, m_output.getD());
+		}
+
+		void launchTransfer()
+		{
 			m_output.toHost(m_body->m_stream);
+		}
+
+		void updateTree()
+		{
+			m_tree.update();
 		}
 
 		CudaBuffer<cuPerTriangleInput> m_input;
 		CudaBuffer<cuAabb, Aabb> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
-
 	private:
 
 		int m_numColliders;
+		CudaColliderTree m_tree;
+
 	};
 
 	CudaPerTriangleShape::CudaPerTriangleShape(PerTriangleShape* shape)
@@ -373,6 +454,16 @@ namespace hdt
 		m_imp->launch();
 	}
 
+	void CudaPerTriangleShape::launchTransfer()
+	{
+		m_imp->launchTransfer();
+	}
+
+	void CudaPerTriangleShape::updateTree()
+	{
+		m_imp->updateTree();
+	}
+
 	class CudaPerVertexShape::Imp
 	{
 	public:
@@ -381,7 +472,8 @@ namespace hdt
 			: m_numColliders(shape->m_colliders.size()),
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
-			m_output(shape->m_colliders.size())
+			m_output(shape->m_colliders.size()),
+			m_tree(&shape->m_tree, m_body->m_stream)
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
@@ -389,6 +481,7 @@ namespace hdt
 				m_input[i].margin = shape->m_shapeProp.margin;
 			}
 			m_input.toDevice(m_body->m_stream);
+			m_tree.m_nodeData.toDevice(m_body->m_stream);
 
 			Aabb* aabb = m_output.get();
 			shape->m_tree.relocateAabb(aabb);
@@ -403,7 +496,17 @@ namespace hdt
 				m_input.getD(),
 				m_output.getD(),
 				m_body->m_vertexBuffer.getD());
+			m_tree.launch(m_body->m_stream, m_output.getD());
+		}
+
+		void launchTransfer()
+		{
 			m_output.toHost(m_body->m_stream);
+		}
+
+		void updateTree()
+		{
+			m_tree.update();
 		}
 
 		CudaBuffer<cuPerVertexInput> m_input;
@@ -413,6 +516,7 @@ namespace hdt
 	private:
 
 		int m_numColliders;
+		CudaColliderTree m_tree;
 	};
 
 	CudaPerVertexShape::CudaPerVertexShape(PerVertexShape* shape)
@@ -422,6 +526,16 @@ namespace hdt
 	void CudaPerVertexShape::launch()
 	{
 		m_imp->launch();
+	}
+
+	void CudaPerVertexShape::launchTransfer()
+	{
+		m_imp->launchTransfer();
+	}
+
+	void CudaPerVertexShape::updateTree()
+	{
+		m_imp->updateTree();
 	}
 
 	template <typename T>

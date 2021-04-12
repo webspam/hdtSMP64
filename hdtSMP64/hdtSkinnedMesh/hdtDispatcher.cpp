@@ -146,8 +146,7 @@ namespace hdt
 				}
 			});
 
-			// Launch per-vertex kernels and vertex transfers. The transfer isn't a kernel launch so there shouldn't
-			// be any cost to interleaving these.
+			// Launch per-vertex kernels and vertex transfers.
 			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				if (o.second.first)
@@ -155,26 +154,24 @@ namespace hdt
 					o.second.first->m_cudaObject->launch();
 				}
 
-#ifndef USE_GPU_COLLISION
-				// Vertex transfer is only needed if we're doing CPU collision with vertex data computed on
-				// the GPU. We can skip this for GPU-based collisions.
-				o.first->m_cudaObject->launchTransfer();
-#endif
+				o.first->m_cudaObject->recordState();
+
+				if (o.second.second)
+				{
+					o.second.second->m_cudaObject->launchTransfer();
+				}
+				if (o.second.first)
+				{
+					o.second.first->m_cudaObject->launchTransfer();
+				}
 			});
 
-			// Do the sequential part of the AABB tree updates.
-			// TODO: Would like to have this concurrent with the actual collision processing, but currently
-			// we have to wait for all the tree updates before any collision can be done.
+			// Update the aggregate parts of the AABB trees. This means we can do the first stage of
+			// collision detection while we're still waiting for the full bounding box data (ideally we
+			// wouldn't even need that on the host at all - work in progress!)
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
-				// Synchronize just the stream for this body. For CPU collision we wait for just the AABB
-				// data. For GPU collision that event never gets set, but there's no vertex transfer so we
-				// can just synchronize the whole stream.
-#ifdef USE_GPU_COLLISION
-				o.first->m_cudaObject->synchronize();
-#else
 				o.first->m_cudaObject->waitForAaabData();
-#endif
 
 				if (o.second.first)
 				{
@@ -212,6 +209,12 @@ namespace hdt
 			{
 				if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
 				{
+					if (CudaInterface::instance()->hasCuda())
+					{
+						// Make sure we have the full bounding box data before continuing
+						i.first->m_cudaObject->synchronize();
+						i.second->m_cudaObject->synchronize();
+					}
 					SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
 				}
 			});

@@ -130,6 +130,32 @@ namespace hdt
         }
     }
 
+    __global__
+        void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const cuAabb* __restrict__ boundingBoxes, cuAabb* output)
+    {
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
+        int stride = blockDim.x * gridDim.x;
+
+        for (int i = index; i < n; i += stride)
+        {
+            cuAabb box = { {FLT_MAX, FLT_MAX, FLT_MAX, 0}, {-FLT_MAX, -FLT_MAX, -FLT_MAX, 0} };
+            auto start = boundingBoxes + nodeData[i].first;
+            auto end = start + nodeData[i].second;
+
+            // FIXME: Sequential update on the GPU is really stupid, just do the minimum to get it working for now
+            for (; start != end; ++start)
+            {
+                box.aabbMin.x = min(box.aabbMin.x, start->aabbMin.x);
+                box.aabbMin.y = min(box.aabbMin.y, start->aabbMin.y);
+                box.aabbMin.z = min(box.aabbMin.z, start->aabbMin.z);
+                box.aabbMax.x = max(box.aabbMax.x, start->aabbMax.x);
+                box.aabbMax.y = max(box.aabbMax.y, start->aabbMax.y);
+                box.aabbMax.z = max(box.aabbMax.z, start->aabbMax.z);
+            }
+            output[i] = box;
+        }
+    }
+
     __device__ cuVector3& operator+=(cuVector3& v1, cuVector3& v2)
     {
         v1.x += v2.x;
@@ -485,6 +511,15 @@ namespace hdt
 
         kernelCollision <<<n, collisionBlockSize<T>(), collisionBlockSize<T>() * sizeof(float), *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
+        return cudaPeekAtLastError() == cudaSuccess;
+    }
+
+    bool cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output)
+    {
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+        int numBlocks = (n - 1) / cuBlockSize() + 1;
+
+        kernelBoundingBoxReduce <<<numBlocks, cuBlockSize(), 0, *s >>> (n, setup, boundingBoxes, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 

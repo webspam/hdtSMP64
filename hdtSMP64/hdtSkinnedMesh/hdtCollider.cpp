@@ -130,6 +130,10 @@ namespace hdt
 				aabb.merge(*i);
 			aabbMe = aabb;
 		}
+		else
+		{
+			aabbMe.invalidate();
+		}
 
 		aabbAll = aabbMe;
 		for (auto& i : children)
