@@ -24,12 +24,6 @@ namespace hdt
 		e_CUDA
 	};
 
-#ifdef USE_GPU_COLLISION
-#define DEFAULT_COLLISION_ALGORITHM e_CUDA
-#else
-#define DEFAULT_COLLISION_ALGORITHM e_CPURefactored
-#endif
-
 	// CollisionCheckBase1 provides data members and the basic constructor for the target types. Note that we
 	// always collide a vertex shape against something else, so only the second type is templated.
 	template <typename T>
@@ -333,7 +327,7 @@ namespace hdt
 	};
 
 	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
-	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = DEFAULT_COLLISION_ALGORITHM>
+	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CUDA>
 	struct CollisionCheckAlgorithm : public CollisionCheckDispatcher<T, SwapResults, Algorithm>
 	{
 		template <typename... Ts>
@@ -431,15 +425,19 @@ namespace hdt
 	};
 
 	template <typename T, bool SwapResults>
-	struct CollisionCheckAlgorithm<T, SwapResults, e_CUDA> : public CollisionCheckBase2<T, SwapResults>
+	struct CollisionCheckAlgorithm<T, SwapResults, e_CUDA> : public CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>
 	{
 		template <typename... Ts>
 		CollisionCheckAlgorithm(Ts&&... ts)
-			: CollisionCheckBase2(std::forward<Ts>(ts)...)
+			: CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>(std::forward<Ts>(ts)...)
 		{}
 
 		int operator()()
 		{
+			if (!CudaInterface::instance()->hasCuda())
+			{
+				return CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>::operator()();
+			}
 			std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
 			pairs.reserve(c0->colliders.size() + c1->colliders.size());
 			c0->checkCollisionL(c1, pairs);
