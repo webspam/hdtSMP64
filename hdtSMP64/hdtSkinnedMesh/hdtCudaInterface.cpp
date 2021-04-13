@@ -324,6 +324,7 @@ namespace hdt
 
 		ColliderTree* m_tree;
 		int m_numNodes;
+		int m_largestNode;
 
 	public:
 
@@ -334,13 +335,13 @@ namespace hdt
 			m_nodeAabbs(m_numNodes)
 		{
 			std::vector<NodePair> nodeData;
-			buildNodeData(*tree, m_nodeData.get());
+			buildNodeData(*tree, m_nodeData.get(), &m_largestNode);
 			m_nodeData.toDevice(stream);
 		}
 
 		void launch(CudaStream& stream, cuAabb* boundingBoxes)
 		{
-			cuRunBoundingBoxReduce(stream, m_numNodes, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD());
+			cuRunBoundingBoxReduce(stream, m_numNodes, m_largestNode, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD());
 			m_nodeAabbs.toHost(stream);
 		}
 
@@ -364,12 +365,15 @@ namespace hdt
 			return count;
 		}
 
-		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData)
+		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData, int* largestNode)
 		{
 			*nodeData++ = { tree.aabb - m_tree->aabb, tree.numCollider };
+			*largestNode = tree.numCollider;
 			for (auto& child : tree.children)
 			{
-				nodeData = buildNodeData(child, nodeData);
+				int size;
+				nodeData = buildNodeData(child, nodeData, &size);
+				*largestNode = max(*largestNode, size);
 			}
 			return nodeData;
 		}
