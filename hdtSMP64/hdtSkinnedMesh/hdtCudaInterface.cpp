@@ -558,6 +558,7 @@ namespace hdt
 			m_shapeB(shapeB),
 			m_numCollisionPairs(numCollisionPairs),
 			m_nextPair(0),
+			m_stream(shapeA->m_imp->m_body->m_stream),
 			m_resultBuffer(numCollisionPairs),
 			m_setupBuffer(numCollisionPairs),
 			m_indexBuffer(numColliders)
@@ -617,7 +618,7 @@ namespace hdt
 		int m_numCollisionPairs;
 		int m_nextPair;
 
-		CudaStream m_stream;
+		CudaStream& m_stream;
 		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
 		CudaPooledBuffer<cuCollisionSetup> m_setupBuffer;
 		CudaPooledBuffer<int> m_indexBuffer;
