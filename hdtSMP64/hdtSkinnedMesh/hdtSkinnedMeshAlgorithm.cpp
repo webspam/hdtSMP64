@@ -243,7 +243,7 @@ namespace hdt
 			{
 				res.normOnB.set128(normal);
 				res.posA = s.pos() - res.normOnB * r;
-				res.posB.set128(projection);
+				res.posB = projection + res.normOnB * margin;
 				res.depth = distanceFromPlane - radiusWithMargin;
 				return res.depth < -FLT_EPSILON;
 			}
@@ -632,7 +632,7 @@ namespace hdt
 					}
 				}
 				else
-				{
+				{     
 					list.reserve(std::max<size_t>(bsize, list.capacity()));
 					for (auto i = abeg; i < aend; ++i)
 					{
