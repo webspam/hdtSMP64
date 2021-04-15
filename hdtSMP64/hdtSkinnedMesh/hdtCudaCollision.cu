@@ -407,7 +407,6 @@ namespace hdt
             return false;
         }
 
-        // FIXME: posA doesn't take the margin into account here
         output.normOnB = normal;
         output.posB = projection;
         multiply(normal, margin, projection);

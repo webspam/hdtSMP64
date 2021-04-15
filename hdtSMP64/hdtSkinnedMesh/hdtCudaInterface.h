@@ -4,6 +4,13 @@
 
 namespace hdt
 {
+	struct CudaCollisionData
+	{
+		int offset;
+		int size;
+		Aabb boundingBox;
+	};
+
 	class CudaBody
 	{
 		friend class CudaPerTriangleShape;
@@ -40,6 +47,8 @@ namespace hdt
 	{
 		template <typename T>
 		friend class CudaCollisionPair;
+		template <typename T>
+		friend class CudaCollisionPair2;
 	public:
 		class Imp;
 
@@ -49,6 +58,31 @@ namespace hdt
 		void updateTree();
 
 	private:
+		std::shared_ptr<Imp> m_imp;
+
+	public:
+		CudaCollisionData* const m_collisionData;
+
+	};
+
+	template <typename T>
+	class CudaCollisionPair2
+	{
+	public:
+		CudaCollisionPair2(
+			CudaPerVertexShape* shapeA,
+			T* shapeB,
+			int numCollisionPairs,
+			CollisionResult** results);
+
+		void sendColliderGroups(int endKinematic, int startdynamic);
+		void launchBoundingBoxCheck(Aabb& boundingBox);
+		void launchCollision(int offset, int numDynamic, int numColliders);
+
+		void synchronize();
+
+	private:
+		class Imp;
 		std::shared_ptr<Imp> m_imp;
 	};
 
