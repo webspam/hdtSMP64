@@ -479,7 +479,6 @@ namespace hdt
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size()),
 			m_tree(&shape->m_tree, m_body->m_stream),
-			m_collisionData(m_tree.m_numNodes),
 			m_scratchSpace(shape->m_colliders.size())
 		{
 			for (int i = 0; i < m_numColliders; ++i)
@@ -521,19 +520,17 @@ namespace hdt
 	private:
 
 		int m_numColliders;
-		CudaColliderTree m_tree;
 
 	public:
 
+		CudaColliderTree m_tree;
 		CudaBuffer<cuPerVertexInput> m_input;
 		CudaBuffer<cuAabb, Aabb> m_output;
-		CudaBuffer<CudaCollisionData> m_collisionData;
 		CudaBuffer<int> m_scratchSpace;
 	};
 
 	CudaPerVertexShape::CudaPerVertexShape(PerVertexShape* shape)
-		: m_imp(new Imp(shape)),
-		m_collisionData(m_imp->m_collisionData)
+		: m_imp(new Imp(shape))
 	{}
 
 	void CudaPerVertexShape::launch()
@@ -580,15 +577,21 @@ namespace hdt
 			int offsetA,
 			int offsetB,
 			int sizeA,
-			int sizeB)
+			int sizeB,
+			Aabb& boundingBoxA)
 		{
 			static_assert(sizeof(cuCollider) == sizeof(Collider));
+
+			cuAabb bb;
+			bb.aabbMin.val = boundingBoxA.m_min;
+			bb.aabbMax.val = boundingBoxA.m_max;
 
 			m_setupBuffer[m_nextPair] = {
 				sizeA,
 				sizeB,
 				m_indexBuffer.getD() + offsetA,
-				m_indexBuffer.getD() + offsetB
+				offsetB,
+				bb
 			};
 			++m_nextPair;
 		}
@@ -649,9 +652,10 @@ namespace hdt
 		int offsetA,
 		int offsetB,
 		int sizeA,
-		int sizeB)
+		int sizeB,
+		Aabb& boundingBoxA)
 	{
-		m_imp->addPair(offsetA, offsetB, sizeA, sizeB);
+		m_imp->addPair(offsetA, offsetB, sizeA, sizeB, boundingBoxA);
 	}
 
 	template <typename T>
@@ -668,79 +672,6 @@ namespace hdt
 
 	template <typename T>
 	void CudaCollisionPair<T>::synchronize()
-	{
-		m_imp->synchronize();
-	}
-
-	template <typename T>
-	class CudaCollisionPair2<T>::Imp
-	{
-	public:
-
-		Imp(
-			CudaPerVertexShape* shapeA,
-			T* shapeB,
-			int numCollisionPairs,
-			CollisionResult** results)
-			: m_shapeA(shapeA),
-			m_shapeB(shapeB)
-		{}
-
-		void sendColliderGroups(int endKinematic, int startdynamic)
-		{
-			// FIXME: Send data from m_shapeA->m_collisionData
-		}
-
-		void launchBoundingBoxCheck(Aabb& boundingBox)
-		{
-			// FIXME: Launch the bounding box check to filter these out properly
-		}
-
-		void launchCollision(int offset, int numDynamic, int numColliders)
-		{
-			// FIXME: Do the collision
-		}
-
-		void synchronize()
-		{
-			cuSynchronize(m_shapeA->m_imp->m_body->m_stream);
-		}
-
-	private:
-
-		CudaPerVertexShape* m_shapeA;
-		T* m_shapeB;
-	};
-
-	template <typename T>
-	CudaCollisionPair2<T>::CudaCollisionPair2(
-		CudaPerVertexShape* shapeA,
-		T* shapeB,
-		int numCollisionPairs,
-		CollisionResult** results)
-		: m_imp(new Imp(shapeA, shapeB, numCollisionPairs, results))
-	{}
-
-	template <typename T>
-	void CudaCollisionPair2<T>::sendColliderGroups(int endKinematic, int startDynamic)
-	{
-		m_imp->sendColliderGroups(endKinematic, startDynamic);
-	}
-
-	template <typename T>
-	void CudaCollisionPair2<T>::launchBoundingBoxCheck(Aabb& boundingBox)
-	{
-		m_imp->launchBoundingBoxCheck(boundingBox);
-	}
-
-	template <typename T>
-	void CudaCollisionPair2<T>::launchCollision(int offset, int numDynamic, int numColliders)
-	{
-		m_imp->launchCollision(offset, numDynamic, numColliders);
-	}
-
-	template <typename T>
-	void CudaCollisionPair2<T>::synchronize()
 	{
 		m_imp->synchronize();
 	}
@@ -773,7 +704,4 @@ namespace hdt
 
 	template class CudaCollisionPair<CudaPerVertexShape>;
 	template class CudaCollisionPair<CudaPerTriangleShape>;
-
-	template class CudaCollisionPair2<CudaPerVertexShape>;
-	template class CudaCollisionPair2<CudaPerTriangleShape>; 
 }

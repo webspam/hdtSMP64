@@ -21,8 +21,7 @@ namespace hdt
 	{
 		e_CPU,
 		e_CPURefactored,
-		e_CUDA,
-		e_CUDA2
+		e_CUDA
 	};
 
 	// CollisionCheckBase1 provides data members and the basic constructor for the target types. Note that we
@@ -446,19 +445,15 @@ namespace hdt
 
 			// Work out how many colliders will actually be needed for each pair
 			int npairs = pairs.size();
-			std::vector<int> counts(npairs * 2);
+			std::vector<int> counts(npairs);
 			concurrency::parallel_for(0, npairs, [&](int i)
 			{
 				auto a = pairs[i].first;
 				auto b = pairs[i].second;
 
 				auto abeg = a->aabb;
-				auto bbeg = b->aabb;
 				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
-				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
 				auto aend = abeg + asize;
-				auto bend = bbeg + bsize;
-				auto aabbA = a->aabbMe;
 				auto aabbB = b->aabbMe;
 
 				int count = 0;
@@ -470,15 +465,6 @@ namespace hdt
 					}
 				}
 				counts[i] = count;
-				count = 0;
-				for (auto c = bbeg; c != bend; ++c)
-				{
-					if (c->collideWith(aabbA))
-					{
-						++count;
-					}
-				}
-				counts[i + npairs] = count;
 			});
 
 			// Calculate offset of data for each pair in vertex index buffer
@@ -504,16 +490,11 @@ namespace hdt
 				auto b = pairs[i].second;
 
 				auto abeg = a->aabb;
-				auto bbeg = b->aabb;
 				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
-				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
 				auto aend = abeg + asize;
-				auto bend = bbeg + bsize;
-				auto aabbA = a->aabbMe;
 				auto aabbB = b->aabbMe;
 
 				auto vertexStartA = a->cbuf - shapeA->m_colliders.data();
-				auto vertexStartB = b->cbuf - shapeB->m_colliders.data();
 
 				int* addr = indexData + offsets[i];
 				for (auto c = abeg; c != aend; ++c)
@@ -521,14 +502,6 @@ namespace hdt
 					if (c->collideWith(aabbB))
 					{
 						*(addr++) = vertexStartA + (c - abeg);
-					}
-				}
-				addr = indexData + offsets[i + npairs];
-				for (auto c = bbeg; c != bend; ++c)
-				{
-					if (c->collideWith(aabbA))
-					{
-						*(addr++) = vertexStartB + (c - bbeg);
 					}
 				}
 			});
@@ -540,115 +513,16 @@ namespace hdt
 			{
 				collisionPair.addPair(
 					offsets[i],
-					offsets[i + npairs],
+					pairs[i].second->cbuf - shapeB->m_colliders.data(),
 					counts[i],
-					counts[i + npairs]);
+					pairs[i].first->isKinematic ? pairs[i].second->dynCollider : pairs[i].second->numCollider,
+					pairs[i].first->aabbMe);
 			}
 
 			// Run the kernel and get the results
 			collisionPair.launch();
 			collisionPair.synchronize();
 			for (int i = 0; i < npairs; ++i)
-			{
-				if (results[i].depth <= 0)
-				{
-					// Kernel doesn't know real collider addresses, so it sets colliders referenced to 0.
-					// We need to convert them to corresponding addresses in the real host-side data.
-					int ciA = results[i].colliderA - static_cast<Collider*>(0);
-					int ciB = results[i].colliderB - static_cast<Collider*>(0);
-					results[i].colliderA = shapeA->m_colliders.data() + ciA;
-					results[i].colliderB = shapeB->m_colliders.data() + ciB;
-					addResult(results[i]);
-				}
-			}
-
-			return numResults;
-		}
-	};
-
-	// New version of the CUDA algorithm
-	template <typename T, bool SwapResults>
-	struct CollisionCheckAlgorithm<T, SwapResults, e_CUDA2> : public CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>
-	{
-		template <typename... Ts>
-		CollisionCheckAlgorithm(Ts&&... ts)
-			: CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>(std::forward<Ts>(ts)...)
-		{}
-
-		int operator()()
-		{
-			if (!CudaInterface::instance()->hasCuda())
-			{
-				return CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>::operator()();
-			}
-
-			// Get all potentially colliding pairs of trees
-			std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
-			pairs.reserve(c0->colliders.size() + c1->colliders.size()); // FIXME: This size calculation makes absolutely no sense, and has just been copied from the original code
-			c0->checkCollisionL(c1, pairs);
-			if (pairs.empty()) return 0;
-
-			CudaPerVertexShape* cudaShapeA = shapeA->m_cudaObject.get();
-			auto cudaShapeB = shapeB->m_cudaObject.get();
-
-			CollisionResult* results;
-			CudaCollisionPair2 collisionPair(cudaShapeA, cudaShapeB, pairs.size(), &results);
-
-			// Group by the second element of each pair
-			std::unordered_map <ColliderTree*, std::vector<ColliderTree*>> groupedPairs;
-			for (auto pair : pairs)
-			{
-				groupedPairs[pair.second].push_back(pair.first);
-			}
-
-			Collider* firstColliderA = shapeA->m_colliders.data();
-			Collider* firstColliderB = shapeB->m_colliders.data();
-			for (auto group : groupedPairs)
-			{
-				// Set up data for the parts of shapeA that collide with this part of shapeB. We have a buffer large
-				// enough to hold one record for every part of the shape, and we add to the start or end based on whether
-				// this part of shapeA is kinematic (which affects how many of the shapeB colliders need to be checked
-				// against it).
-				int i = 0, j = group.second.size();
-				for (auto c : group.second)
-				{
-					if (c->isKinematic)
-					{
-						cudaShapeA->m_collisionData[i++] = {
-							static_cast<int>(c->cbuf - firstColliderA),
-							static_cast<int>(group.first->isKinematic ? c->dynCollider : c->numCollider),
-							c->aabbMe };
-					}
-					else
-					{
-						cudaShapeA->m_collisionData[--j] = {
-							static_cast<int>(c->cbuf - firstColliderA),
-							static_cast<int>(group.first->isKinematic ? c->dynCollider : c->numCollider),
-							c->aabbMe };
-					}
-				}
-
-				// Now send the group data to the GPU. This should combine the two sections of the buffer into one
-				// contiguous array, for the following bounding box check.
-				collisionPair.sendColliderGroups(i, j);
-
-				// Start the bounding box check on the GPU. The GPU algorithm should build a list of
-				// colliders in each part that intersect the bounding box, and update the size of the group
-				// data accordingly. It may optionally also compute a new bounding box for each part (this
-				// may be particularly useful for collisions against kinematic parts).
-				collisionPair.launchBoundingBoxCheck(group.first->aabbMe);
-
-				// Now we can do the actual collision for this part of shapeB against each part in the group
-				// data.
-				collisionPair.launchCollision(
-					group.first->cbuf - firstColliderB,
-					group.first->dynCollider,
-					group.first->numCollider);
-			}
-
-			// Once all groups have been processed, synchronize and retrieve the results
-			collisionPair.synchronize();
-			for (int i = 0; i < pairs.size(); ++i)
 			{
 				if (results[i].depth <= 0)
 				{

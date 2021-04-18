@@ -80,7 +80,8 @@ namespace hdt
 		int sizeA;
 		int sizeB;
 		int* indicesA;
-		int* indicesB;
+		int colliderStartB;
+		cuAabb boundingBoxA;
 	};
 
 	void cuCreateStream(void** ptr);

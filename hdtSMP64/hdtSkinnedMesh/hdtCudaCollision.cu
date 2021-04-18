@@ -438,7 +438,7 @@ namespace hdt
             int nA = setup[block].sizeA;
             int nB = setup[block].sizeB;
             int* indicesA = setup[block].indicesA;
-            int* indicesB = setup[block].indicesB;
+            int colliderStartB = setup[block].colliderStartB;
 
             // Depth should always be negative for collisions. We'll use positive values to signify no
             // collision, and later for mutual exclusion.
@@ -450,7 +450,7 @@ namespace hdt
             for (int i = tid; i < nPairs; i += blockDim.x)
             {
                 int iA = indicesA[i % nA];
-                int iB = indicesB[i / nA];
+                int iB = colliderStartB + i / nA;
 
                 // Skip pairs until we find one with a bounding box collision. This should increase the
                 // number of full checks done in parallel, and reduce divergence overall. Note we only do
@@ -463,7 +463,7 @@ namespace hdt
                     {
                         i += blockDim.x;
                         iA = indicesA[i % nA];
-                        iB = indicesB[i / nA];
+                        iB = colliderStartB + i / nA;
                     }
                 }
 #endif
