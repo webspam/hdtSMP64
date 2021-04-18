@@ -17,6 +17,23 @@ namespace hdt
 			float w;
 		};
 		__m128 val;
+
+#ifdef __NVCC__
+		__device__ cuVector3();
+		__device__ cuVector3(float ix, float iy, float iz, float iw);
+
+		__device__ cuVector3 operator+(const cuVector3& o) const;
+		__device__ cuVector3 operator-(const cuVector3& o) const;
+		__device__ cuVector3 operator*(const float c) const;
+
+		__device__ cuVector3& operator+=(const cuVector3& o);
+		__device__ cuVector3& operator-=(const cuVector3& o);
+		__device__ cuVector3& operator*=(const float c);
+
+		__device__ float magnitude2() const;
+		__device__ float magnitude() const;
+		__device__ cuVector3 normalize() const;
+#endif
 	};
 
 	struct cuTriangle
@@ -41,6 +58,15 @@ namespace hdt
 
 	struct cuAabb
 	{
+#ifdef __NVCC__
+		__device__ explicit cuAabb(const cuVector3& v);
+
+		template<typename... Args>
+		__device__ explicit cuAabb(const cuVector3& v, const Args&... args);
+
+		__device__ void addMargin(const float margin);
+#endif
+
 		cuVector3 aabbMin;
 		cuVector3 aabbMax;
 	};

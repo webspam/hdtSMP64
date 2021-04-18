@@ -22,39 +22,50 @@ namespace hdt
     template<>
     constexpr int collisionBlockSize<cuPerTriangleInput>() { return 1024; }
 
-    __device__
-        void subtract(const cuVector3& v1, const cuVector3& v2, cuVector3& result)
+    __device__ cuVector3::cuVector3()
+    {}
+
+    __device__ __forceinline__ cuVector3::cuVector3(float ix, float iy, float iz, float iw)
+        : x(ix), y(iy), z(iz), w(iw)
+    {}
+
+    __device__ __forceinline__ cuVector3 cuVector3::operator+(const cuVector3& o) const
     {
-        result.x = v1.x - v2.x;
-        result.y = v1.y - v2.y;
-        result.z = v1.z - v2.z;
-        result.w = v1.w - v2.w;
+        return { x + o.x, y + o.y, z + o.z, w + o.w };
+    }
+
+    __device__ __forceinline__ cuVector3 cuVector3::operator-(const cuVector3& o) const
+    {
+        return { x - o.x, y - o.y, z - o.z, w - o.w };
+    }
+
+    __device__ __forceinline__ cuVector3 cuVector3::operator*(const float c) const
+    {
+        return { x * c, y * c, z * c, w * c };
+    }
+
+    __device__ __forceinline__ cuVector3& cuVector3::operator+=(const cuVector3& o)
+    {
+        *this = *this + o;
+        return *this;
+    }
+
+    __device__ __forceinline__ cuVector3& cuVector3::operator-=(const cuVector3& o)
+    {
+        *this = *this - o;
+        return *this;
+    }
+
+    __device__ __forceinline__ cuVector3& cuVector3::operator *= (const float c)
+    {
+        *this = *this * c;
+        return *this;
     }
 
     __device__
-        void add(const cuVector3& v1, const cuVector3& v2, cuVector3& result)
+        cuVector3 crossProduct(const cuVector3& v1, const cuVector3& v2)
     {
-        result.x = v1.x + v2.x;
-        result.y = v1.y + v2.y;
-        result.z = v1.z + v2.z;
-        result.w = v1.w + v2.w;
-    }
-
-    __device__
-        void multiply(const cuVector3& v, float c, cuVector3& result)
-    {
-        result.x = v.x * c;
-        result.y = v.y * c;
-        result.z = v.z * c;
-        result.w = v.w * c;
-    }
-
-    __device__
-        void crossProduct(const cuVector3& v1, const cuVector3& v2, cuVector3& result)
-    {
-        result.x = v1.y * v2.z - v1.z * v2.y;
-        result.y = v1.z * v2.x - v1.x * v2.z;
-        result.z = v1.x * v2.y - v1.y * v2.x;
+        return { v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x, 0 };
     }
 
     __device__
@@ -63,19 +74,51 @@ namespace hdt
         return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
     }
 
-    __device__
-        float magnitude(const cuVector3& v)
+    __device__ float cuVector3::magnitude2() const
     {
-        return sqrt(dotProduct(v, v));
+        return dotProduct(*this, *this);
     }
 
-    __device__
-        void normalize(cuVector3& v)
+    __device__ float cuVector3::magnitude() const
     {
-        float mag = magnitude(v);
-        v.x /= mag;
-        v.y /= mag;
-        v.z /= mag;
+        return sqrt(magnitude2());
+    }
+
+    __device__ cuVector3 cuVector3::normalize() const
+    {
+        return *this * rsqrt(magnitude2());
+    }
+
+    __device__ __forceinline__ cuVector3 perElementMin(const cuVector3& v1, const cuVector3& v2)
+    {
+        return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z), min(v1.w, v2.w) };
+    }
+
+    __device__ __forceinline__ cuVector3 perElementMax(const cuVector3& v1, const cuVector3& v2)
+    {
+        return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z), max(v1.w, v2.w) };
+    }
+
+    __device__ cuAabb::cuAabb(const cuVector3& v)
+        : aabbMin(v), aabbMax(v)
+    {}
+
+    template<typename... Args>
+    __device__ __forceinline__ cuAabb::cuAabb(const cuVector3& v, const Args&... args)
+        : cuAabb(args...)
+    {
+        aabbMin = perElementMin(aabbMin, v);
+        aabbMax = perElementMax(aabbMax, v);
+    }
+
+    __device__ void cuAabb::addMargin(const float margin)
+    {
+        aabbMin.x -= margin;
+        aabbMin.y -= margin;
+        aabbMin.z -= margin;
+        aabbMax.x += margin;
+        aabbMax.y += margin;
+        aabbMax.z += margin;
     }
 
     __device__
@@ -98,14 +141,8 @@ namespace hdt
         for (int i = index; i < n; i += stride)
         {
             const cuVector3& v = vertexData[in[i].vertexIndex];
-            float margin = v.w * in[i].margin;
-
-            out[i].aabbMin.x = v.x - margin;
-            out[i].aabbMin.y = v.y - margin;
-            out[i].aabbMin.z = v.z - margin;
-            out[i].aabbMax.x = v.x + margin;
-            out[i].aabbMax.y = v.y + margin;
-            out[i].aabbMax.z = v.z + margin;
+            out[i] = cuAabb(v);
+            out[i].addMargin(v.w * in[i].margin);
         }
     }
 
@@ -124,12 +161,8 @@ namespace hdt
             float penetration = abs(in[i].penetration);
             float margin = max((v0.w + v1.w + v2.w) * in[i].margin / 3, penetration);
 
-            out[i].aabbMin.x = min(v0.x, min(v1.x, v2.x)) - margin;
-            out[i].aabbMin.y = min(v0.y, min(v1.y, v2.y)) - margin;
-            out[i].aabbMin.z = min(v0.z, min(v1.z, v2.z)) - margin;
-            out[i].aabbMax.x = max(v0.x, max(v1.x, v2.x)) + margin;
-            out[i].aabbMax.y = max(v0.y, max(v1.y, v2.y)) + margin;
-            out[i].aabbMax.z = max(v0.z, max(v1.z, v2.z)) + margin;
+            out[i] = cuAabb(v0, v1, v2);
+            out[i].addMargin(margin);
         }
     }
 
@@ -154,9 +187,7 @@ namespace hdt
                 int s = blockDim.x;
                 if (i + s < aabbCount)
                 {
-                    shared[tid].x = min(aabbStart[i].aabbMin.x, aabbStart[i + s].aabbMin.x);
-                    shared[tid].y = min(aabbStart[i].aabbMin.y, aabbStart[i + s].aabbMin.y);
-                    shared[tid].z = min(aabbStart[i].aabbMin.z, aabbStart[i + s].aabbMin.z);
+                    shared[tid] = perElementMin(aabbStart[i].aabbMin, aabbStart[i + s].aabbMin);
                 }
                 else
                 {
@@ -170,9 +201,7 @@ namespace hdt
                 {
                     if (tid < s && i + s < aabbCount)
                     {
-                        shared[tid].x = min(shared[tid].x, shared[tid + s].x);
-                        shared[tid].y = min(shared[tid].y, shared[tid + s].y);
-                        shared[tid].z = min(shared[tid].z, shared[tid + s].z);
+                        shared[tid] = perElementMin(shared[tid], shared[tid + s]);
                     }
                     __syncthreads();
                 }
@@ -180,9 +209,7 @@ namespace hdt
                 // Finally, thread 0 combines with the result from previous blocks
                 if (tid == 0)
                 {
-                    temp.x = min(temp.x, shared[tid].x);
-                    temp.y = min(temp.x, shared[tid].y);
-                    temp.z = min(temp.x, shared[tid].z);
+                    temp = perElementMin(temp, shared[tid]);
                 }
             }
             if (tid == 0)
@@ -197,9 +224,7 @@ namespace hdt
                 int s = blockDim.x;
                 if (i + s < aabbCount)
                 {
-                    shared[tid].x = max(aabbStart[i].aabbMax.x, aabbStart[i + s].aabbMax.x);
-                    shared[tid].y = max(aabbStart[i].aabbMax.y, aabbStart[i + s].aabbMax.y);
-                    shared[tid].z = max(aabbStart[i].aabbMax.z, aabbStart[i + s].aabbMax.z);
+                    shared[tid] = perElementMax(aabbStart[i].aabbMax, aabbStart[i + s].aabbMax);
                 }
                 else
                 {
@@ -211,17 +236,13 @@ namespace hdt
                 {
                     if (tid < s && i + s < aabbCount)
                     {
-                        shared[tid].x = max(shared[tid].x, shared[tid + s].x);
-                        shared[tid].y = max(shared[tid].y, shared[tid + s].y);
-                        shared[tid].z = max(shared[tid].z, shared[tid + s].z);
+                        shared[tid] = perElementMax(shared[tid], shared[tid + s]);
                     }
                     __syncthreads();
                 }
                 if (tid == 0)
                 {
-                    temp.x = max(temp.x, shared[tid].x);
-                    temp.y = max(temp.x, shared[tid].y);
-                    temp.z = max(temp.x, shared[tid].z);
+                    temp = perElementMax(temp, shared[tid]);
                 }
             }
             if (tid == 0)
@@ -231,15 +252,6 @@ namespace hdt
         }
     }
 
-    __device__ cuVector3& operator+=(cuVector3& v1, cuVector3& v2)
-    {
-        v1.x += v2.x;
-        v1.y += v2.y;
-        v1.z += v2.z;
-        v1.w += v2.w;
-        return v1;
-    }
-
     __device__ cuVector3 calcVertexState(const cuVector3& skinPos, const cuBone& bone, float w)
     {
         cuVector3 result;
@@ -247,10 +259,7 @@ namespace hdt
         result.y = bone.transform[0].y * skinPos.x + bone.transform[1].y * skinPos.y + bone.transform[2].y * skinPos.z + bone.transform[3].y;
         result.z = bone.transform[0].z * skinPos.x + bone.transform[1].z * skinPos.y + bone.transform[2].z * skinPos.z + bone.transform[3].z;
         result.w = bone.marginMultiplier.w;
-        result.x *= w;
-        result.y *= w;
-        result.z *= w;
-        result.w *= w;
+        result *= w;
         return result;
     }
 
@@ -285,9 +294,8 @@ namespace hdt
         float rA = vA.w * inputA.margin;
         float rB = vB.w * inputB.margin;
         float bound2 = (rA + rB) * (rA + rB);
-        cuVector3 diff;
-        subtract(vA, vB, diff);
-        float dist2 = dotProduct(diff, diff);
+        cuVector3 diff = vA - vB;
+        float dist2 = diff.magnitude2();
         float len = sqrt(dist2);
         float dist = len - (rA + rB);
         if (dist2 <= bound2 && (dist < output.depth))
@@ -298,14 +306,12 @@ namespace hdt
             }
             else
             {
-                normalize(diff);
+                diff = diff.normalize();
             }
             output.depth = dist;
             output.normOnB = diff;
-            multiply(diff, rA, output.posA);
-            multiply(diff, rB, output.posB);
-            subtract(vA, output.posA, output.posA);
-            add(vB, output.posB, output.posB);
+            output.posA = vA - diff * rA;
+            output.posB = vB + diff * rB;
             return true;
         }
         return false;
@@ -332,33 +338,27 @@ namespace hdt
         }
 
         // Compute unit normal and twice area of triangle
-        cuVector3 ab;
-        cuVector3 ac;
-        subtract(p1, p0, ab);
-        subtract(p2, p0, ac);
-        cuVector3 normal;
-        crossProduct(ab, ac, normal);
-        float area = magnitude(normal);
+        cuVector3 ab = p1 - p0;
+        cuVector3 ac = p2 - p0;
+        cuVector3 normal = crossProduct(ab, ac);
+        float area = normal.magnitude();
         if (area < FLT_EPSILON)
         {
             return false;
         }
-        multiply(normal, 1.0 / area, normal);
+        normal *= (1.0 / area);
 
         // Reverse normal direction if penetration is negative
         if (penetration < 0)
         {
-            multiply(normal, -1.0, normal);
+            normal *= -1.0;
             penetration = -penetration;
         }
 
         // Compute distance from point to plane and its projection onto the plane
-        cuVector3 ap;
-        subtract(s, p0, ap);
+        cuVector3 ap = s - p0;
         float distance = dotProduct(ap, normal);
-        cuVector3 projection;
-        multiply(normal, distance, projection);
-        subtract(s, projection, projection);
+        cuVector3 projection = s - normal * distance;
 
         // Determine whether the point is close enough to the plane
         float radiusWithMargin = r + margin;
@@ -374,7 +374,7 @@ namespace hdt
             if (distance < 0)
             {
                 distance = -distance;
-                multiply(normal, -1, normal);
+                normal *= -1.0;
             }
             if (distance >= radiusWithMargin)
             {
@@ -390,30 +390,23 @@ namespace hdt
         }
 
         // Compute twice the area of each triangle formed by the projection
-        cuVector3 bp;
-        cuVector3 cp;
-        subtract(projection, p0, ap);
-        subtract(projection, p1, bp);
-        subtract(projection, p2, cp);
-        cuVector3 aa;
-        crossProduct(bp, cp, aa);
-        crossProduct(cp, ap, ab);
-        crossProduct(ap, bp, ac);
-        float areaA = magnitude(aa);
-        float areaB = magnitude(ab);
-        float areaC = magnitude(ac);
+        ap = projection - p0;
+        cuVector3 bp = projection - p1;
+        cuVector3 cp = projection - p2;
+        cuVector3 aa = crossProduct(bp, cp);
+        ab = crossProduct(cp, ap);
+        ac = crossProduct(ap, bp);
+        float areaA = aa.magnitude();
+        float areaB = ab.magnitude();
+        float areaC = ac.magnitude();
         if (areaA + areaB > area || areaB + areaC > area || areaC + areaA > area)
         {
             return false;
         }
 
-        // FIXME: posA doesn't take the margin into account here
         output.normOnB = normal;
-        output.posB = projection;
-        multiply(normal, margin, projection);
-        add(output.posB, projection, output.posB);
-        multiply(normal, r, projection);
-        subtract(s, projection, output.posA);
+        output.posB = projection + normal * margin;
+        output.posA = s - normal * r;
         output.depth = depth;
         return true;
     }
