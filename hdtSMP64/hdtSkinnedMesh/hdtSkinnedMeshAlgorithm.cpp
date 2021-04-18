@@ -173,35 +173,33 @@ namespace hdt
 				penetration = 0;
 			}
 
-			// Compute unit normal and (twice) area of triangle
+			// Compute unit normal
 			auto ab = (p1.pos() - p0.pos()).get128();
 			auto ac = (p2.pos() - p0.pos()).get128();
 			auto normal = cross_product(ab, ac);
-			auto area = _mm_sqrt_ps(_mm_dp_ps(normal, normal, 0x77));
-			if (_mm_cvtss_f32(area) < FLT_EPSILON)
+			auto len = _mm_sqrt_ps(_mm_dp_ps(normal, normal, 0x77));
+			if (_mm_cvtss_f32(len) < FLT_EPSILON)
 			{
 				return false;
 			}
-			normal = _mm_div_ps(normal, area);
+			normal = _mm_div_ps(normal, len);
 			if (penetration < 0)
 			{
 				normal = _mm_sub_ps(_mm_set1_ps(0.0), normal);
 				penetration = -penetration;
 			}
 
-			// Compute distance from point to plane, and projection onto plane
-			auto ap = (s.pos() - p0.pos()).get128();
+			// Compute distance from point to plane
+			auto ap = _mm_sub_ps(s.pos().get128(), p0.pos().get128());
 			auto distance = _mm_dp_ps(ap, normal, 0x77);
-			auto projection = _mm_mul_ps(normal, distance);
-			projection = _mm_sub_ps(s.pos().get128(), projection);
+			float distanceFromPlane = _mm_cvtss_f32(distance);
 
-			// Logic to decide if we're within range of the plane - don't completely understand all the cases here
+			// Decide whether point is close enough to plane
 			float radiusWithMargin = r + margin;
 			bool isInsideContactPlane;
-			float distanceFromPlane = _mm_cvtss_f32(distance);
 			if (penetration >= FLT_EPSILON)
 			{
-				isInsideContactPlane = distanceFromPlane < radiusWithMargin&& distanceFromPlane >= -penetration;
+				isInsideContactPlane = distanceFromPlane < radiusWithMargin && distanceFromPlane >= -penetration;
 			}
 			else
 			{
@@ -217,33 +215,35 @@ namespace hdt
 				return false;
 			}
 
-			// Compute (twice) area of each triangle between projection and two triangle points
-			ap = _mm_sub_ps(projection, p0.pos().get128());
-			auto bp = _mm_sub_ps(projection, p1.pos().get128());
-			auto cp = _mm_sub_ps(projection, p2.pos().get128());
+			// Compute the triple product of the triangle normal with vectors from the sphere center to each
+			// pair of triangle vertices (note ordering of the vertices is important). The projection of the
+			// center onto the triangle plane lies within the triangle if and only if all three products have
+			// the same sign.
+			auto bp = _mm_sub_ps(s.pos().get128(), p1.pos().get128());
+			auto cp = _mm_sub_ps(s.pos().get128(), p2.pos().get128());
 			auto aa = cross_product(bp, cp);
 			ab = cross_product(cp, ap);
 			ac = cross_product(ap, bp);
-			aa = _mm_dp_ps(aa, aa, 0x74);
-			ab = _mm_dp_ps(ab, ab, 0x72);
-			ac = _mm_dp_ps(ac, ac, 0x71);
+			aa = _mm_dp_ps(aa, normal, 0x74);
+			ab = _mm_dp_ps(ab, normal, 0x72);
+			ac = _mm_dp_ps(ac, normal, 0x71);
 			aa = _mm_or_ps(aa, ab);
 			aa = _mm_or_ps(aa, ac);
-			aa = _mm_sqrt_ps(aa);
 
-			// Now if every pair of elements in aa sums to no more than area, then the point is inside the triangle
-			aa = _mm_add_ps(aa, _mm_shuffle_ps(aa, aa, _MM_SHUFFLE(3, 0, 2, 1)));
-			aa = _mm_cmpgt_ps(aa, area);
+			// To check signs, take the product of each pair. If the point is outside the triangle, then at
+			// least one pair of signs will differ and give a negative product. So if all three products are
+			// positive the point is inside the triangle.
+			aa = _mm_mul_ps(aa, _mm_shuffle_ps(aa, aa, _MM_SHUFFLE(3, 0, 2, 1)));
+			aa = _mm_cmpgt_ps(_mm_set1_ps(0.0), aa);
 			auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
 
-			// FIXME: posA doesn't take the margin into account here
 			res.colliderA = a;
 			res.colliderB = b;
 			if (pointInTriangle)
 			{
 				res.normOnB.set128(normal);
 				res.posA = s.pos() - res.normOnB * r;
-				res.posB = projection + res.normOnB * margin;
+				res.posB = s.pos() - res.normOnB * (distanceFromPlane - margin);
 				res.depth = distanceFromPlane - radiusWithMargin;
 				return res.depth < -FLT_EPSILON;
 			}

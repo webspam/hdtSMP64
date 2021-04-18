@@ -358,7 +358,6 @@ namespace hdt
         // Compute distance from point to plane and its projection onto the plane
         cuVector3 ap = s - p0;
         float distance = dotProduct(ap, normal);
-        cuVector3 projection = s - normal * distance;
 
         // Determine whether the point is close enough to the plane
         float radiusWithMargin = r + margin;
@@ -389,24 +388,23 @@ namespace hdt
             return false;
         }
 
-        // Compute twice the area of each triangle formed by the projection
-        ap = projection - p0;
-        cuVector3 bp = projection - p1;
-        cuVector3 cp = projection - p2;
+        // Compute triple products and check the projection lies in the triangle
+        cuVector3 bp = s - p1;
+        cuVector3 cp = s - p2;
         cuVector3 aa = crossProduct(bp, cp);
         ab = crossProduct(cp, ap);
         ac = crossProduct(ap, bp);
-        float areaA = aa.magnitude();
-        float areaB = ab.magnitude();
-        float areaC = ac.magnitude();
-        if (areaA + areaB > area || areaB + areaC > area || areaC + areaA > area)
+        float areaA = dotProduct(aa, normal);
+        float areaB = dotProduct(ab, normal);
+        float areaC = dotProduct(ac, normal);
+        if (areaA * areaB < 0 || areaB * areaC < 0 || areaC * areaA < 0)
         {
             return false;
         }
 
         output.normOnB = normal;
-        output.posB = projection + normal * margin;
         output.posA = s - normal * r;
+        output.posB = s - normal * (distance - margin);
         output.depth = depth;
         return true;
     }
