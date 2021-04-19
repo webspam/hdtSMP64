@@ -663,6 +663,8 @@ namespace hdt
 		m_imp->synchronize();
 	}
 
+	bool CudaInterface::enableCuda = false;
+
 	CudaInterface* CudaInterface::instance()
 	{
 		static CudaInterface s_instance;
@@ -671,7 +673,7 @@ namespace hdt
 
 	bool CudaInterface::hasCuda()
 	{
-		return cuDeviceCount() > 0;
+		return m_enabled && cuDeviceCount() > 0;
 	}
 
 	void CudaInterface::synchronize()
@@ -685,8 +687,12 @@ namespace hdt
 	}
 
 	CudaInterface::CudaInterface()
+		: m_enabled(enableCuda)
 	{
-		cuInitialize();
+		if (m_enabled)
+		{
+			cuInitialize();
+		}
 	}
 
 	template class CudaCollisionPair<CudaPerVertexShape>;

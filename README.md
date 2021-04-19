@@ -1,10 +1,12 @@
-# hdtSMP for Skyrim Special Edition
+# hdtSMP with CUDA for Skyrim Special Edition
 
 Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
 ## Changes 
 
++ Added CUDA support for several parts of collision detection (still a work in progress). This includes
+  everything that had OpenCL support in earlier releases, as well as the final collision check.
 + Added distance check in ActorManager to disable NPCs more than a certain distance from the player. This
   resolves the massive FPS drop in certain cell transitions (such as Blue Palace -> Solitude). Default
   maximum distance is 10000, which resolves that issue, but I recommend something around 2000 for better
@@ -27,6 +29,44 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
   physics should now work (with limitations) on NPCs without having to manually edit the facegen data.
 + New bones from facegen files should now be added to the head instead of the NPC root, so they should now be
   positioned correctly if there is no physics for them or after a reset.
+
+## CUDA support
+
+CUDA support is disabled by default, but can be enabled in configs.xml. It will automatically fall back to
+the CPU algorithm if you do not have any CUDA capable cards. However, it does not check capabilities of any
+cards it finds, so may crash if your card is too old. It was developed for a GeForce 10 series card, so
+should work on those or anything newer.
+
+The following parts of the collision algortihm are currently GPU accelerated:
+
+* Vertex position calculations for skinned mesh bodies
+* Collider bounding box calculations for per-vertex and per-triangle shapes
+* Aggregate bounding box calculation for internal nodes of collider trees
+* Sphere-sphere and sphere-triangle collision checks
+
+The following parts are still CPU-based:
+
+* Building collider lists for the final collision check (this is also the biggest performance hit, as it's
+  the only remaining part that needs per-collider bounding boxes in host memory)
+* Merging collision results and converting to manifolds for the Bullet library to work with
+* And, of course, the solver itself, which is part of the Bullet library, not the HDT-SMP plugin
+
+This is still experimental, and may not give good performance. The old CPU collision algorithm was heavily
+optimized, so matching its framerate is not easy. Much of the performance loss comes from data transfer
+between the host and graphics card, so reducing this is key to future improvements.
+
+* On a 6850K processor (6 cores, 3.6GHz) with a 1080Ti GPU, framerate in crowded areas is significantly worse
+  than with the CPU-only algorithm. The GPU algorithm typically gives about half the framerate of the CPU
+  one when under heavy load. But most of the time, both algorithms easily reach the framerate cap at 60fps.
+
+If you have an i3 or i5 CPU (or the AMD equivalent) with a fast graphics card, the GPU algorithm may help. If
+you have an i7 or i9 CPU, or your graphics card already struggles with the base game, stick with the CPU
+version.
+
+## Radeon support?
+
+Nope, sorry. CUDA and nVidia cards are pretty much the industry standard for scientific computing, so that's
+what I use. In any case, I can't support GPU architectures that I don't have.
 
 ## Note about NPC head parts
 

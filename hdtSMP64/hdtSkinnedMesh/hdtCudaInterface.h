@@ -86,6 +86,7 @@ namespace hdt
 		struct CudaBuffers;
 
 	public:
+		static bool enableCuda;
 
 		static CudaInterface* instance();
 
@@ -98,5 +99,6 @@ namespace hdt
 	private:
 
 		CudaInterface();
+		bool m_enabled;
 	};
 }

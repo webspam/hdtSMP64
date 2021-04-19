@@ -2,6 +2,7 @@
 #include "XmlReader.h"
 
 #include "hdtSkyrimPhysicsWorld.h"
+#include "hdtSkinnedMesh/hdtCudaInterface.h"
 
 #include <clocale>
 
@@ -76,6 +77,8 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
 				else if (reader.GetLocalName() == "maximumDistance")
 					ActorManager::instance()->m_maxDistance = reader.readFloat();
+				else if (reader.GetLocalName() == "enableCuda")
+					CudaInterface::enableCuda = reader.readBool();
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());
