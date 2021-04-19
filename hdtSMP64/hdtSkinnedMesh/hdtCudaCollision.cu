@@ -340,13 +340,13 @@ namespace hdt
         // Compute unit normal and twice area of triangle
         cuVector3 ab = p1 - p0;
         cuVector3 ac = p2 - p0;
-        cuVector3 normal = crossProduct(ab, ac);
-        float area = normal.magnitude();
+        cuVector3 raw_normal = crossProduct(ab, ac);
+        float area = raw_normal.magnitude();
         if (area < FLT_EPSILON)
         {
             return false;
         }
-        normal *= (1.0 / area);
+        cuVector3 normal = raw_normal * (1.0 / area);
 
         // Reverse normal direction if penetration is negative
         if (penetration < 0)
@@ -394,10 +394,10 @@ namespace hdt
         cuVector3 aa = crossProduct(bp, cp);
         ab = crossProduct(cp, ap);
         ac = crossProduct(ap, bp);
-        float areaA = dotProduct(aa, normal);
-        float areaB = dotProduct(ab, normal);
-        float areaC = dotProduct(ac, normal);
-        if (areaA * areaB < 0 || areaB * areaC < 0 || areaC * areaA < 0)
+        float areaA = dotProduct(aa, raw_normal);
+        float areaB = dotProduct(ab, raw_normal);
+        float areaC = dotProduct(ac, raw_normal);
+        if (areaA < 0 || areaB < 0 || areaC < 0)
         {
             return false;
         }

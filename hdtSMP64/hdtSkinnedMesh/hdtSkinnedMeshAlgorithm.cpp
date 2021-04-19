@@ -173,16 +173,17 @@ namespace hdt
 				penetration = 0;
 			}
 
-			// Compute unit normal
+			// Compute unit normal. Keep the original normal because we'll need it later for the triangle
+			// check.
 			auto ab = (p1.pos() - p0.pos()).get128();
 			auto ac = (p2.pos() - p0.pos()).get128();
-			auto normal = cross_product(ab, ac);
-			auto len = _mm_sqrt_ps(_mm_dp_ps(normal, normal, 0x77));
+			auto raw_normal = cross_product(ab, ac);
+			auto len = _mm_sqrt_ps(_mm_dp_ps(raw_normal, raw_normal, 0x77));
 			if (_mm_cvtss_f32(len) < FLT_EPSILON)
 			{
 				return false;
 			}
-			normal = _mm_div_ps(normal, len);
+			auto normal = _mm_div_ps(raw_normal, len);
 			if (penetration < 0)
 			{
 				normal = _mm_sub_ps(_mm_set1_ps(0.0), normal);
@@ -217,23 +218,18 @@ namespace hdt
 
 			// Compute the triple product of the triangle normal with vectors from the sphere center to each
 			// pair of triangle vertices (note ordering of the vertices is important). The projection of the
-			// center onto the triangle plane lies within the triangle if and only if all three products have
-			// the same sign.
+			// center onto the triangle plane lies within the triangle if and only if all three products are
+			// positive.
 			auto bp = _mm_sub_ps(s.pos().get128(), p1.pos().get128());
 			auto cp = _mm_sub_ps(s.pos().get128(), p2.pos().get128());
 			auto aa = cross_product(bp, cp);
 			ab = cross_product(cp, ap);
 			ac = cross_product(ap, bp);
-			aa = _mm_dp_ps(aa, normal, 0x74);
-			ab = _mm_dp_ps(ab, normal, 0x72);
-			ac = _mm_dp_ps(ac, normal, 0x71);
+			aa = _mm_dp_ps(aa, raw_normal, 0x74);
+			ab = _mm_dp_ps(ab, raw_normal, 0x72);
+			ac = _mm_dp_ps(ac, raw_normal, 0x71);
 			aa = _mm_or_ps(aa, ab);
 			aa = _mm_or_ps(aa, ac);
-
-			// To check signs, take the product of each pair. If the point is outside the triangle, then at
-			// least one pair of signs will differ and give a negative product. So if all three products are
-			// positive the point is inside the triangle.
-			aa = _mm_mul_ps(aa, _mm_shuffle_ps(aa, aa, _MM_SHUFFLE(3, 0, 2, 1)));
 			aa = _mm_cmpgt_ps(_mm_set1_ps(0.0), aa);
 			auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
 
