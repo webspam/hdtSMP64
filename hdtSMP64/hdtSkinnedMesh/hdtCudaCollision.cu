@@ -281,6 +281,7 @@ namespace hdt
 
     // collidePair does the actual collision between two colliders, always a vertex and some other type. It
     // should modify output if and only if there is a collision.
+    template <cuPenetrationType>
     __device__ bool collidePair(
         const cuPerVertexInput& __restrict__ inputA,
         const cuPerVertexInput& __restrict__ inputB,
@@ -317,6 +318,7 @@ namespace hdt
         return false;
     }
 
+    template <cuPenetrationType penType>
     __device__ bool collidePair(
         const cuPerVertexInput& __restrict__ inputA,
         const cuPerTriangleInput& __restrict__ inputB,
@@ -332,56 +334,41 @@ namespace hdt
         float margin = (p0.w + p1.w + p2.w) / 3.0;
         float penetration = inputB.penetration * margin;
         margin *= inputB.margin;
-        if (penetration > -FLT_EPSILON && penetration < FLT_EPSILON)
-        {
-            penetration = 0;
-        }
 
         // Compute unit normal and twice area of triangle
         cuVector3 ab = p1 - p0;
         cuVector3 ac = p2 - p0;
-        cuVector3 raw_normal = crossProduct(ab, ac);
+        cuVector3 raw_normal = penType == eExternal ? crossProduct(ac, ab) : crossProduct(ab, ac);
         float area = raw_normal.magnitude();
+
+        // Check for degenerate triangles
         if (area < FLT_EPSILON)
         {
             return false;
         }
         cuVector3 normal = raw_normal * (1.0 / area);
 
-        // Reverse normal direction if penetration is negative
-        if (penetration < 0)
-        {
-            normal *= -1.0;
-            penetration = -penetration;
-        }
-
         // Compute distance from point to plane and its projection onto the plane
         cuVector3 ap = s - p0;
         float distance = dotProduct(ap, normal);
 
-        // Determine whether the point is close enough to the plane
         float radiusWithMargin = r + margin;
-        if (penetration >= FLT_EPSILON)
+        if (penType == eNone)
         {
-            if (distance >= radiusWithMargin || distance < -penetration)
-            {
-                return false;
-            }
-        }
-        else
-        {
+            // Two-sided check: make sure distance is positive and normal is in the correct direction
             if (distance < 0)
             {
                 distance = -distance;
                 normal *= -1.0;
             }
-            if (distance >= radiusWithMargin)
-            {
-                return false;
-            }
+        }
+        else if (distance < penetration)
+        {
+            // One-sided check: make sure sphere center isn't too far on the wrong side of the triangle
+            return false;
         }
 
-        // Don't bother to do any more if depth isn't negative, or we already have a deeper collision
+        // Don't bother to do any more if there's no collision or we already have a deeper one
         float depth = distance - radiusWithMargin;
         if (depth >= -FLT_EPSILON || depth >= output.depth)
         {
@@ -411,7 +398,7 @@ namespace hdt
 
     // kernelCollision does the supporting work for threading the collision checks and making sure that only
     // the deepest result is kept.
-    template <typename T>
+    template <cuPenetrationType penType = eNone, typename T>
     __global__ void kernelCollision(
         int n,
         const cuCollisionSetup* __restrict__ setup,
@@ -460,7 +447,7 @@ namespace hdt
                 }
 #endif
 
-                if (i < nPairs && collidePair(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
+                if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
                 {
                     temp.colliderA = static_cast<cuCollider*>(0) + iA;
                     temp.colliderB = static_cast<cuCollider*>(0) + iB;
@@ -562,7 +549,7 @@ namespace hdt
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
-    template<typename T>
+    template<cuPenetrationType penType, typename T>
     bool cuRunCollision(
         void* stream,
         int n,
@@ -577,7 +564,7 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        kernelCollision <<<n, collisionBlockSize<T>(), collisionBlockSize<T>() * sizeof(float), *s >>> (
+        kernelCollision<penType> <<<n, collisionBlockSize<T>(), collisionBlockSize<T>() * sizeof(float), *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
@@ -645,6 +632,8 @@ namespace hdt
         return count;
     }
 
-    template bool cuRunCollision<cuPerVertexInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerVertexInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
-    template bool cuRunCollision<cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template bool cuRunCollision<eNone, cuPerVertexInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerVertexInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template bool cuRunCollision<eNone, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template bool cuRunCollision<eExternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template bool cuRunCollision<eInternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
 }

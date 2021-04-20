@@ -8,6 +8,16 @@ namespace hdt
 	class CudaPerVertexShape;
 	class CudaPerTriangleShape;
 
+	// Internal penetration is the most common case where penetration is positive
+	// External penetration is where penetration is negative, and the orientation of the triangle is reversed
+	// No penetration is where it is zero, and the triangle is treated as unoriented
+	enum cuPenetrationType
+	{
+		eInternal,
+		eExternal,
+		eNone
+	};
+
 	union cuVector3
 	{
 		struct {
@@ -131,7 +141,7 @@ namespace hdt
 
 	bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
 
-	template <typename T>
+	template <cuPenetrationType penType = eNone, typename T>
 	bool cuRunCollision(
 		void* stream,
 		int n,

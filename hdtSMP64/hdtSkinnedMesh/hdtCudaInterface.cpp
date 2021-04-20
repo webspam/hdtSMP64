@@ -397,6 +397,7 @@ namespace hdt
 
 		Imp(PerTriangleShape* shape)
 			: m_numColliders(shape->m_colliders.size()),
+			m_penetrationType(shape->m_shapeProp.penetration > FLT_EPSILON ? eInternal : shape->m_shapeProp.penetration < -FLT_EPSILON ? eExternal : eNone),
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size()),
@@ -408,7 +409,7 @@ namespace hdt
 				m_input[i].vertexIndices[1] = shape->m_colliders[i].vertices[1];
 				m_input[i].vertexIndices[2] = shape->m_colliders[i].vertices[2];
 				m_input[i].margin = shape->m_shapeProp.margin;
-				m_input[i].penetration = shape->m_shapeProp.penetration;
+				m_input[i].penetration = -abs(shape->m_shapeProp.penetration);
 			}
 			m_input.toDevice(m_body->m_stream);
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
@@ -442,6 +443,7 @@ namespace hdt
 		CudaBuffer<cuPerTriangleInput> m_input;
 		CudaBuffer<cuAabb, Aabb> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
+		const cuPenetrationType m_penetrationType;
 	private:
 
 		int m_numColliders;
@@ -592,7 +594,7 @@ namespace hdt
 		void launch()
 		{
 			m_setupBuffer.toDevice(m_stream);
-			cuRunCollision(
+			collisionFunc()(
 				m_stream,
 				m_nextPair,
 				m_setupBuffer.getD(),
@@ -622,7 +624,32 @@ namespace hdt
 		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
 		CudaPooledBuffer<cuCollisionSetup> m_setupBuffer;
 		CudaPooledBuffer<int> m_indexBuffer;
+
+		auto collisionFunc() -> decltype(cuRunCollision<eNone, std::remove_pointer<decltype(m_shapeB->m_imp->m_input.getD())>::type>)*;
 	};
+
+	template<>
+	auto CudaCollisionPair<CudaPerVertexShape>::Imp::collisionFunc()
+		-> decltype(cuRunCollision<eNone, cuPerVertexInput>)*
+	{
+		return cuRunCollision<eNone, cuPerVertexInput>;
+	}
+
+	template<>
+	auto CudaCollisionPair<CudaPerTriangleShape>::Imp::collisionFunc()
+		-> decltype(cuRunCollision<eNone, cuPerTriangleInput>)*
+	{
+		switch (m_shapeB->m_imp->m_penetrationType)
+		{
+		case eNone:
+			return cuRunCollision<eNone, cuPerTriangleInput>;
+		case eInternal:
+			return cuRunCollision<eInternal, cuPerTriangleInput>;
+		case eExternal:
+		default:
+			return cuRunCollision<eExternal, cuPerTriangleInput>;
+		}
+	}
 
 	template <typename T>
 	CudaCollisionPair<T>::CudaCollisionPair(
