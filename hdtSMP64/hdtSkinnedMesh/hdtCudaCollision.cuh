@@ -115,8 +115,10 @@ namespace hdt
 	{
 		int sizeA;
 		int sizeB;
-		int* indicesA;
+		int offsetA;
+		int* scratch;
 		int* indicesB;
+		cuAabb boundingBoxB;
 	};
 
 	void cuCreateStream(void** ptr);

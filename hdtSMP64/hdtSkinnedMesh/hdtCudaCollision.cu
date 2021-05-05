@@ -411,17 +411,65 @@ namespace hdt
         cuCollisionResult* output)
     {
         extern __shared__ float sdata[];
+        int* intShared = reinterpret_cast<int*>(sdata);
 
+        int tid = threadIdx.x;
+        int threadInWarp = tid & 0x1f;
+        int warpid = threadIdx.x >> 5;
+        
         for (int block = blockIdx.x; block < n; block += gridDim.x)
         {
             int nA = setup[block].sizeA;
             int nB = setup[block].sizeB;
-            int* indicesA = setup[block].indicesA;
+            int* indicesA = setup[block].scratch;
             int* indicesB = setup[block].indicesB;
+            int vertexStart = setup[block].offsetA;
+            const cuAabb& boundingBoxB = setup[block].boundingBoxB;
+
+            // Set up scratch space
+            int nACeil = (((nA - 1) / blockDim.x) + 1) * blockDim.x;
+            int blockStart = 0;
+            for (int i = tid; i < nACeil; i += blockDim.x)
+            {
+                int vertex = i + vertexStart;
+                bool collision = i < nA && boundingBoxCollision(boundingBoxesA[vertex], boundingBoxB);
+
+                // Count the number of collisions in this warp and store in shared memory
+                auto mask = __ballot_sync(0xffffffff, collision);
+                if (threadInWarp == 0)
+                {
+                    intShared[warpid] = __popc(mask);
+                }
+                __syncthreads();
+
+                // Compute partial sum counts in warps before this one and broadcast across the warp
+                int a = (threadInWarp < warpid) ? intShared[threadInWarp] : 0;
+                for (int j = 16; j > 0; j >>= 1)
+                {
+                    a += __shfl_down_sync(0xffffffff, a, j);
+                }
+                int warpStart = blockStart + __shfl_sync(0xffffffff, a, 0);
+
+                // Now we can calculate where to put the index, if it's a potential collision
+                if (collision)
+                {
+                    int lanemask = (1L << threadInWarp) - 1;
+                    indicesA[warpStart + __popc(mask & lanemask)] = vertex;
+                }
+
+                // Extend the partial sum from the last warp to a total sum, and update the block start
+                if (warpid == 31 && threadInWarp == 0)
+                {
+                    intShared[0] = a + intShared[31];
+                }
+                __syncthreads();
+                blockStart += intShared[0];
+            }
+
+            nA = blockStart;
 
             // Depth should always be negative for collisions. We'll use positive values to signify no
             // collision, and later for mutual exclusion.
-            int tid = threadIdx.x;
             cuCollisionResult temp;
             temp.depth = 1;
 
@@ -454,19 +502,32 @@ namespace hdt
                 }
             }
 
-            // Set the best depth for this thread in shared memory
-            sdata[tid] = temp.depth;
-
-            // Now reduce to find the minimum depth, and store it in the first element
-            __syncthreads();
-            for (int s = blockDim.x / 2; s > 0; s >>= 1)
+            // Find minimum depth in this warp and store in shared memory
+            float d = temp.depth;
+            for (int j = 16; j > 0; j >>= 1)
             {
-                if (tid < s && sdata[tid] > sdata[tid + s])
-                {
-                    sdata[tid] = sdata[tid + s];
-                }
-                __syncthreads();
+                d = min(d, __shfl_down_sync(0xffffffff, d, j));
             }
+            if (threadInWarp == 0)
+            {
+                sdata[warpid] = d;
+            }
+            __syncthreads();
+
+            // Find minimum across warps
+            if (warpid == 0)
+            {
+                d = sdata[threadInWarp];
+                for (int j = 16; j > 0; j >>= 1)
+                {
+                    d = min(d, __shfl_down_sync(0xffffffff, d, j));
+                }
+                if (threadInWarp == 0)
+                {
+                    sdata[0] = d;
+                }
+            }
+            __syncthreads();
 
             // If the depth of this thread is equal to the minimum, try to set the result. Do an atomic
             // exchange with the first value to ensure that only one thread gets to do this in case of ties.
@@ -564,7 +625,7 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        kernelCollision<penType> <<<n, collisionBlockSize<T>(), collisionBlockSize<T>() * sizeof(float), *s >>> (
+        kernelCollision<penType> <<<n, collisionBlockSize<T>(), 32 * sizeof(float), *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }

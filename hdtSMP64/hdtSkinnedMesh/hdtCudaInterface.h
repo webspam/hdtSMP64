@@ -68,7 +68,8 @@ namespace hdt
 			int offsetA,
 			int offsetB,
 			int sizeA,
-			int sizeB);
+			int sizeB,
+			const Aabb& aabbB);
 
 		void sendVertexLists();
 

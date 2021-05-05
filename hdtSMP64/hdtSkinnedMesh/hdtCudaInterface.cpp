@@ -479,6 +479,7 @@ namespace hdt
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size()),
+			m_scratchBuffer(shape->m_colliders.size()),
 			m_tree(&shape->m_tree, m_body->m_stream)
 		{
 			for (int i = 0; i < m_numColliders; ++i)
@@ -517,11 +518,12 @@ namespace hdt
 
 		CudaBuffer<cuPerVertexInput> m_input;
 		CudaBuffer<cuAabb, Aabb> m_output;
+		CudaBuffer<int> m_scratchBuffer;
 		std::shared_ptr<CudaBody::Imp> m_body;
+		int m_numColliders;
 
 	private:
 
-		int m_numColliders;
 		CudaColliderTree m_tree;
 	};
 
@@ -563,7 +565,9 @@ namespace hdt
 			m_stream(shapeA->m_imp->m_body->m_stream),
 			m_resultBuffer(numCollisionPairs),
 			m_setupBuffer(numCollisionPairs),
-			m_indexBuffer(numColliders)
+			m_indexBuffer(numColliders),
+			m_scratchOffset(0),
+			m_batchSizes({ 0 })
 		{
 			*results = m_resultBuffer.get();
 			*indexData = m_indexBuffer.get();
@@ -573,17 +577,33 @@ namespace hdt
 			int offsetA,
 			int offsetB,
 			int sizeA,
-			int sizeB)
+			int sizeB,
+			const Aabb& aabbB)
 		{
 			static_assert(sizeof(cuCollider) == sizeof(Collider));
+
+			// We only have limited space for vertex lists on shape A (enough to collide every patch against
+			// one patch of shape B). We'll split the pairs into batches if necessary to reuse that space.
+			// FIXME: This will perform very badly if shape A only has a small number of large patches (for
+			// example with virtual collision bodies). Ideally each pair should use this scratch space for
+			// the smaller patch, with the larger one processed on the fly or by the CPU.
+			if (m_scratchOffset + sizeA > m_shapeA->m_imp->m_numColliders)
+			{
+				m_batchSizes.push_back(0);
+				m_scratchOffset = 0;
+			}
 
 			m_setupBuffer[m_nextPair] = {
 				sizeA,
 				sizeB,
-				m_indexBuffer.getD() + offsetA,
-				m_indexBuffer.getD() + offsetB
+				offsetA,
+				m_shapeA->m_imp->m_scratchBuffer.getD() + m_scratchOffset,
+				m_indexBuffer.getD() + offsetB,
+				*reinterpret_cast<const cuAabb*>(&aabbB)
 			};
 			++m_nextPair;
+			++m_batchSizes.back();
+			m_scratchOffset += sizeA;
 		}
 
 		void sendVertexLists()
@@ -594,17 +614,25 @@ namespace hdt
 		void launch()
 		{
 			m_setupBuffer.toDevice(m_stream);
-			collisionFunc()(
-				m_stream,
-				m_nextPair,
-				m_setupBuffer.getD(),
-				m_shapeA->m_imp->m_input.getD(),
-				m_shapeB->m_imp->m_input.getD(),
-				m_shapeA->m_imp->m_output.getD(),
-				m_shapeB->m_imp->m_output.getD(),
-				m_shapeA->m_imp->m_body->m_vertexBuffer.getD(),
-				m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
-				m_resultBuffer.getD());
+
+			int start = 0;
+			for (auto s : m_batchSizes)
+			{
+				collisionFunc()(
+					m_stream,
+					s,
+					m_setupBuffer.getD() + start,
+					m_shapeA->m_imp->m_input.getD(),
+					m_shapeB->m_imp->m_input.getD(),
+					m_shapeA->m_imp->m_output.getD(),
+					m_shapeB->m_imp->m_output.getD(),
+					m_shapeA->m_imp->m_body->m_vertexBuffer.getD(),
+					m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
+					m_resultBuffer.getD() + start);
+
+				start += s;
+			}
+
 			m_resultBuffer.toHost(m_stream);
 		}
 
@@ -619,6 +647,9 @@ namespace hdt
 		T* m_shapeB;
 		int m_numCollisionPairs;
 		int m_nextPair;
+		
+		int m_scratchOffset;
+		std::vector<int> m_batchSizes;
 
 		CudaStream& m_stream;
 		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
@@ -667,9 +698,10 @@ namespace hdt
 		int offsetA,
 		int offsetB,
 		int sizeA,
-		int sizeB)
+		int sizeB,
+		const Aabb& aabbB)
 	{
-		m_imp->addPair(offsetA, offsetB, sizeA, sizeB);
+		m_imp->addPair(offsetA, offsetB, sizeA, sizeB, aabbB);
 	}
 
 	template <typename T>

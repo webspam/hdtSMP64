@@ -441,31 +441,18 @@ namespace hdt
 
 			// Work out how many colliders will actually be needed for each pair
 			int npairs = pairs.size();
-			std::vector<int> counts(npairs * 2);
+			std::vector<int> counts(npairs);
 			concurrency::parallel_for(0, npairs, [&](int i)
 			{
 				auto a = pairs[i].first;
 				auto b = pairs[i].second;
 
-				auto abeg = a->aabb;
 				auto bbeg = b->aabb;
-				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
 				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
-				auto aend = abeg + asize;
 				auto bend = bbeg + bsize;
 				auto aabbA = a->aabbMe;
-				auto aabbB = b->aabbMe;
 
 				int count = 0;
-				for (auto c = abeg; c != aend; ++c)
-				{
-					if (c->collideWith(aabbB))
-					{
-						++count;
-					}
-				}
-				counts[i] = count;
-				count = 0;
 				for (auto c = bbeg; c != bend; ++c)
 				{
 					if (c->collideWith(aabbA))
@@ -473,7 +460,7 @@ namespace hdt
 						++count;
 					}
 				}
-				counts[i + npairs] = count;
+				counts[i] = count;
 			});
 
 			// Calculate offset of data for each pair in vertex index buffer
@@ -498,27 +485,14 @@ namespace hdt
 				auto a = pairs[i].first;
 				auto b = pairs[i].second;
 
-				auto abeg = a->aabb;
 				auto bbeg = b->aabb;
-				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
 				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
-				auto aend = abeg + asize;
 				auto bend = bbeg + bsize;
 				auto aabbA = a->aabbMe;
-				auto aabbB = b->aabbMe;
 
-				auto vertexStartA = a->cbuf - shapeA->m_colliders.data();
 				auto vertexStartB = b->cbuf - shapeB->m_colliders.data();
 
 				int* addr = indexData + offsets[i];
-				for (auto c = abeg; c != aend; ++c)
-				{
-					if (c->collideWith(aabbB))
-					{
-						*(addr++) = vertexStartA + (c - abeg);
-					}
-				}
-				addr = indexData + offsets[i + npairs];
 				for (auto c = bbeg; c != bend; ++c)
 				{
 					if (c->collideWith(aabbA))
@@ -533,11 +507,18 @@ namespace hdt
 			// Set up data for each pair of collision trees
 			for (int i = 0; i < npairs; ++i)
 			{
+				auto a = pairs[i].first;
+				auto b = pairs[i].second;
+				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
+				auto aabbB = b->aabbMe;
+
+				// Provide a range of vertices for shapeA, and a list for shapeB
 				collisionPair.addPair(
+					pairs[i].first->cbuf - shapeA->m_colliders.data(),
 					offsets[i],
-					offsets[i + npairs],
+					asize,
 					counts[i],
-					counts[i + npairs]);
+					aabbB);
 			}
 
 			// Run the kernel and get the results
