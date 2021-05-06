@@ -145,6 +145,13 @@ namespace hdt
 					o.second.second->m_cudaObject->launch();
 				}
 			});
+			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			{
+				if (o.second.second)
+				{
+					o.second.second->m_cudaObject->launchTree();
+				}
+			});
 
 			// Launch per-vertex kernels
 			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
@@ -152,6 +159,13 @@ namespace hdt
 				if (o.second.first)
 				{
 					o.second.first->m_cudaObject->launch();
+				}
+			});
+			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			{
+				if (o.second.first)
+				{
+					o.second.first->m_cudaObject->launchTree();
 				}
 
 				o.first->m_cudaObject->recordState();

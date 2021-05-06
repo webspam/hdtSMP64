@@ -455,22 +455,25 @@ namespace hdt
 				auto b = pairs[i].second;
 				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
 				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
-				auto aabbB = b->aabbMe;
 
 				// Note that (for now), we only check shape A colliders against bounding box B. Might want to
-				// do both later, depending on performance.
-				collisionPair.addPair(
-					pairs[i].first->cbuf - shapeA->m_colliders.data(),
-					pairs[i].second->cbuf - shapeB->m_colliders.data(),
-					asize,
-					bsize,
-					aabbB);
+				// do both later, depending on performance. It's also possible to have no colliders in one
+				// shape (if it's dynamic), in which case we can skip this pair.
+				if (asize > 0 && bsize > 0)
+				{
+					collisionPair.addPair(
+						pairs[i].first->cbuf - shapeA->m_colliders.data(),
+						pairs[i].second->cbuf - shapeB->m_colliders.data(),
+						asize,
+						bsize,
+						b->aabbMe);
+				}
 			}
 
 			// Run the kernel and get the results
 			collisionPair.launch();
 			collisionPair.synchronize();
-			for (int i = 0; i < npairs; ++i)
+			for (int i = 0; i < collisionPair.numPairs(); ++i)
 			{
 				if (results[i].depth <= 0)
 				{

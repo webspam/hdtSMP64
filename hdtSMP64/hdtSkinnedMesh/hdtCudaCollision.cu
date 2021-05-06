@@ -421,87 +421,105 @@ namespace hdt
         {
             int nA = setup[block].sizeA;
             int nB = setup[block].sizeB;
-            int* indicesA = setup[block].scratch;
-//            int* indicesB = setup[block].indicesB;
             int offsetA = setup[block].offsetA;
             int offsetB = setup[block].offsetB;
-            const cuAabb& boundingBoxB = setup[block].boundingBoxB;
-
-            // Set up scratch space
-            int nACeil = (((nA - 1) / blockDim.x) + 1) * blockDim.x;
-            int blockStart = 0;
-            for (int i = tid; i < nACeil; i += blockDim.x)
-            {
-                int vertex = i + offsetA;
-                bool collision = i < nA && boundingBoxCollision(boundingBoxesA[vertex], boundingBoxB);
-
-                // Count the number of collisions in this warp and store in shared memory
-                auto mask = __ballot_sync(0xffffffff, collision);
-                if (threadInWarp == 0)
-                {
-                    intShared[warpid] = __popc(mask);
-                }
-                __syncthreads();
-
-                // Compute partial sum counts in warps before this one and broadcast across the warp
-                int a = (threadInWarp < warpid) ? intShared[threadInWarp] : 0;
-                for (int j = 16; j > 0; j >>= 1)
-                {
-                    a += __shfl_down_sync(0xffffffff, a, j);
-                }
-                int warpStart = blockStart + __shfl_sync(0xffffffff, a, 0);
-
-                // Now we can calculate where to put the index, if it's a potential collision
-                if (collision)
-                {
-                    int lanemask = (1L << threadInWarp) - 1;
-                    indicesA[warpStart + __popc(mask & lanemask)] = vertex;
-                }
-
-                // Extend the partial sum from the last warp to a total sum, and update the block start
-                if (warpid == 31 && threadInWarp == 0)
-                {
-                    intShared[0] = a + intShared[31];
-                }
-                __syncthreads();
-                blockStart += intShared[0];
-            }
-
-            nA = blockStart;
 
             // Depth should always be negative for collisions. We'll use positive values to signify no
             // collision, and later for mutual exclusion.
             cuCollisionResult temp;
             temp.depth = 1;
-
             int nPairs = nA * nB;
-            for (int i = tid; i < nPairs; i += blockDim.x)
-            {
-                int iA = indicesA[i % nA];
-//                int iB = indicesB[i / nA];
-                int iB = offsetB + i / nA;
 
-                // Skip pairs until we find one with a bounding box collision. This should increase the
-                // number of full checks done in parallel, and reduce divergence overall. Note we only do
-                // this at all if there are more pairs than threads - if there's only enough work for a
-                // single iteration (very common), there's no benefit to trying to reduce it.
-#ifdef GPU_BOUNDING_BOX_CHECK
-                if (nPairs > blockDim.x)
+            if (nPairs < gridDim.x)
+            {
+                // If we have fewer possible collider pairs than threads, we can just check every pair in one
+                // step, and skip the bounding box check altogether.
+                if (tid < nPairs)
                 {
-                    while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
+                    int iA = offsetA + tid % nA;
+                    int iB = offsetB +  tid / nA;
+                    if (collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
                     {
-                        i += blockDim.x;
-                        iA = indicesA[i % nA];
-//                        iB = indicesB[i / nA];
-                        iB = offsetB + i / nA;
+                        temp.colliderA = static_cast<cuCollider*>(0) + iA;
+                        temp.colliderB = static_cast<cuCollider*>(0) + iB;
                     }
                 }
+            }
+            else
+            {
+                int* indicesA = setup[block].scratch;
+                const cuAabb& boundingBoxB = setup[block].boundingBoxB;
+
+                // Set up vertex list for shape A
+                int nACeil = (((nA - 1) / blockDim.x) + 1) * blockDim.x;
+                int blockStart = 0;
+                for (int i = tid; i < nACeil; i += blockDim.x)
+                {
+                    int vertex = i + offsetA;
+                    bool collision = i < nA&& boundingBoxCollision(boundingBoxesA[vertex], boundingBoxB);
+
+                    // Count the number of collisions in this warp and store in shared memory
+                    auto mask = __ballot_sync(0xffffffff, collision);
+                    if (threadInWarp == 0)
+                    {
+                        intShared[warpid] = __popc(mask);
+                    }
+                    __syncthreads();
+
+                    // Compute partial sum counts in warps before this one and broadcast across the warp
+                    int a = (threadInWarp < warpid) ? intShared[threadInWarp] : 0;
+                    for (int j = 16; j > 0; j >>= 1)
+                    {
+                        a += __shfl_down_sync(0xffffffff, a, j);
+                    }
+                    int warpStart = blockStart + __shfl_sync(0xffffffff, a, 0);
+
+                    // Now we can calculate where to put the index, if it's a potential collision
+                    if (collision)
+                    {
+                        int lanemask = (1L << threadInWarp) - 1;
+                        indicesA[warpStart + __popc(mask & lanemask)] = vertex;
+                    }
+
+                    // Extend the partial sum from the last warp to a total sum, and update the block start
+                    if (warpid == 31 && threadInWarp == 0)
+                    {
+                        intShared[0] = a + intShared[31];
+                    }
+                    __syncthreads();
+                    blockStart += intShared[0];
+                }
+
+                // Update number of colliders in A and the total number of pairs
+                nA = blockStart;
+                nPairs = nA * nB;
+
+                for (int i = tid; i < nPairs; i += blockDim.x)
+                {
+                    int iA = indicesA[i % nA];
+                    int iB = offsetB + i / nA;
+
+                    // Skip pairs until we find one with a bounding box collision. This should increase the
+                    // number of full checks done in parallel, and reduce divergence overall. Note we only do
+                    // this at all if there are more pairs than threads - if there's only enough work for a
+                    // single iteration (very common), there's no benefit to trying to reduce it.
+#ifdef GPU_BOUNDING_BOX_CHECK
+                    if (nPairs > blockDim.x)
+                    {
+                        while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
+                        {
+                            i += blockDim.x;
+                            iA = indicesA[i % nA];
+                            iB = offsetB + i / nA;
+                        }
+                    }
 #endif
 
-                if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
-                {
-                    temp.colliderA = static_cast<cuCollider*>(0) + iA;
-                    temp.colliderB = static_cast<cuCollider*>(0) + iB;
+                    if (i < nPairs&& collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
+                    {
+                        temp.colliderA = static_cast<cuCollider*>(0) + iA;
+                        temp.colliderB = static_cast<cuCollider*>(0) + iB;
+                    }
                 }
             }
 

@@ -29,7 +29,7 @@ namespace hdt
 
 		CudaPerTriangleShape(PerTriangleShape* shape);
 		void launch();
-		void launchTransfer();
+		void launchTree();
 		void updateTree();
 
 	private:
@@ -45,7 +45,7 @@ namespace hdt
 
 		CudaPerVertexShape(PerVertexShape* shape);
 		void launch();
-		void launchTransfer();
+		void launchTree();
 		void updateTree();
 
 	private:
@@ -72,6 +72,8 @@ namespace hdt
 		void launch();
 
 		void synchronize();
+
+		int numPairs();
 
 	private:
 		class Imp;

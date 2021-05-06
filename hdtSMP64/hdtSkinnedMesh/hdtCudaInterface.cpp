@@ -427,12 +427,11 @@ namespace hdt
 				m_input.getD(),
 				m_output.getD(),
 				m_body->m_vertexBuffer.getD());
-			m_tree.launch(m_body->m_stream, m_output.getD());
 		}
 
-		void launchTransfer()
+		void launchTree()
 		{
-			m_output.toHost(m_body->m_stream);
+			m_tree.launch(m_body->m_stream, m_output.getD());
 		}
 
 		void updateTree()
@@ -460,9 +459,9 @@ namespace hdt
 		m_imp->launch();
 	}
 
-	void CudaPerTriangleShape::launchTransfer()
+	void CudaPerTriangleShape::launchTree()
 	{
-		m_imp->launchTransfer();
+		m_imp->launchTree();
 	}
 
 	void CudaPerTriangleShape::updateTree()
@@ -503,12 +502,11 @@ namespace hdt
 				m_input.getD(),
 				m_output.getD(),
 				m_body->m_vertexBuffer.getD());
-			m_tree.launch(m_body->m_stream, m_output.getD());
 		}
 
-		void launchTransfer()
+		void launchTree()
 		{
-			m_output.toHost(m_body->m_stream);
+			m_tree.launch(m_body->m_stream, m_output.getD());
 		}
 
 		void updateTree()
@@ -536,9 +534,9 @@ namespace hdt
 		m_imp->launch();
 	}
 
-	void CudaPerVertexShape::launchTransfer()
+	void CudaPerVertexShape::launchTree()
 	{
-		m_imp->launchTransfer();
+		m_imp->launchTree();
 	}
 
 	void CudaPerVertexShape::updateTree()
@@ -632,6 +630,11 @@ namespace hdt
 			cuSynchronize(m_stream);
 		}
 
+		int numPairs()
+		{
+			return m_nextPair;
+		}
+
 	private:
 
 		CudaPerVertexShape* m_shapeA;
@@ -702,6 +705,12 @@ namespace hdt
 	void CudaCollisionPair<T>::synchronize()
 	{
 		m_imp->synchronize();
+	}
+
+	template <typename T>
+	int CudaCollisionPair<T>::numPairs()
+	{
+		return m_imp->numPairs();
 	}
 
 	bool CudaInterface::enableCuda = false;
