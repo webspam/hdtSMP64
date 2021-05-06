@@ -576,12 +576,16 @@ namespace hdt
 		{
 			static_assert(sizeof(cuCollider) == sizeof(Collider));
 
+			// Total number of possible pairs. If this is less than 1024 (the block size), the kernel won't
+			// do bounding box calculations so we don't need any memory for this pair.
+			int nPairs = sizeA * sizeB;
+
 			// We only have limited space for vertex lists on shape A (enough to collide every patch against
 			// one patch of shape B). We'll split the pairs into batches if necessary to reuse that space.
 			// FIXME: This will perform very badly if shape A only has a small number of large patches (for
 			// example with virtual collision bodies). Ideally each pair should use this scratch space for
 			// the smaller patch, with the larger one processed on the fly or by the CPU.
-			if (m_scratchOffset + sizeA > m_shapeA->m_imp->m_numColliders * 4)
+			if (nPairs > 1024 && m_scratchOffset + sizeA > m_shapeA->m_imp->m_numColliders * 4)
 			{
 				m_batchSizes.push_back(0);
 				m_scratchOffset = 0;
@@ -597,7 +601,10 @@ namespace hdt
 			};
 			++m_nextPair;
 			++m_batchSizes.back();
-			m_scratchOffset += sizeA;
+			if (nPairs > 1024)
+			{
+				m_scratchOffset += sizeA;
+			}
 		}
 
 		void launch()

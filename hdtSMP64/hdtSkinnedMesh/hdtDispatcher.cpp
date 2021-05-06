@@ -138,30 +138,30 @@ namespace hdt
 
 			// Launch per-triangle kernels. Performance is significantly better grouping kernels by type like this
 			// instead of setting up each complete stream in turn - presumably because launch overhead is reduced.
-			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			for (auto& o : to_update)
 			{
 				if (o.second.second)
 				{
 					o.second.second->m_cudaObject->launch();
 				}
-			});
-			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			}
+			for (auto& o : to_update)
 			{
 				if (o.second.second)
 				{
 					o.second.second->m_cudaObject->launchTree();
 				}
-			});
+			}
 
 			// Launch per-vertex kernels
-			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			for (auto& o : to_update)
 			{
 				if (o.second.first)
 				{
 					o.second.first->m_cudaObject->launch();
 				}
-			});
-			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			}
+			for (auto& o : to_update)
 			{
 				if (o.second.first)
 				{
@@ -169,7 +169,7 @@ namespace hdt
 				}
 
 				o.first->m_cudaObject->recordState();
-			});
+			}
 
 			// Update the aggregate parts of the AABB trees. This means we can do the first stage of
 			// collision detection while we're still waiting for the full bounding box data (ideally we
@@ -214,12 +214,6 @@ namespace hdt
 			{
 				if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
 				{
-					if (CudaInterface::instance()->hasCuda())
-					{
-						// Make sure we have the full bounding box data before continuing
-						i.first->m_cudaObject->synchronize();
-						i.second->m_cudaObject->synchronize();
-					}
 					SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
 				}
 			});

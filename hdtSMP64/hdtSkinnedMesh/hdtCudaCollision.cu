@@ -430,7 +430,7 @@ namespace hdt
             temp.depth = 1;
             int nPairs = nA * nB;
 
-            if (nPairs < gridDim.x)
+            if (nPairs < blockDim.x)
             {
                 // If we have fewer possible collider pairs than threads, we can just check every pair in one
                 // step, and skip the bounding box check altogether.
