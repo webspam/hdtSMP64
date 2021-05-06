@@ -422,8 +422,9 @@ namespace hdt
             int nA = setup[block].sizeA;
             int nB = setup[block].sizeB;
             int* indicesA = setup[block].scratch;
-            int* indicesB = setup[block].indicesB;
-            int vertexStart = setup[block].offsetA;
+//            int* indicesB = setup[block].indicesB;
+            int offsetA = setup[block].offsetA;
+            int offsetB = setup[block].offsetB;
             const cuAabb& boundingBoxB = setup[block].boundingBoxB;
 
             // Set up scratch space
@@ -431,7 +432,7 @@ namespace hdt
             int blockStart = 0;
             for (int i = tid; i < nACeil; i += blockDim.x)
             {
-                int vertex = i + vertexStart;
+                int vertex = i + offsetA;
                 bool collision = i < nA && boundingBoxCollision(boundingBoxesA[vertex], boundingBoxB);
 
                 // Count the number of collisions in this warp and store in shared memory
@@ -477,7 +478,8 @@ namespace hdt
             for (int i = tid; i < nPairs; i += blockDim.x)
             {
                 int iA = indicesA[i % nA];
-                int iB = indicesB[i / nA];
+//                int iB = indicesB[i / nA];
+                int iB = offsetB + i / nA;
 
                 // Skip pairs until we find one with a bounding box collision. This should increase the
                 // number of full checks done in parallel, and reduce divergence overall. Note we only do
@@ -490,7 +492,8 @@ namespace hdt
                     {
                         i += blockDim.x;
                         iA = indicesA[i % nA];
-                        iB = indicesB[i / nA];
+//                        iB = indicesB[i / nA];
+                        iB = offsetB + i / nA;
                     }
                 }
 #endif

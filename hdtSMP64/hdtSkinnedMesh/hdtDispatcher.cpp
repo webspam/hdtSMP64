@@ -146,7 +146,7 @@ namespace hdt
 				}
 			});
 
-			// Launch per-vertex kernels and vertex transfers.
+			// Launch per-vertex kernels
 			std::for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				if (o.second.first)
@@ -155,15 +155,6 @@ namespace hdt
 				}
 
 				o.first->m_cudaObject->recordState();
-
-				if (o.second.second)
-				{
-					o.second.second->m_cudaObject->launchTransfer();
-				}
-				if (o.second.first)
-				{
-					o.second.first->m_cudaObject->launchTransfer();
-				}
 			});
 
 			// Update the aggregate parts of the AABB trees. This means we can do the first stage of
@@ -175,11 +166,11 @@ namespace hdt
 
 				if (o.second.first)
 				{
-					o.second.first->m_tree.updateAabb();
+					o.second.first->m_cudaObject->updateTree();
 				}
 				if (o.second.second)
 				{
-					o.second.second->m_tree.updateAabb();
+					o.second.second->m_cudaObject->updateTree();
 				}
 				o.first->m_bulletShape.m_aabb = o.first->m_shape->m_tree.aabbAll;
 			});

@@ -116,8 +116,8 @@ namespace hdt
 		int sizeA;
 		int sizeB;
 		int offsetA;
+		int offsetB;
 		int* scratch;
-		int* indicesB;
 		cuAabb boundingBoxB;
 	};
 

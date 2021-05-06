@@ -60,9 +60,7 @@ namespace hdt
 			CudaPerVertexShape* shapeA,
 			T* shapeB,
 			int numCollisionPairs,
-			int numColliders,
-			CollisionResult** results,
-			int** indexData);
+			CollisionResult** results);
 
 		void addPair(
 			int offsetA,
@@ -70,8 +68,6 @@ namespace hdt
 			int sizeA,
 			int sizeB,
 			const Aabb& aabbB);
-
-		void sendVertexLists();
 
 		void launch();
 
