@@ -136,27 +136,39 @@ namespace hdt
 				o.first->m_cudaObject->launch();
 			});
 
-			// Launch per-triangle kernels. Performance is significantly better grouping kernels by type like this
-			// instead of setting up each complete stream in turn - presumably because launch overhead is reduced.
+			// Launch per-triangle kernels. Theoretically we should get better performance launching kernels
+			// breadth-first like this.
 			for (auto& o : to_update)
 			{
 				if (o.second.second)
 				{
 					o.second.second->m_cudaObject->launch();
+				}
+			}
+			for (auto& o : to_update)
+			{
+				if (o.second.second)
+				{
 					o.second.second->m_cudaObject->launchTree();
 				}
-
+			}
+			for (auto& o : to_update)
+			{
 				if (o.second.first)
 				{
 					o.second.first->m_cudaObject->launch();
+				}
+			}
+			for (auto& o : to_update)
+			{
+				if (o.second.first)
+				{
 					o.second.first->m_cudaObject->launchTree();
 				}
 				o.first->m_cudaObject->recordState();
 			}
 
-			// Update the aggregate parts of the AABB trees. This means we can do the first stage of
-			// collision detection while we're still waiting for the full bounding box data (ideally we
-			// wouldn't even need that on the host at all - work in progress!)
+			// Update the aggregate parts of the AABB trees
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
 				o.first->m_cudaObject->waitForAaabData();
