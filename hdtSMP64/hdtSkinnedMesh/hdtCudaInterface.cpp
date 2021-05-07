@@ -609,6 +609,8 @@ namespace hdt
 
 		void launch()
 		{
+			std::lock_guard l(CudaInterface::instance()->m_lock);
+
 			m_setupBuffer.toDevice(m_stream);
 
 			int start = 0;

@@ -8,15 +8,16 @@
 
 namespace hdt
 {
-    constexpr int cuBlockSize() { return 1024; }
-
-    // Reduction makes heavy use of shared memory (16 bytes per thread), so a smaller block size may be desirable
-    constexpr int cuReduceBlockSize() { return 1024; }
+    // Block size for map type operations (vertex and bounding box calculations). Since there's no reduction
+    // in these, we just set this for maximum occupancy (currently 100% for bounding boxes, 75% for vertex
+    // calculation).
+    constexpr int cuMapBlockSize() { return 256; }
 
     template<typename T>
     constexpr int collisionBlockSize();
 
-    // Collision checking is quite register-hungry, so we may need to reduce the block size for it here
+    // Collision checking currently has reduction hard-coded for 1024 blocks. With more than 32 registers we
+    // can't do better than 50% occupancy anyway
     template<>
     constexpr int collisionBlockSize<cuPerVertexInput>() { return 1024; }
     template<>
@@ -99,6 +100,10 @@ namespace hdt
         return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z), max(v1.w, v2.w) };
     }
 
+    __device__ cuAabb::cuAabb()
+        : aabbMin({ FLT_MAX, FLT_MAX, FLT_MAX, 0 }), aabbMax({ -FLT_MAX, -FLT_MAX, -FLT_MAX, 0 })
+    {}
+
     __device__ cuAabb::cuAabb(const cuVector3& v)
         : aabbMin(v), aabbMax(v)
     {}
@@ -169,85 +174,37 @@ namespace hdt
     __global__
         void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const cuAabb* __restrict__ boundingBoxes, cuAabb* output)
     {
-        extern __shared__ cuVector3 shared[];
-
         for (int block = blockIdx.x; block < n; block += gridDim.x)
         {
             const cuAabb* aabbStart = boundingBoxes + nodeData[block].first;
             int aabbCount = nodeData[block].second;
             int tid = threadIdx.x;
 
-            // To reduce demand on shared memory, process min and max separately. We may also need to process
-            // the data in multiple blocks - we use the fast divide-and-conquer approach within a block, but
-            // combine them linearly.
-            cuVector3 temp = { FLT_MAX, FLT_MAX, FLT_MAX, 0 };
-            for (int i = tid; i < aabbCount; i += 2 * blockDim.x)
+            // Load the first block of bounding boxes
+            cuAabb temp = (tid < aabbCount) ? aabbStart[tid] : cuAabb();
+
+            // Take union with each successive block
+            for (int i = tid + blockDim.x; i < aabbCount; i += blockDim.x)
             {
-                // First step takes data from the individual bounding boxes and populates shared memory
-                int s = blockDim.x;
-                if (i + s < aabbCount)
-                {
-                    shared[tid] = perElementMin(aabbStart[i].aabbMin, aabbStart[i + s].aabbMin);
-                }
-                else
-                {
-                    shared[tid] = aabbStart[i].aabbMin;
-                }
-
-                // Now we can do a conventional reduction
-                s >>= 1;
-                __syncthreads();
-                for (; s > 0; s >>= 1)
-                {
-                    if (tid < s && i + s < aabbCount)
-                    {
-                        shared[tid] = perElementMin(shared[tid], shared[tid + s]);
-                    }
-                    __syncthreads();
-                }
-
-                // Finally, thread 0 combines with the result from previous blocks
-                if (tid == 0)
-                {
-                    temp = perElementMin(temp, shared[tid]);
-                }
+                temp.aabbMin = perElementMin(temp.aabbMin, aabbStart[i].aabbMin);
+                temp.aabbMax = perElementMax(temp.aabbMax, aabbStart[i].aabbMax);
             }
+
+            // Intra-warp reduce
+            for (int j = 16; j > 0; j >>= 1)
+            {
+                temp.aabbMin.x = min(temp.aabbMin.x, __shfl_down_sync(0xffffffff, temp.aabbMin.x, j));
+                temp.aabbMin.y = min(temp.aabbMin.y, __shfl_down_sync(0xffffffff, temp.aabbMin.y, j));
+                temp.aabbMin.z = min(temp.aabbMin.z, __shfl_down_sync(0xffffffff, temp.aabbMin.z, j));
+                temp.aabbMax.x = min(temp.aabbMax.x, __shfl_down_sync(0xffffffff, temp.aabbMax.x, j));
+                temp.aabbMax.y = min(temp.aabbMax.y, __shfl_down_sync(0xffffffff, temp.aabbMax.y, j));
+                temp.aabbMax.z = min(temp.aabbMax.z, __shfl_down_sync(0xffffffff, temp.aabbMax.z, j));
+            }
+
+            // First thread stores results
             if (tid == 0)
             {
-                output[block].aabbMin = temp;
-            }
-
-            // Now do the same again for the maximums
-            temp = { -FLT_MAX, -FLT_MAX, -FLT_MAX, 0 };
-            for (int i = tid; i < aabbCount; i += 2 * blockDim.x)
-            {
-                int s = blockDim.x;
-                if (i + s < aabbCount)
-                {
-                    shared[tid] = perElementMax(aabbStart[i].aabbMax, aabbStart[i + s].aabbMax);
-                }
-                else
-                {
-                    shared[tid] = aabbStart[i].aabbMin;
-                }
-                s >>= 1;
-                __syncthreads();
-                for (; s > 0; s >>= 1)
-                {
-                    if (tid < s && i + s < aabbCount)
-                    {
-                        shared[tid] = perElementMax(shared[tid], shared[tid + s]);
-                    }
-                    __syncthreads();
-                }
-                if (tid == 0)
-                {
-                    temp = perElementMax(temp, shared[tid]);
-                }
-            }
-            if (tid == 0)
-            {
-                output[block].aabbMax = temp;
+                output[block] = temp;
             }
         }
     }
@@ -606,18 +563,18 @@ namespace hdt
     bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / cuBlockSize() + 1;
+        int numBlocks = (n - 1) / cuMapBlockSize() + 1;
 
-        kernelBodyUpdate <<<numBlocks, cuBlockSize(), 0, *s >>> (n, input, output, boneData);
+        kernelBodyUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, boneData);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
     bool cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / cuBlockSize() + 1;
+        int numBlocks = (n - 1) / cuMapBlockSize() + 1;
 
-        kernelPerVertexUpdate <<<numBlocks, cuBlockSize(), 0, *s >>> (n, input, output, vertexData);
+        kernelPerVertexUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, vertexData);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
@@ -625,9 +582,9 @@ namespace hdt
     bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / cuBlockSize() + 1;
+        int numBlocks = (n - 1) / cuMapBlockSize() + 1;
 
-        kernelPerTriangleUpdate <<<numBlocks, cuBlockSize(), 0, *s >>> (n, input, output, vertexData);
+        kernelPerTriangleUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, vertexData);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
@@ -653,13 +610,10 @@ namespace hdt
 
     bool cuRunBoundingBoxReduce(void* stream, int n, int largestNode, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output)
     {
+        // Reduction kernel only uses a single warp per tree node, becoming linear performance if there are
+        // more than 32 boxes. The reduction itself is entirely intra-warp, without any shared memory use.
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-
-        // Block size for bounding box reduction should be half the size of the largest block, rounded up to
-        // a multiple of 32, not exceeding the maximum block size.
-        int blockSize = min(32 * ((largestNode - 1) / 64 + 1), cuReduceBlockSize());
-        
-        kernelBoundingBoxReduce <<<n, blockSize, blockSize * sizeof(cuVector3), *s >>> (n, setup, boundingBoxes, output);
+        kernelBoundingBoxReduce <<<n, 32, 0, *s >>> (n, setup, boundingBoxes, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 

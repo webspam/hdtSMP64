@@ -69,6 +69,7 @@ namespace hdt
 	struct cuAabb
 	{
 #ifdef __NVCC__
+		__device__ cuAabb();
 		__device__ explicit cuAabb(const cuVector3& v);
 
 		template<typename... Args>

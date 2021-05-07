@@ -143,31 +143,14 @@ namespace hdt
 				if (o.second.second)
 				{
 					o.second.second->m_cudaObject->launch();
-				}
-			}
-			for (auto& o : to_update)
-			{
-				if (o.second.second)
-				{
 					o.second.second->m_cudaObject->launchTree();
 				}
-			}
 
-			// Launch per-vertex kernels
-			for (auto& o : to_update)
-			{
 				if (o.second.first)
 				{
 					o.second.first->m_cudaObject->launch();
-				}
-			}
-			for (auto& o : to_update)
-			{
-				if (o.second.first)
-				{
 					o.second.first->m_cudaObject->launchTree();
 				}
-
 				o.first->m_cudaObject->recordState();
 			}
 
