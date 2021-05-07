@@ -174,6 +174,8 @@ namespace hdt
     __global__
         void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const cuAabb* __restrict__ boundingBoxes, cuAabb* output)
     {
+        extern __shared__ cuAabb sharedBox;
+
         for (int block = blockIdx.x; block < n; block += gridDim.x)
         {
             const cuAabb* aabbStart = boundingBoxes + nodeData[block].first;
@@ -201,10 +203,18 @@ namespace hdt
                 temp.aabbMax.z = min(temp.aabbMax.z, __shfl_down_sync(0xffffffff, temp.aabbMax.z, j));
             }
 
+            if (tid == 32)
+            {
+                sharedBox = temp;
+            }
+
+            __syncthreads();
+
             // First thread stores results
             if (tid == 0)
             {
-                output[block] = temp;
+                output[block].aabbMin = perElementMin(temp.aabbMin, sharedBox.aabbMin);
+                output[block].aabbMax = perElementMax(temp.aabbMax, sharedBox.aabbMax);
             }
         }
     }
@@ -613,7 +623,7 @@ namespace hdt
         // Reduction kernel only uses a single warp per tree node, becoming linear performance if there are
         // more than 32 boxes. The reduction itself is entirely intra-warp, without any shared memory use.
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        kernelBoundingBoxReduce <<<n, 32, 0, *s >>> (n, setup, boundingBoxes, output);
+        kernelBoundingBoxReduce <<<n, 64, sizeof(cuAabb), *s >>> (n, setup, boundingBoxes, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }
 
