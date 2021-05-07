@@ -198,9 +198,9 @@ namespace hdt
                 temp.aabbMin.x = min(temp.aabbMin.x, __shfl_down_sync(0xffffffff, temp.aabbMin.x, j));
                 temp.aabbMin.y = min(temp.aabbMin.y, __shfl_down_sync(0xffffffff, temp.aabbMin.y, j));
                 temp.aabbMin.z = min(temp.aabbMin.z, __shfl_down_sync(0xffffffff, temp.aabbMin.z, j));
-                temp.aabbMax.x = min(temp.aabbMax.x, __shfl_down_sync(0xffffffff, temp.aabbMax.x, j));
-                temp.aabbMax.y = min(temp.aabbMax.y, __shfl_down_sync(0xffffffff, temp.aabbMax.y, j));
-                temp.aabbMax.z = min(temp.aabbMax.z, __shfl_down_sync(0xffffffff, temp.aabbMax.z, j));
+                temp.aabbMax.x = max(temp.aabbMax.x, __shfl_down_sync(0xffffffff, temp.aabbMax.x, j));
+                temp.aabbMax.y = max(temp.aabbMax.y, __shfl_down_sync(0xffffffff, temp.aabbMax.y, j));
+                temp.aabbMax.z = max(temp.aabbMax.z, __shfl_down_sync(0xffffffff, temp.aabbMax.z, j));
             }
 
             // One-stage inter-warp reduce, to get maximum (theoretical) occupancy
