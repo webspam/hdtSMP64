@@ -26,38 +26,39 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 + New mechanism for remapping mesh names in the defaultBBPs.xml file, allowing much more concise ways of
   defining complex collision objects for lots of armors at once.
 + The code to scan defaultBBPs.xml can now handle the structure of facegen files, which means head part
-  physics should now work (with limitations) on NPCs without having to manually edit the facegen data.
-+ New bones from facegen files should now be added to the head instead of the NPC root, so they should now be
+  physics should work (with limitations) on NPCs without having to manually edit the facegen data.
++ New bones from facegen files should now be added to the head instead of the NPC root, so they should be
   positioned correctly if there is no physics for them or after a reset.
 
 ## CUDA support
 
-CUDA support is disabled by default, but can be enabled in configs.xml. It will automatically fall back to
-the CPU algorithm if you do not have any CUDA capable cards. However, it does not check capabilities of any
-cards it finds, so may crash if your card is too old. It was developed for a GeForce 10 series card, so
-should work on those or anything newer.
+CUDA support is disabled by default, but can be enabled in configs.xml or from the console. It will
+automatically fall back to the CPU algorithm if you do not have any CUDA capable cards. However, it does not
+check capabilities of any cards it finds, so may crash if your card is too old. It was developed for a
+GeForce 10 series card, so should work on those or anything newer.
 
 The following parts of the collision algortihm are currently GPU accelerated:
 
 * Vertex position calculations for skinned mesh bodies
 * Collider bounding box calculations for per-vertex and per-triangle shapes
 * Aggregate bounding box calculation for internal nodes of collider trees
+* Building collider lists for the final collision check (for one body only)
 * Sphere-sphere and sphere-triangle collision checks
 
 The following parts are still CPU-based:
 
-* Building collider lists for the final collision check (this is also the biggest performance hit, as it's
-  the only remaining part that needs per-collider bounding boxes in host memory)
 * Merging collision results and converting to manifolds for the Bullet library to work with
 * And, of course, the solver itself, which is part of the Bullet library, not the HDT-SMP plugin
 
 This is still experimental, and may not give good performance. The old CPU collision algorithm was heavily
-optimized, so matching its framerate is not easy. Much of the performance loss comes from data transfer
-between the host and graphics card, so reducing this is key to future improvements.
+optimized, so matching its framerate is not easy.
 
 * On a 6850K processor (6 cores, 3.6GHz) with a 1080Ti GPU, framerate in crowded areas is significantly worse
   than with the CPU-only algorithm. The GPU algorithm typically gives about half the framerate of the CPU
   one when under heavy load. But most of the time, both algorithms easily reach the framerate cap at 60fps.
+* On the same hardware, the internal update (vertex position and bounding box calculations) takes about the
+  same time on CPU and GPU, typically around 3ms per frame. It's the main collision check algorithm and/or
+  its supporting code that kills performance.
 
 If you have an i3 or i5 CPU (or the AMD equivalent) with a fast graphics card, the GPU algorithm may help. If
 you have an i7 or i9 CPU, or your graphics card already struggles with the base game, stick with the CPU
@@ -80,6 +81,18 @@ infamous dark face bug. Special restrictions apply to NPCs that do have facegen 
   be used as kinematic objects in constraints. Replace references to these with the NPC head (which should
   always be present). You may also need to set the frame of reference origin to the position of the missing
   bone relative to the head to get correct constraint behavior.
+
+## Console commands
+
+The smp console command will print some basic information about the number of tracked and active objects. The
+plugin recognizes the following optional parameters:
+
+* reset attempts to reload all meshes and reset the whole HDT-SMP system. However, it is a little buggy and
+  may fail to reload some meshes or constraints properly.
+* gpu toggles the CUDA collision algorithm, if there is at least one CUDA device available.
+* dumptree dumps the entire node tree of the current targeted NPC to the log file.
+* detail shows extended details of all tracked actors, including active and inactive armour and head parts.
+* list shows a more concise list of tracked actors.
 
 ## Coming soon (maybe)
 

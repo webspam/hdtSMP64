@@ -67,6 +67,7 @@ namespace hdt
 			int offsetB,
 			int sizeA,
 			int sizeB,
+			const Aabb& aabbA,
 			const Aabb& aabbB);
 
 		void launch();

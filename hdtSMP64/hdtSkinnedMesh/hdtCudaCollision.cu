@@ -3,8 +3,8 @@
 #include "math.h"
 
 // Check collider bounding boxes on the GPU. This reduces the total amount of work, but is bad for
-// divergence and increases register usage.
-#define GPU_BOUNDING_BOX_CHECK
+// divergence and increases register usage. Probably no longer very useful with vertex lists working.
+//#define GPU_BOUNDING_BOX_CHECK
 
 namespace hdt
 {
@@ -22,6 +22,16 @@ namespace hdt
     constexpr int collisionBlockSize<cuPerVertexInput>() { return 1024; }
     template<>
     constexpr int collisionBlockSize<cuPerTriangleInput>() { return 1024; }
+
+    // Maximum number of vertices per patch if we build vertex lists
+    __host__ __device__
+    constexpr int vertexListSize() { return 256; }
+
+    // Maximum number of iterations of collision checking with a single vertex list. If there are too many
+    // potential collisions to finish in this number of passes, we compute the second vertex list as well.
+    __device__
+    constexpr int vertexListThresholdFactor() { return 2; }
+
 
     __device__ cuVector3::cuVector3()
     {}
@@ -361,6 +371,68 @@ namespace hdt
         return true;
     }
 
+    __device__ int kernelComputeVertexList(
+        int start,
+        int n,
+        int blockSize,
+        int tid,
+        const cuAabb* boundingBoxes,
+        const cuAabb& boundingBox,
+        int* intShared,
+        int* vertexList
+    )
+    {
+        int threadInWarp = tid & 0x1f;
+        int warpid = threadIdx.x >> 5;
+
+        // Set up vertex list for shape A
+        int nCeil = (((n - 1) / blockSize) + 1) * blockSize;
+        int blockStart = 0;
+        for (int i = tid; blockStart < vertexListSize() && i < nCeil; i += blockSize)
+        {
+            int vertex = i + start;
+            bool collision = i < n && boundingBoxCollision(boundingBoxes[vertex], boundingBox);
+
+            // Count the number of collisions in this warp and store in shared memory
+            auto mask = __ballot_sync(0xffffffff, collision);
+            if (threadInWarp == 0)
+            {
+                intShared[warpid] = __popc(mask);
+            }
+            __syncthreads();
+
+            // Compute partial sum counts in warps before this one and broadcast across the warp
+            int a = (threadInWarp < warpid) ? intShared[threadInWarp] : 0;
+            for (int j = 16; j > 0; j >>= 1)
+            {
+                a += __shfl_down_sync(0xffffffff, a, j);
+            }
+            int warpStart = blockStart + __shfl_sync(0xffffffff, a, 0);
+
+            // Now we can calculate where to put the index, if it's a potential collision
+            if (collision)
+            {
+                unsigned int lanemask = (1L << threadInWarp) - 1;
+                int index = warpStart + __popc(mask & lanemask);
+                if (index < vertexListSize())
+                {
+                    vertexList[index] = vertex;
+                }
+            }
+
+            // Extend the partial sum from the last warp to a total sum, and update the block start
+            if (warpid == 31 && threadInWarp == 0)
+            {
+                intShared[0] = a + intShared[31];
+            }
+            __syncthreads();
+            blockStart += intShared[0];
+        }
+
+        // Update number of colliders in A and the total number of pairs
+       return min(blockStart, vertexListSize());
+    }
+
     // kernelCollision does the supporting work for threading the collision checks and making sure that only
     // the deepest result is kept.
     template <cuPenetrationType penType = eNone, typename T>
@@ -375,8 +447,8 @@ namespace hdt
         const cuVector3* __restrict__ vertexDataB,
         cuCollisionResult* output)
     {
-        extern __shared__ float sdata[];
-        int* intShared = reinterpret_cast<int*>(sdata);
+        extern __shared__ float floatShared[];
+        int* intShared = reinterpret_cast<int*>(floatShared);
 
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
@@ -395,14 +467,14 @@ namespace hdt
             temp.depth = 1;
             int nPairs = nA * nB;
 
-            if (nPairs < blockDim.x)
+            if (nPairs <= blockDim.x)
             {
                 // If we have fewer possible collider pairs than threads, we can just check every pair in one
                 // step, and skip the bounding box check altogether.
                 if (tid < nPairs)
                 {
                     int iA = offsetA + tid % nA;
-                    int iB = offsetB +  tid / nA;
+                    int iB = offsetB + tid / nA;
                     if (collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
                     {
                         temp.colliderA = static_cast<cuCollider*>(0) + iA;
@@ -412,57 +484,80 @@ namespace hdt
             }
             else
             {
-                int* indicesA = setup[block].scratch;
-                const cuAabb& boundingBoxB = setup[block].boundingBoxB;
+                int* vertexListA = intShared + 32;
+                int* vertexListB = vertexListA + vertexListSize();
 
-                // Set up vertex list for shape A
-                int nACeil = (((nA - 1) / blockDim.x) + 1) * blockDim.x;
-                int blockStart = 0;
-                for (int i = tid; i < nACeil; i += blockDim.x)
+                bool haveListA = false;
+                bool haveListB = false;
+
+                // Try to get the number of pairs down to a reasonable size, by building a collider list in
+                // shared memory from the larger patch. If the result is still large, do the smaller one as
+                // well. The threshold for doing this may need some tweaking for optimal performance, but
+                // the full collision check is pretty expensive so it won't be more than a couple of
+                // blocks.
+                if (nA > nB)
                 {
-                    int vertex = i + offsetA;
-                    bool collision = i < nA&& boundingBoxCollision(boundingBoxesA[vertex], boundingBoxB);
-
-                    // Count the number of collisions in this warp and store in shared memory
-                    auto mask = __ballot_sync(0xffffffff, collision);
-                    if (threadInWarp == 0)
+                    nA = kernelComputeVertexList(
+                        offsetA,
+                        nA,
+                        blockDim.x,
+                        tid,
+                        boundingBoxesA,
+                        setup[block].boundingBoxB,
+                        intShared,
+                        vertexListA
+                    );
+                    haveListA = true;
+                    if (nA * nB > blockDim.x * vertexListThresholdFactor())
                     {
-                        intShared[warpid] = __popc(mask);
+                        nB = kernelComputeVertexList(
+                            offsetB,
+                            nB,
+                            blockDim.x,
+                            tid,
+                            boundingBoxesB,
+                            setup[block].boundingBoxA,
+                            intShared,
+                            vertexListB
+                        );
+                        haveListB = true;
                     }
-                    __syncthreads();
-
-                    // Compute partial sum counts in warps before this one and broadcast across the warp
-                    int a = (threadInWarp < warpid) ? intShared[threadInWarp] : 0;
-                    for (int j = 16; j > 0; j >>= 1)
+                }
+                else
+                {
+                    nB = kernelComputeVertexList(
+                        offsetB,
+                        nB,
+                        blockDim.x,
+                        tid,
+                        boundingBoxesB,
+                        setup[block].boundingBoxA,
+                        intShared,
+                        vertexListB
+                    );
+                    haveListB = true;
+                    if (nA * nB > blockDim.x * vertexListThresholdFactor())
                     {
-                        a += __shfl_down_sync(0xffffffff, a, j);
+                        nA = kernelComputeVertexList(
+                            offsetA,
+                            nA,
+                            blockDim.x,
+                            tid,
+                            boundingBoxesA,
+                            setup[block].boundingBoxB,
+                            intShared,
+                            vertexListA
+                        );
+                        haveListA = true;
                     }
-                    int warpStart = blockStart + __shfl_sync(0xffffffff, a, 0);
-
-                    // Now we can calculate where to put the index, if it's a potential collision
-                    if (collision)
-                    {
-                        int lanemask = (1L << threadInWarp) - 1;
-                        indicesA[warpStart + __popc(mask & lanemask)] = vertex;
-                    }
-
-                    // Extend the partial sum from the last warp to a total sum, and update the block start
-                    if (warpid == 31 && threadInWarp == 0)
-                    {
-                        intShared[0] = a + intShared[31];
-                    }
-                    __syncthreads();
-                    blockStart += intShared[0];
                 }
 
-                // Update number of colliders in A and the total number of pairs
-                nA = blockStart;
                 nPairs = nA * nB;
 
                 for (int i = tid; i < nPairs; i += blockDim.x)
                 {
-                    int iA = indicesA[i % nA];
-                    int iB = offsetB + i / nA;
+                    int iA = haveListA ? vertexListA[i % nA] : offsetA + i % nA;
+                    int iB = haveListB ? vertexListB[i / nA] : offsetB + i / nA;
 
                     // Skip pairs until we find one with a bounding box collision. This should increase the
                     // number of full checks done in parallel, and reduce divergence overall. Note we only do
@@ -474,8 +569,11 @@ namespace hdt
                         while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
                         {
                             i += blockDim.x;
-                            iA = indicesA[i % nA];
-                            iB = offsetB + i / nA;
+                            if (i < nPairs)
+                            {
+                                iA = haveListA ? vertexListA[i % nA] : offsetA + i % nA;
+                                iB = haveListB ? vertexListB[i / nA] : offsetB + i / nA;
+                            }
                         }
                     }
 #endif
@@ -496,28 +594,28 @@ namespace hdt
             }
             if (threadInWarp == 0)
             {
-                sdata[warpid] = d;
+                floatShared[warpid] = d;
             }
             __syncthreads();
 
             // Find minimum across warps
             if (warpid == 0)
             {
-                d = sdata[threadInWarp];
+                d = floatShared[threadInWarp];
                 for (int j = 16; j > 0; j >>= 1)
                 {
                     d = min(d, __shfl_down_sync(0xffffffff, d, j));
                 }
                 if (threadInWarp == 0)
                 {
-                    sdata[0] = d;
+                    floatShared[0] = d;
                 }
             }
             __syncthreads();
 
             // If the depth of this thread is equal to the minimum, try to set the result. Do an atomic
             // exchange with the first value to ensure that only one thread gets to do this in case of ties.
-            if (sdata[0] == temp.depth && atomicExch(sdata, 2) == temp.depth)
+            if (floatShared[0] == temp.depth && atomicExch(floatShared, 2) == temp.depth)
             {
                 output[block] = temp;
             }
@@ -611,7 +709,8 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        kernelCollision<penType> <<<n, collisionBlockSize<T>(), 32 * sizeof(float), *s >>> (
+        int sharedMemorySize = (32 + 2 * vertexListSize()) * sizeof(float);
+        kernelCollision<penType> <<<n, collisionBlockSize<T>(), sharedMemorySize, *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cudaPeekAtLastError() == cudaSuccess;
     }

@@ -340,16 +340,6 @@ namespace hdt
 			c0->checkCollisionL(c1, pairs);
 			if (pairs.empty()) return 0;
 
-			// Make sure the vertex data is available, if we're using CUDA vertex calculations with CPU collision checking
-			if (shapeA->m_owner->m_cudaObject)
-			{
-				shapeA->m_owner->m_cudaObject->synchronize();
-			}
-			if (shapeB->m_owner->m_cudaObject)
-			{
-				shapeB->m_owner->m_cudaObject->synchronize();
-			}
-
 			decltype(auto) func = [this](const std::pair<ColliderTree*, ColliderTree*>& pair)
 			{
 				if (numResults >= SkinnedMeshAlgorithm::MaxCollisionCount)
@@ -466,6 +456,7 @@ namespace hdt
 						pairs[i].second->cbuf - shapeB->m_colliders.data(),
 						asize,
 						bsize,
+						a->aabbMe,
 						b->aabbMe);
 				}
 			}
@@ -473,6 +464,7 @@ namespace hdt
 			// Run the kernel and get the results
 			collisionPair.launch();
 			collisionPair.synchronize();
+
 			for (int i = 0; i < collisionPair.numPairs(); ++i)
 			{
 				if (results[i].depth <= 0)
