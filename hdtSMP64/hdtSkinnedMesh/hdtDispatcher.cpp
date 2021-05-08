@@ -5,6 +5,9 @@
 
 #include <LinearMath/btPoolAllocator.h>
 
+// Comparison of CPU and GPU internal update performance
+//#define MEASURE_PERFORMANCE
+
 namespace hdt
 {
 	void CollisionDispatcher::clearAllManifold()
@@ -108,70 +111,92 @@ namespace hdt
 			else getNearCallback()(pair, *this, dispatchInfo);
 		});
 
+#ifdef MEASURE_PERFORMANCE
+		LARGE_INTEGER ticks;
+		QueryPerformanceCounter(&ticks);
+		int64_t time_start = ticks.QuadPart;
+#endif
+
 		if (CudaInterface::instance()->hasCuda())
 		{
-			// First create any CUDA objects that don't exist already. Each body has its own stream, and per-vertex
-			// and per-triangle updates for it will be launched in the same stream.
-			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
-			{
-				if (!o.first->m_cudaObject)
-				{
-					o.first->m_cudaObject.reset(new CudaBody(o.first));
-				}
-				if (o.second.first && !o.second.first->m_cudaObject)
-				{
-					o.second.first->m_cudaObject.reset(new CudaPerVertexShape(o.second.first));
-				}
-				if (o.second.second && !o.second.second->m_cudaObject)
-				{
-					o.second.second->m_cudaObject.reset(new CudaPerTriangleShape(o.second.second));
-				}
-			});
+			std::vector<SkinnedMeshBody*> bodies;
+			bodies.reserve(to_update.size());
+			std::vector<PerVertexShape*> vertexShapes;
+			vertexShapes.reserve(to_update.size());
+			std::vector<PerTriangleShape*> triangleShapes;
+			triangleShapes.reserve(to_update.size());
+			bool initialized = true;
 
-			// Update bone transforms and launch the vertex calculation kernel as soon as the transforms are ready
-			// for each body.
-			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			// Build simple vectors of the things to update, and determine whether any new CUDA objects need
+			// to be created
+			for (auto& o : to_update)
 			{
-				o.first->updateBones();
-				o.first->m_cudaObject->launch();
-			});
+				bodies.push_back(o.first);
+				initialized &= static_cast<bool>(bodies.back()->m_cudaObject);
+				if (o.second.first)
+				{
+					vertexShapes.push_back(o.second.first);
+					initialized &= static_cast<bool>(vertexShapes.back()->m_cudaObject);
+				}
+				if (o.second.second)
+				{
+					triangleShapes.push_back(o.second.second);
+					initialized &= static_cast<bool>(triangleShapes.back()->m_cudaObject);
+				}
+			}
+
+			// Create any new CUDA objects if necessary
+			if (!initialized)
+			{
+				concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+				{
+					if (!o.first->m_cudaObject)
+					{
+						o.first->m_cudaObject.reset(new CudaBody(o.first));
+					}
+					if (o.second.first && !o.second.first->m_cudaObject)
+					{
+						o.second.first->m_cudaObject.reset(new CudaPerVertexShape(o.second.first));
+					}
+					if (o.second.second && !o.second.second->m_cudaObject)
+					{
+						o.second.second->m_cudaObject.reset(new CudaPerTriangleShape(o.second.second));
+					}
+				});
+			}
+
+			// Update bone transforms and launch the vertex calculation kernel
+			for (auto body : bodies)
+			{
+				body->updateBones();
+				body->m_cudaObject->launch();
+			}
 
 			// Launch per-triangle kernels. Theoretically we should get better performance launching kernels
 			// breadth-first like this.
-			for (auto& o : to_update)
+			for (auto triangleShape : triangleShapes)
 			{
-				if (o.second.second)
-				{
-					o.second.second->m_cudaObject->launch();
-				}
+				triangleShape->m_cudaObject->launch();
 			}
-			for (auto& o : to_update)
+			for (auto triangleShape : triangleShapes)
 			{
-				if (o.second.second)
-				{
-					o.second.second->m_cudaObject->launchTree();
-				}
+				triangleShape->m_cudaObject->launchTree();
 			}
-			for (auto& o : to_update)
+
+			// Launch per-vertex kernels
+			for (auto vertexShape : vertexShapes)
 			{
-				if (o.second.first)
-				{
-					o.second.first->m_cudaObject->launch();
-				}
+				vertexShape->m_cudaObject->launch();
 			}
-			for (auto& o : to_update)
+			for (auto vertexShape : vertexShapes)
 			{
-				if (o.second.first)
-				{
-					o.second.first->m_cudaObject->launchTree();
-				}
-				o.first->m_cudaObject->recordState();
+				vertexShape->m_cudaObject->launchTree();
 			}
 
 			// Update the aggregate parts of the AABB trees
-			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			for (auto& o : to_update)
 			{
-				o.first->m_cudaObject->waitForAaabData();
+				o.first->m_cudaObject->synchronize();
 
 				if (o.second.first)
 				{
@@ -182,9 +207,14 @@ namespace hdt
 					o.second.second->m_cudaObject->updateTree();
 				}
 				o.first->m_bulletShape.m_aabb = o.first->m_shape->m_tree.aabbAll;
-			});
+			}
 		}
+#ifdef MEASURE_PERFORMANCE
+		QueryPerformanceCounter(&ticks);
+		int64_t time_gpu = ticks.QuadPart;
+#else
 		else
+#endif
 		{
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
@@ -200,6 +230,16 @@ namespace hdt
 				o.first->m_bulletShape.m_aabb = o.first->m_shape->m_tree.aabbAll;
 			});
 		}
+
+#ifdef MEASURE_PERFORMANCE
+		QueryPerformanceCounter(&ticks);
+		int64_t time_end = ticks.QuadPart;
+		QueryPerformanceFrequency(&ticks);
+		int64_t ticks_per_us = ticks.QuadPart / 1e6;
+		int64_t cpu_time = (time_end - time_gpu) / ticks_per_us;
+		int64_t gpu_time = (time_gpu - time_start) / ticks_per_us;
+		_MESSAGE("Internal updates took %d us on GPU, %d us on CPU, difference %d", gpu_time, cpu_time, gpu_time - cpu_time);
+#endif
 
 		CudaInterface::instance()->clearBufferPool();
 

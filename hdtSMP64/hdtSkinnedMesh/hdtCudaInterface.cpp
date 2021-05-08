@@ -732,7 +732,7 @@ namespace hdt
 
 	bool CudaInterface::hasCuda()
 	{
-		return m_enabled && cuDeviceCount() > 0;
+		return enableCuda && m_enabled;
 	}
 
 	void CudaInterface::synchronize()
@@ -746,7 +746,7 @@ namespace hdt
 	}
 
 	CudaInterface::CudaInterface()
-		: m_enabled(enableCuda)
+		: m_enabled(cuDeviceCount() > 0)
 	{
 		if (m_enabled)
 		{

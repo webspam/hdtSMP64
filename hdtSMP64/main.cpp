@@ -18,6 +18,8 @@
 #include "skse64/GameRTTI.h"
 #include "skse64_common/BranchTrampoline.h"
 
+#include "hdtSkinnedMesh/hdtCudaInterface.h"
+
 namespace hdt
 {
 	IDebugLog gLog;
@@ -348,6 +350,19 @@ namespace hdt
 			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
 			ActorManager::instance()->reloadMeshes();
 			SkyrimPhysicsWorld::get()->resetSystems();
+			return true;
+		}
+		if (_strnicmp(buffer, "gpu", MAX_PATH) == 0)
+		{
+			CudaInterface::enableCuda = !CudaInterface::enableCuda;
+			if (CudaInterface::instance()->hasCuda())
+			{
+				Console_Print("CUDA collision enabled");
+			}
+			else
+			{
+				Console_Print("CUDA collision disabled");
+			}
 			return true;
 		}
 		if (_strnicmp(buffer, "dumptree", MAX_PATH) == 0)
