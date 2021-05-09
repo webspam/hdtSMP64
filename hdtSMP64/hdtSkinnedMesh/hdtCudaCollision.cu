@@ -16,12 +16,11 @@ namespace hdt
     template<typename T>
     constexpr int collisionBlockSize();
 
-    // Collision checking currently has reduction hard-coded for 1024 blocks. With more than 32 registers we
-    // can't do better than 50% occupancy anyway
+    // Block size for collision checking. Must be a power of 2 for the simple inter-warp reductions to work.
     template<>
-    constexpr int collisionBlockSize<cuPerVertexInput>() { return 1024; }
+    constexpr int collisionBlockSize<cuPerVertexInput>() { return 512; }
     template<>
-    constexpr int collisionBlockSize<cuPerTriangleInput>() { return 1024; }
+    constexpr int collisionBlockSize<cuPerTriangleInput>() { return 512; }
 
     // Maximum number of vertices per patch if we build vertex lists
     __host__ __device__
@@ -384,6 +383,7 @@ namespace hdt
     {
         int threadInWarp = tid & 0x1f;
         int warpid = threadIdx.x >> 5;
+        int nwarps = blockSize >> 5;
 
         // Set up vertex list for shape A
         int nCeil = (((n - 1) / blockSize) + 1) * blockSize;
@@ -403,7 +403,7 @@ namespace hdt
 
             // Compute partial sum counts in warps before this one and broadcast across the warp
             int a = (threadInWarp < warpid) ? intShared[threadInWarp] : 0;
-            for (int j = 16; j > 0; j >>= 1)
+            for (int j = nwarps >> 1; j > 0; j >>= 1)
             {
                 a += __shfl_down_sync(0xffffffff, a, j);
             }
@@ -421,9 +421,9 @@ namespace hdt
             }
 
             // Extend the partial sum from the last warp to a total sum, and update the block start
-            if (warpid == 31 && threadInWarp == 0)
+            if (warpid == (nwarps - 1) && threadInWarp == 0)
             {
-                intShared[0] = a + intShared[31];
+                intShared[0] = a + intShared[nwarps - 1];
             }
             __syncthreads();
             blockStart += intShared[0];
@@ -453,6 +453,7 @@ namespace hdt
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
         int warpid = threadIdx.x >> 5;
+        int nwarps = blockDim.x >> 5;
         
         for (int block = blockIdx.x; block < n; block += gridDim.x)
         {
@@ -467,11 +468,11 @@ namespace hdt
             temp.depth = 1;
             int nPairs = nA * nB;
 
-            if (nPairs <= blockDim.x)
+            if (nPairs <= blockDim.x * vertexListThresholdFactor())
             {
                 // If we have fewer possible collider pairs than threads, we can just check every pair in one
                 // step, and skip the bounding box check altogether.
-                if (tid < nPairs)
+                for (int i = tid; i < nPairs; i += blockDim.x)
                 {
                     int iA = offsetA + tid % nA;
                     int iB = offsetB + tid / nA;
@@ -602,7 +603,7 @@ namespace hdt
             if (warpid == 0)
             {
                 d = floatShared[threadInWarp];
-                for (int j = 16; j > 0; j >>= 1)
+                for (int j = nwarps >> 1; j > 0; j >>= 1)
                 {
                     d = min(d, __shfl_down_sync(0xffffffff, d, j));
                 }
