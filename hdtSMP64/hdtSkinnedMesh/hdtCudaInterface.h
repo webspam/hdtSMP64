@@ -96,8 +96,6 @@ namespace hdt
 
 		void clearBufferPool();
 
-		std::mutex m_lock;
-
 	private:
 
 		CudaInterface();
