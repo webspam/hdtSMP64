@@ -22,7 +22,7 @@ namespace hdt
     template<>
     constexpr int collisionBlockSize<cuPerTriangleInput>() { return 512; }
 
-    // Maximum number of vertices per patch if we build vertex lists
+    // Maximum number of vertices per patch
     __host__ __device__
     constexpr int vertexListSize() { return 256; }
 
@@ -154,9 +154,10 @@ namespace hdt
 
         for (int i = index; i < n; i += stride)
         {
-            const cuVector3& v = vertexData[in[i].vertexIndex];
-            out[i] = cuAabb(v);
-            out[i].addMargin(v.w * in[i].margin);
+            const cuVector3 v = vertexData[in[i].vertexIndex];
+            cuAabb aabb(v);
+            aabb.addMargin(v.w * in[i].margin);
+            out[i] = aabb;
         }
     }
 
@@ -168,15 +169,16 @@ namespace hdt
 
         for (int i = index; i < n; i += stride)
         {
-            const cuVector3& v0 = vertexData[in[i].vertexIndices[0]];
-            const cuVector3& v1 = vertexData[in[i].vertexIndices[1]];
-            const cuVector3& v2 = vertexData[in[i].vertexIndices[2]];
+            const cuVector3 v0 = vertexData[in[i].vertexIndices[0]];
+            const cuVector3 v1 = vertexData[in[i].vertexIndices[1]];
+            const cuVector3 v2 = vertexData[in[i].vertexIndices[2]];
 
             float penetration = abs(in[i].penetration);
             float margin = max((v0.w + v1.w + v2.w) * in[i].margin / 3, penetration);
 
-            out[i] = cuAabb(v0, v1, v2);
-            out[i].addMargin(margin);
+            cuAabb aabb(v0, v1, v2);
+            aabb.addMargin(margin);
+            out[i] = aabb;
         }
     }
 
@@ -245,11 +247,13 @@ namespace hdt
 
         for (int i = index; i < n; i += stride)
         {
-            out[i] = calcVertexState(in[i].position, boneData[in[i].bones[0]], in[i].weights[0]);
+            cuVector3 pos = in[i].position;
+            cuVector3 v = calcVertexState(pos, boneData[in[i].bones[0]], in[i].weights[0]);
             for (int j = 1; j < 4; ++j)
             {
-                out[i] += calcVertexState(in[i].position, boneData[in[i].bones[j]], in[i].weights[j]);
+                v += calcVertexState(pos, boneData[in[i].bones[j]], in[i].weights[j]);
             }
+            out[i] = v;
         }
     }
 
@@ -263,8 +267,8 @@ namespace hdt
         const cuVector3* __restrict__ vertexDataB,
         cuCollisionResult& output)
     {
-        const cuVector3& vA = vertexDataA[inputA.vertexIndex];
-        const cuVector3& vB = vertexDataB[inputB.vertexIndex];
+        const cuVector3 vA = vertexDataA[inputA.vertexIndex];
+        const cuVector3 vB = vertexDataB[inputB.vertexIndex];
 
         float rA = vA.w * inputA.margin;
         float rB = vB.w * inputB.margin;
@@ -352,12 +356,11 @@ namespace hdt
         // Compute triple products and check the projection lies in the triangle
         cuVector3 bp = s - p1;
         cuVector3 cp = s - p2;
-        cuVector3 aa = crossProduct(bp, cp);
-        ab = crossProduct(cp, ap);
         ac = crossProduct(ap, bp);
-        float areaA = dotProduct(aa, raw_normal);
-        float areaB = dotProduct(ab, raw_normal);
+        ab = crossProduct(cp, ap);
         float areaC = dotProduct(ac, raw_normal);
+        float areaB = dotProduct(ab, raw_normal);
+        float areaA = area - areaB - areaC;
         if (areaA < 0 || areaB < 0 || areaC < 0)
         {
             return false;
@@ -436,7 +439,7 @@ namespace hdt
     // kernelCollision does the supporting work for threading the collision checks and making sure that only
     // the deepest result is kept.
     template <cuPenetrationType penType = eNone, typename T>
-    __global__ void kernelCollision(
+    __global__ void __launch_bounds__(collisionBlockSize<T>(), 1024 / collisionBlockSize<T>()) kernelCollision(
         int n,
         const cuCollisionSetup* __restrict__ setup,
         const cuPerVertexInput* __restrict__ inA,
