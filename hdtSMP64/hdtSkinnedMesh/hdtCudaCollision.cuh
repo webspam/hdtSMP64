@@ -3,10 +3,161 @@
 #include <memory>
 #include <immintrin.h>
 
+#include <tuple>
+
 namespace hdt
 {
 	class CudaPerVertexShape;
 	class CudaPerTriangleShape;
+
+	template <typename StructT, typename... Args>
+	struct PlanarStruct
+	{
+	private:
+
+		template<typename T, typename... Ts>
+		friend struct PlanarStruct;
+
+		using TupleT = std::tuple<Args...>;
+
+		template<typename T>
+		struct ElementSize
+		{
+			static const size_t size = sizeof(T);
+		};
+		template<typename... Ts>
+		struct ElementSize<PlanarStruct<Ts...>>
+		{
+			static const size_t size = PlanarStruct<Ts...>::size;
+		};
+		template<int N, typename... Args>
+		struct OffsetHelper;
+		template<typename... Args>
+		struct OffsetHelper<0, Args...>
+		{
+			static const size_t offset = 0;
+		};
+		template<int N, typename First, typename... Rest>
+		struct OffsetHelper<N, First, Rest...>
+		{
+			static const size_t offset = ElementSize<First>::size + OffsetHelper<N - 1, Rest...>::offset;
+		};
+		template<int N>
+		static const size_t offset = OffsetHelper<N, Args...>::offset;
+		static const size_t size = OffsetHelper<sizeof...(Args), Args...>::offset;
+
+	public:
+
+#ifndef __NVCC__
+		PlanarStruct(StructT* buffer, size_t n)
+			: m_buffer(reinterpret_cast<uint8_t*>(buffer)), m_size(n)
+		{}
+#else
+		__host__ __device__ PlanarStruct(StructT* buffer, size_t n)
+			: m_buffer(reinterpret_cast<uint8_t*>(buffer)), m_size(n)
+		{}
+
+		template <int N>
+		__device__ __forceinline__ std::tuple_element<N, TupleT>::type* getPlane()
+		{
+			return reinterpret_cast<typename std::tuple_element<N, TupleT>::type*>(
+				m_buffer + m_size * offset<N>);
+		}
+
+		struct GetHelper
+		{
+		private:
+			template <typename T, typename... Ts>
+			friend struct PlanarStruct;
+
+			template <int N, typename T>
+			struct Getter
+			{
+				using type = T&;
+				__device__ __forceinline__ static type get(PlanarStruct* s, size_t n)
+				{
+					return s->getPlane<N>()[n];
+				}
+			};
+			template <int N, typename... Ts>
+			struct Getter<N, PlanarStruct<Ts...>>
+			{
+				using type = PlanarStruct<Ts...>::GetHelper;
+				__device__ __forceinline__ static type get(PlanarStruct* s, size_t n)
+				{
+					return PlanarStruct<Ts...>::GetHelper(s->getPlane<N>(), n);
+				}
+			};
+
+		public:
+
+			template <int N>
+			__device__ __forceinline__ Getter<N, std::tuple_element<N, TupleT>::type>::type get()
+			{
+				return Getter<N, typename std::tuple_element<N, TupleT>::type>::get(m_s, m_n);
+			}
+
+			template <int N>
+			__device__ __forceinline__ const Getter<N, std::tuple_element<N, TupleT>::type>::type get() const
+			{
+				return Getter<N, typename std::tuple_element<N, TupleT>::type>::get(m_s, m_n);
+			}
+
+			__device__ __forceinline__ operator StructT()
+			{
+				return getStruct(std::make_index_sequence<sizeof...(Args)>());
+			}
+
+			__device__ __forceinline__ operator const StructT() const
+			{
+				return getStruct(std::make_index_sequence<sizeof...(Args)>());
+			}
+
+			__device__ __forceinline__ void operator=(const StructT& s)
+			{
+				set(s, std::make_index_sequence<sizeof...(Args)>());
+			}
+
+		private:
+			__device__ __forceinline__ GetHelper(PlanarStruct* s, size_t n)
+				: m_s(s), m_n(n) {}
+
+			template <std::size_t... I>
+			__device__ __forceinline__ StructT getStruct(std::index_sequence<I...>)
+			{
+				return StructT(get<I>()...);
+			}
+
+			template <std::size_t... I>
+			__device__ __forceinline__ const StructT getStruct(std::index_sequence<I...>) const
+			{
+				return StructT(get<I>()...);
+			}
+
+			template<typename... Args>
+			__device__ __forceinline__ void dummy(Args...) {}
+
+			template <std::size_t... I>
+			__device__ __forceinline__ void set(const StructT& s, std::index_sequence<I...>)
+			{
+				dummy((get<I>() = *reinterpret_cast<const typename std::remove_reference<typename Getter<I, Args>::type>::type*>(reinterpret_cast<const uint8_t*>(&s) + offset<I>))...);
+			}
+
+			PlanarStruct* m_s;
+			size_t m_n;
+		};
+
+		__device__ __forceinline__ GetHelper operator[](size_t i)
+		{
+			return GetHelper(this, i);
+		}
+#endif
+
+	private:
+
+		size_t m_size;
+		uint8_t* m_buffer;
+	};
 
 	// Internal penetration is the most common case where penetration is positive
 	// External penetration is where penetration is negative, and the orientation of the triangle is reversed

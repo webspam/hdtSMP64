@@ -109,6 +109,51 @@ namespace hdt
 			HostT* m_hostData;
 		};
 
+		template <typename CudaT>
+		class CudaDeviceBuffer
+		{
+		public:
+
+			CudaDeviceBuffer(int n)
+				: m_size(n * sizeof(CudaT))
+			{
+				cuGetDeviceBuffer(&reinterpret_cast<void*>(m_deviceData), m_size);
+			}
+
+			~CudaDeviceBuffer()
+			{
+				cuFreeDevice(m_deviceData);
+			}
+
+			CudaT* getD() { return m_deviceData; }
+
+		private:
+
+			int m_size;
+			CudaT* m_deviceData;
+		};
+
+		template <typename T, typename... Ts>
+		class CudaDeviceBuffer<PlanarStruct<T, Ts...>>
+		{
+		public:
+
+			CudaDeviceBuffer(int n)
+				: m_size(32 * ((n - 1) / 32) + 1),
+				m_buffer(m_size)
+			{}
+
+			PlanarStruct<T, Ts...> getD() {
+				return PlanarStruct<T, Ts...>(m_buffer.getD(), m_size);
+			}
+
+		private:
+
+			int m_size;
+			CudaDeviceBuffer<T> m_buffer;
+		};
+
+
 		// Memory pool for small short-lived objects. This can grow arbitrarily in size, to the maximum required
 		// in a single frame. All allocations get cleared at the end of the frame.
 		class CudaBufferPool
@@ -413,10 +458,6 @@ namespace hdt
 			}
 			m_input.toDevice(m_body->m_stream);
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
-
-			Aabb* aabb = m_output.get();
-			shape->m_tree.relocateAabb(aabb);
-			shape->m_aabb.reset(aabb, NullDeleter<Aabb[]>());
 		}
 
 		void launch()
@@ -440,7 +481,7 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerTriangleInput> m_input;
-		CudaBuffer<cuAabb, Aabb> m_output;
+		CudaDeviceBuffer<cuAabb> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		const cuPenetrationType m_penetrationType;
 	private:
@@ -487,10 +528,6 @@ namespace hdt
 			}
 			m_input.toDevice(m_body->m_stream);
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
-
-			Aabb* aabb = m_output.get();
-			shape->m_tree.relocateAabb(aabb);
-			shape->m_aabb.reset(aabb, NullDeleter<Aabb[]>());
 		}
 
 		void launch()
@@ -514,7 +551,7 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerVertexInput> m_input;
-		CudaBuffer<cuAabb, Aabb> m_output;
+		CudaDeviceBuffer<cuAabb> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		int m_numColliders;
 
