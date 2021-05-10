@@ -25,7 +25,7 @@ namespace hdt
 		public:
 			CudaStream()
 			{
-				cuCreateStream(&m_stream);
+				cuCreateStream(&m_stream).check(__FUNCTION__);
 			}
 
 			~CudaStream()
@@ -45,7 +45,7 @@ namespace hdt
 		public:
 			CudaEvent()
 			{
-				cuCreateEvent(&m_event);
+				cuCreateEvent(&m_event).check(__FUNCTION__);
 			}
 
 			~CudaEvent()
@@ -77,8 +77,8 @@ namespace hdt
 				: m_size(n * sizeof(CudaT))
 			{
 				static_assert(sizeof(CudaT) == sizeof(HostT), "Device and host types different sizes");
-				cuGetDeviceBuffer(&reinterpret_cast<void*>(m_deviceData), m_size);
-				cuGetHostBuffer(&reinterpret_cast<void*>(m_hostData), m_size);
+				cuGetDeviceBuffer(&reinterpret_cast<void*>(m_deviceData), m_size).check(__FUNCTION__);
+				cuGetHostBuffer(&reinterpret_cast<void*>(m_hostData), m_size).check(__FUNCTION__);
 			}
 
 			~CudaBuffer()
@@ -89,12 +89,12 @@ namespace hdt
 
 			void toDevice(CudaStream& stream)
 			{
-				cuCopyToDevice(m_deviceData, m_hostData, m_size, stream);
+				cuCopyToDevice(m_deviceData, m_hostData, m_size, stream).check(__FUNCTION__);
 			}
 
 			void toHost(CudaStream& stream)
 			{
-				cuCopyToHost(m_hostData, m_deviceData, m_size, stream);
+				cuCopyToHost(m_hostData, m_deviceData, m_size, stream).check(__FUNCTION__);
 			}
 
 			operator HostT* () { return m_hostData; }
@@ -197,8 +197,8 @@ namespace hdt
 				{
 					size_t newSize = std::max(pageSize, blockSize(size));
 					m_buffers.push_back({ 0, newSize, {0,0} });
-					cuGetDeviceBuffer(&(std::get<2>(m_buffers.back()).first), newSize);
-					cuGetHostBuffer(&(std::get<2>(m_buffers.back()).second), newSize);
+					cuGetDeviceBuffer(&(std::get<2>(m_buffers.back()).first), newSize).check(__FUNCTION__);
+					cuGetHostBuffer(&(std::get<2>(m_buffers.back()).second), newSize).check(__FUNCTION__);
 					it = m_buffers.end() - 1;
 				}
 				Buffers result = {
@@ -263,12 +263,12 @@ namespace hdt
 
 			void toDevice(CudaStream& stream)
 			{
-				cuCopyToDevice(m_deviceData, m_hostData, m_size, stream);
+				cuCopyToDevice(m_deviceData, m_hostData, m_size, stream).check(__FUNCTION__);
 			}
 
 			void toHost(CudaStream& stream)
 			{
-				cuCopyToHost(m_hostData, m_deviceData, m_size, stream);
+				cuCopyToHost(m_hostData, m_deviceData, m_size, stream).check(__FUNCTION__);
 			}
 
 			operator HostT* () { return m_hostData; }
@@ -309,12 +309,12 @@ namespace hdt
 				m_numVertices,
 				m_vertexData.getD(),
 				m_vertexBuffer.getD(),
-				m_bones.getD());
+				m_bones.getD()).check(__FUNCTION__);
 		}
 
 		void synchronize()
 		{
-			cuSynchronize(m_stream);
+			cuSynchronize(m_stream).check(__FUNCTION__);
 		}
 
 		void recordState()
@@ -386,7 +386,7 @@ namespace hdt
 
 		void launch(CudaStream& stream, cuAabb* boundingBoxes)
 		{
-			cuRunBoundingBoxReduce(stream, m_numNodes, m_largestNode, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD());
+			cuRunBoundingBoxReduce(stream, m_numNodes, m_largestNode, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD()).check(__FUNCTION__);
 			m_nodeAabbs.toHost(stream);
 		}
 
@@ -467,7 +467,7 @@ namespace hdt
 				m_numColliders,
 				m_input.getD(),
 				m_output.getD(),
-				m_body->m_vertexBuffer.getD());
+				m_body->m_vertexBuffer.getD()).check(__FUNCTION__);
 		}
 
 		void launchTree()
@@ -537,7 +537,7 @@ namespace hdt
 				m_numColliders,
 				m_input.getD(),
 				m_output.getD(),
-				m_body->m_vertexBuffer.getD());
+				m_body->m_vertexBuffer.getD()).check(__FUNCTION__);
 		}
 
 		void launchTree()
@@ -622,26 +622,29 @@ namespace hdt
 
 		void launch()
 		{
-			m_setupBuffer.toDevice(m_stream);
+			if (m_nextPair > 0)
+			{
+				m_setupBuffer.toDevice(m_stream);
 
-			collisionFunc()(
-				m_stream,
-				m_nextPair,
-				m_setupBuffer.getD(),
-				m_shapeA->m_imp->m_input.getD(),
-				m_shapeB->m_imp->m_input.getD(),
-				m_shapeA->m_imp->m_output.getD(),
-				m_shapeB->m_imp->m_output.getD(),
-				m_shapeA->m_imp->m_body->m_vertexBuffer.getD(),
-				m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
-				m_resultBuffer.getD());
+				collisionFunc()(
+					m_stream,
+					m_nextPair,
+					m_setupBuffer.getD(),
+					m_shapeA->m_imp->m_input.getD(),
+					m_shapeB->m_imp->m_input.getD(),
+					m_shapeA->m_imp->m_output.getD(),
+					m_shapeB->m_imp->m_output.getD(),
+					m_shapeA->m_imp->m_body->m_vertexBuffer.getD(),
+					m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
+					m_resultBuffer.getD()).check(__FUNCTION__);
 
-			m_resultBuffer.toHost(m_stream);
+				m_resultBuffer.toHost(m_stream);
+			}
 		}
 
 		void synchronize()
 		{
-			cuSynchronize(m_stream);
+			cuSynchronize(m_stream).check(__FUNCTION__);
 		}
 
 		int numPairs()
@@ -740,7 +743,7 @@ namespace hdt
 
 	void CudaInterface::synchronize()
 	{
-		cuSynchronize();
+		cuSynchronize().check(__FUNCTION__);
 	}
 
 	void CudaInterface::clearBufferPool()

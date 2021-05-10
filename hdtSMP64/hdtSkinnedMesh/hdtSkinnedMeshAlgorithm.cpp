@@ -446,9 +446,6 @@ namespace hdt
 				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
 				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
 
-				// Note that (for now), we only check shape A colliders against bounding box B. Might want to
-				// do both later, depending on performance. It's also possible to have no colliders in one
-				// shape (if it's dynamic), in which case we can skip this pair.
 				if (asize > 0 && bsize > 0)
 				{
 					collisionPair.addPair(
@@ -649,10 +646,10 @@ namespace hdt
 	{
 		for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
 		{
-			if (!body1->canCollideWith(body0->m_skinnedBones[i].ptr)) continue;
+			if (!body0->canCollideWith(body0->m_skinnedBones[i].ptr)) continue;
 			for (int j = 0; j < body1->m_skinnedBones.size(); ++j)
 			{
-				if (!body0->canCollideWith(body1->m_skinnedBones[j].ptr)) continue;
+				if (!body1->canCollideWith(body1->m_skinnedBones[j].ptr)) continue;
 				if (get(i, j)->weight < FLT_EPSILON) continue;
 
 				if (body0->m_skinnedBones[i].isKinematic && body1->m_skinnedBones[j].isKinematic) continue;

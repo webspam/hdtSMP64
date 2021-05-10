@@ -31,7 +31,6 @@ namespace hdt
     __device__
     constexpr int vertexListThresholdFactor() { return 2; }
 
-
     __device__ cuVector3::cuVector3()
     {}
 
@@ -317,7 +316,8 @@ namespace hdt
         cuVector3 ab = p1 - p0;
         cuVector3 ac = p2 - p0;
         cuVector3 raw_normal = penType == eExternal ? crossProduct(ac, ab) : crossProduct(ab, ac);
-        float area = raw_normal.magnitude();
+        float area2 = raw_normal.magnitude2();
+        float area = sqrt(area2);
 
         // Check for degenerate triangles
         if (area < FLT_EPSILON)
@@ -360,7 +360,7 @@ namespace hdt
         ab = crossProduct(cp, ap);
         float areaC = dotProduct(ac, raw_normal);
         float areaB = dotProduct(ab, raw_normal);
-        float areaA = area - areaB - areaC;
+        float areaA = area2 - areaB - areaC;
         if (areaA < 0 || areaB < 0 || areaC < 0)
         {
             return false;
@@ -384,11 +384,11 @@ namespace hdt
         int* vertexList
     )
     {
-        int threadInWarp = tid & 0x1f;
+        int threadInWarp = threadIdx.x & 0x1f;
         int warpid = threadIdx.x >> 5;
         int nwarps = blockSize >> 5;
 
-        // Set up vertex list for shape A
+        // Set up vertex list for shape
         int nCeil = (((n - 1) / blockSize) + 1) * blockSize;
         int blockStart = 0;
         for (int i = tid; blockStart < vertexListSize() && i < nCeil; i += blockSize)
@@ -415,7 +415,7 @@ namespace hdt
             // Now we can calculate where to put the index, if it's a potential collision
             if (collision)
             {
-                unsigned int lanemask = (1L << threadInWarp) - 1;
+                unsigned int lanemask = (1UL << threadInWarp) - 1;
                 int index = warpStart + __popc(mask & lanemask);
                 if (index < vertexListSize())
                 {
@@ -423,17 +423,23 @@ namespace hdt
                 }
             }
 
+            __syncthreads();
+
             // Extend the partial sum from the last warp to a total sum, and update the block start
             if (warpid == (nwarps - 1) && threadInWarp == 0)
             {
                 intShared[0] = a + intShared[nwarps - 1];
             }
+
             __syncthreads();
+
             blockStart += intShared[0];
+
+            __syncthreads();
         }
 
         // Update number of colliders in A and the total number of pairs
-       return min(blockStart, vertexListSize());
+        return min(blockStart, vertexListSize());
     }
 
     // kernelCollision does the supporting work for threading the collision checks and making sure that only
@@ -582,7 +588,7 @@ namespace hdt
                     }
 #endif
 
-                    if (i < nPairs&& collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
+                    if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
                     {
                         temp.colliderA = static_cast<cuCollider*>(0) + iA;
                         temp.colliderB = static_cast<cuCollider*>(0) + iB;
@@ -626,10 +632,10 @@ namespace hdt
         }
     }
 
-    void cuCreateStream(void** ptr)
+    cuResult cuCreateStream(void** ptr)
     {
         *ptr = new cudaStream_t;
-        cudaStreamCreate(reinterpret_cast<cudaStream_t*>(*ptr));
+        return cudaStreamCreate(reinterpret_cast<cudaStream_t*>(*ptr));
     }
 
     void cuDestroyStream(void* ptr)
@@ -638,14 +644,14 @@ namespace hdt
         delete reinterpret_cast<cudaStream_t*>(ptr);
     }
 
-    void cuGetDeviceBuffer(void** buf, int size)
+    cuResult cuGetDeviceBuffer(void** buf, int size)
     {
-        cudaMalloc(buf, size);
+        return cudaMalloc(buf, size);
     }
 
-    void cuGetHostBuffer(void** buf, int size)
+    cuResult cuGetHostBuffer(void** buf, int size)
     {
-        cudaMallocHost(buf, size);
+        return cudaMallocHost(buf, size);
     }
 
     void cuFreeDevice(void* buf)
@@ -658,48 +664,47 @@ namespace hdt
         cudaFreeHost(buf);
     }
 
-    void cuCopyToDevice(void* dst, void* src, size_t n, void* stream)
+    cuResult cuCopyToDevice(void* dst, void* src, size_t n, void* stream)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        cudaMemcpyAsync(dst, src, n, cudaMemcpyHostToDevice, *s);
+        return cudaMemcpyAsync(dst, src, n, cudaMemcpyHostToDevice, *s);
     }
 
-    void cuCopyToHost(void* dst, void* src, size_t n, void* stream)
+    cuResult cuCopyToHost(void* dst, void* src, size_t n, void* stream)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        cudaMemcpyAsync(dst, src, n, cudaMemcpyDeviceToHost, *s);
+        return cudaMemcpyAsync(dst, src, n, cudaMemcpyDeviceToHost, *s);
     }
 
-    bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData)
+    cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
 
         kernelBodyUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, boneData);
-        return cudaPeekAtLastError() == cudaSuccess;
+        return cuResult();
     }
 
-    bool cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData)
+    cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
 
         kernelPerVertexUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, vertexData);
-        return cudaPeekAtLastError() == cudaSuccess;
+        return cuResult();
     }
 
-
-    bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData)
+    cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
 
         kernelPerTriangleUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, vertexData);
-        return cudaPeekAtLastError() == cudaSuccess;
+        return cuResult();
     }
 
     template<cuPenetrationType penType, typename T>
-    bool cuRunCollision(
+    cuResult cuRunCollision(
         void* stream,
         int n,
         cuCollisionSetup* setup,
@@ -716,19 +721,19 @@ namespace hdt
         int sharedMemorySize = (32 + 2 * vertexListSize()) * sizeof(float);
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), sharedMemorySize, *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
-        return cudaPeekAtLastError() == cudaSuccess;
+        return cuResult();
     }
 
-    bool cuRunBoundingBoxReduce(void* stream, int n, int largestNode, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output)
+    cuResult cuRunBoundingBoxReduce(void* stream, int n, int largestNode, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output)
     {
         // Reduction kernel only uses a single warp per tree node, becoming linear performance if there are
         // more than 64 boxes. The reduction itself is entirely intra-warp, without any shared memory use.
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         kernelBoundingBoxReduce <<<n, 64, sizeof(cuAabb), *s >>> (n, setup, boundingBoxes, output);
-        return cudaPeekAtLastError() == cudaSuccess;
+        return cuResult();
     }
 
-    bool cuSynchronize(void* stream)
+    cuResult cuSynchronize(void* stream)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
@@ -738,14 +743,14 @@ namespace hdt
         }
         else
         {
-            return cudaDeviceSynchronize() == cudaSuccess;
+            return cudaDeviceSynchronize();
         }
     }
 
-    void cuCreateEvent(void** ptr)
+    cuResult cuCreateEvent(void** ptr)
     {
         *ptr = new cudaEvent_t;
-        cudaEventCreate(reinterpret_cast<cudaEvent_t*>(*ptr));
+        return cudaEventCreate(reinterpret_cast<cudaEvent_t*>(*ptr));
     }
 
     void cuDestroyEvent(void* ptr)
@@ -779,8 +784,8 @@ namespace hdt
         return count;
     }
 
-    template bool cuRunCollision<eNone, cuPerVertexInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerVertexInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
-    template bool cuRunCollision<eNone, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
-    template bool cuRunCollision<eExternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
-    template bool cuRunCollision<eInternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template cuResult cuRunCollision<eNone, cuPerVertexInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerVertexInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template cuResult cuRunCollision<eNone, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template cuResult cuRunCollision<eExternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
+    template cuResult cuRunCollision<eInternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, cuAabb*, cuAabb*, cuVector3*, cuVector3*, cuCollisionResult*);
 }

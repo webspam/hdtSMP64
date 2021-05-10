@@ -4,11 +4,52 @@
 #include <immintrin.h>
 
 #include <tuple>
+#include <string>
 
 namespace hdt
 {
 	class CudaPerVertexShape;
 	class CudaPerTriangleShape;
+
+	class cuResult
+	{
+	public:
+
+#ifdef __NVCC__
+		cuResult(cudaError_t error = cudaGetLastError())
+			: m_ok(error == cudaSuccess)
+		{
+			if (!m_ok)
+			{
+				m_message = cudaGetErrorString(error);
+			}
+		}
+#else
+		bool check(std::string context)
+		{
+			if (!m_ok)
+			{
+				_MESSAGE("%s: %s", context.c_str(), m_message.c_str());
+			}
+			return m_ok;
+		}
+#endif
+
+		operator bool()
+		{
+			return m_ok;
+		}
+
+		std::string message()
+		{
+			return m_message;
+		}
+
+	private:
+
+		bool m_ok;
+		std::string m_message;
+	};
 
 	template <typename StructT, typename... Args>
 	struct PlanarStruct
@@ -273,30 +314,30 @@ namespace hdt
 		cuAabb boundingBoxB;
 	};
 
-	void cuCreateStream(void** ptr);
+	cuResult cuCreateStream(void** ptr);
 
 	void cuDestroyStream(void* ptr);
 
-	void cuGetDeviceBuffer(void** buf, int size);
+	cuResult cuGetDeviceBuffer(void** buf, int size);
 
-	void cuGetHostBuffer(void** buf, int size);
+	cuResult cuGetHostBuffer(void** buf, int size);
 
 	void cuFreeDevice(void* buf);
 
 	void cuFreeHost(void* buf);
 
-	void cuCopyToDevice(void* dst, void* src, size_t n, void* stream);
+	cuResult cuCopyToDevice(void* dst, void* src, size_t n, void* stream);
 
-	void cuCopyToHost(void* dst, void* src, size_t n, void* stream);
+	cuResult cuCopyToHost(void* dst, void* src, size_t n, void* stream);
 
-	bool cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData);
+	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData);
 
-	bool cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData);
+	cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData);
 
-	bool cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
+	cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
 
 	template <cuPenetrationType penType = eNone, typename T>
-	bool cuRunCollision(
+	cuResult cuRunCollision(
 		void* stream,
 		int n,
 		cuCollisionSetup* setup,
@@ -308,11 +349,11 @@ namespace hdt
 		cuVector3* vertexDataB,
 		cuCollisionResult* output);
 
-	bool cuRunBoundingBoxReduce(void* stream, int n, int largestNode, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output);
+	cuResult cuRunBoundingBoxReduce(void* stream, int n, int largestNode, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output);
 
-	bool cuSynchronize(void* stream = nullptr);
+	cuResult cuSynchronize(void* stream = nullptr);
 
-	void cuCreateEvent(void** ptr);
+	cuResult cuCreateEvent(void** ptr);
 
 	void cuDestroyEvent(void* ptr);
 
