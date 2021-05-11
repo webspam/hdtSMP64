@@ -254,6 +254,13 @@ namespace hdt
 			});
 
 		m_pairs.clear();
+
+#ifdef MEASURE_PERFORMANCE
+		QueryPerformanceCounter(&ticks);
+		int64_t time_collide = ticks.QuadPart;
+		int64_t collide_time = (time_collide - time_end) / ticks_per_us;
+		_MESSAGE("Collision processing took %d us", collide_time);
+#endif
 	}
 
 	int CollisionDispatcher::getNumManifolds() const

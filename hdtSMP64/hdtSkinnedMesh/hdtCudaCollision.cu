@@ -404,13 +404,24 @@ namespace hdt
             }
             __syncthreads();
 
-            // Compute partial sum counts in warps before this one and broadcast across the warp
-            int a = (threadInWarp < warpid) ? intShared[threadInWarp] : 0;
-            for (int j = nwarps >> 1; j > 0; j >>= 1)
+            // Compute partial sum counts for warps
+            if (warpid == 0)
             {
-                a += __shfl_down_sync(0xffffffff, a, j);
+                int a = intShared[threadInWarp];
+                for (int j = 1; j < nwarps; j <<= 1)
+                {
+                    int b = __shfl_up_sync(0xffffffff, a, j);
+                    if (threadInWarp >= j)
+                    {
+                        a += b;
+                    }
+                }
+                intShared[threadInWarp] = blockStart + a;
             }
-            int warpStart = blockStart + __shfl_sync(0xffffffff, a, 0);
+
+            __syncthreads();
+
+            int warpStart = (warpid > 0) ? intShared[warpid - 1] : blockStart;
 
             // Now we can calculate where to put the index, if it's a potential collision
             if (collision)
@@ -423,15 +434,9 @@ namespace hdt
                 }
             }
 
-            // Extend the partial sum from the last warp to a total sum, and update the block start
-            if (warpid == (nwarps - 1) && threadInWarp == 0)
-            {
-                intShared[32] = a + intShared[nwarps - 1];
-            }
+            blockStart = intShared[nwarps - 1];
 
             __syncthreads();
-
-            blockStart += intShared[32];
         }
 
         // Update number of colliders in A and the total number of pairs
@@ -490,7 +495,7 @@ namespace hdt
             }
             else
             {
-                int* vertexListA = intShared + 33;
+                int* vertexListA = intShared + 32;
                 int* vertexListB = vertexListA + vertexListSize();
 
                 bool haveListA = false;
@@ -714,7 +719,7 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        int sharedMemorySize = (33 + 2 * vertexListSize()) * sizeof(float);
+        int sharedMemorySize = (32 + 2 * vertexListSize()) * sizeof(float);
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), sharedMemorySize, *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cuResult();
