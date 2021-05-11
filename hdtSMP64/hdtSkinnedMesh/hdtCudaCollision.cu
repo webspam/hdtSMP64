@@ -423,19 +423,15 @@ namespace hdt
                 }
             }
 
-            __syncthreads();
-
             // Extend the partial sum from the last warp to a total sum, and update the block start
             if (warpid == (nwarps - 1) && threadInWarp == 0)
             {
-                intShared[0] = a + intShared[nwarps - 1];
+                intShared[32] = a + intShared[nwarps - 1];
             }
 
             __syncthreads();
 
-            blockStart += intShared[0];
-
-            __syncthreads();
+            blockStart += intShared[32];
         }
 
         // Update number of colliders in A and the total number of pairs
@@ -494,7 +490,7 @@ namespace hdt
             }
             else
             {
-                int* vertexListA = intShared + 32;
+                int* vertexListA = intShared + 33;
                 int* vertexListB = vertexListA + vertexListSize();
 
                 bool haveListA = false;
@@ -718,7 +714,7 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        int sharedMemorySize = (32 + 2 * vertexListSize()) * sizeof(float);
+        int sharedMemorySize = (33 + 2 * vertexListSize()) * sizeof(float);
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), sharedMemorySize, *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cuResult();

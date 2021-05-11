@@ -646,10 +646,10 @@ namespace hdt
 	{
 		for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
 		{
-			if (!body0->canCollideWith(body0->m_skinnedBones[i].ptr)) continue;
+			if (!body1->canCollideWith(body0->m_skinnedBones[i].ptr)) continue;
 			for (int j = 0; j < body1->m_skinnedBones.size(); ++j)
 			{
-				if (!body1->canCollideWith(body1->m_skinnedBones[j].ptr)) continue;
+				if (!body0->canCollideWith(body1->m_skinnedBones[j].ptr)) continue;
 				if (get(i, j)->weight < FLT_EPSILON) continue;
 
 				if (body0->m_skinnedBones[i].isKinematic && body1->m_skinnedBones[j].isKinematic) continue;
