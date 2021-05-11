@@ -384,6 +384,7 @@ namespace hdt
         int* vertexList
     )
     {
+        int* partialSums = intShared + 32;
         int threadInWarp = threadIdx.x & 0x1f;
         int warpid = threadIdx.x >> 5;
         int nwarps = blockSize >> 5;
@@ -416,12 +417,12 @@ namespace hdt
                         a += b;
                     }
                 }
-                intShared[threadInWarp] = blockStart + a;
+                partialSums[threadInWarp] = blockStart + a;
             }
 
             __syncthreads();
 
-            int warpStart = (warpid > 0) ? intShared[warpid - 1] : blockStart;
+            int warpStart = (warpid > 0) ? partialSums[warpid - 1] : blockStart;
 
             // Now we can calculate where to put the index, if it's a potential collision
             if (collision)
@@ -434,9 +435,7 @@ namespace hdt
                 }
             }
 
-            blockStart = intShared[nwarps - 1];
-
-            __syncthreads();
+            blockStart = partialSums[nwarps - 1];
         }
 
         // Update number of colliders in A and the total number of pairs
@@ -495,7 +494,7 @@ namespace hdt
             }
             else
             {
-                int* vertexListA = intShared + 32;
+                int* vertexListA = intShared + 64;
                 int* vertexListB = vertexListA + vertexListSize();
 
                 bool haveListA = false;
@@ -562,6 +561,11 @@ namespace hdt
                         haveListA = true;
                     }
                 }
+
+                // kernelComputeVertexList doesn't do a final synchronize, because it's OK to run it
+                // sequentially for both lists without synchronizing between them. So we need to synchronize
+                // now to make sure the vertex lists are fully visible.
+                __syncthreads();
 
                 nPairs = nA * nB;
 
@@ -719,7 +723,7 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        int sharedMemorySize = (32 + 2 * vertexListSize()) * sizeof(float);
+        int sharedMemorySize = (64 + 2 * vertexListSize()) * sizeof(float);
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), sharedMemorySize, *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cuResult();
