@@ -725,7 +725,7 @@ namespace hdt
         return cuResult();
     }
 
-    cuResult cuRunBoundingBoxReduce(void* stream, int n, int largestNode, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output)
+    cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output)
     {
         // Reduction kernel only uses a single warp per tree node, becoming linear performance if there are
         // more than 64 boxes. The reduction itself is entirely intra-warp, without any shared memory use.

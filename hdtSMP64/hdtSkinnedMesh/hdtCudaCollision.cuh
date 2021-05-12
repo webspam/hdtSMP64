@@ -349,7 +349,7 @@ namespace hdt
 		cuVector3* vertexDataB,
 		cuCollisionResult* output);
 
-	cuResult cuRunBoundingBoxReduce(void* stream, int n, int largestNode, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output);
+	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output);
 
 	cuResult cuSynchronize(void* stream = nullptr);
 

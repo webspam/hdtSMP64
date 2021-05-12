@@ -380,13 +380,13 @@ namespace hdt
 			m_nodeAabbs(m_numNodes)
 		{
 			std::vector<NodePair> nodeData;
-			buildNodeData(*tree, m_nodeData.get(), &m_largestNode);
+			buildNodeData(*tree, m_nodeData.get());
 			m_nodeData.toDevice(stream);
 		}
 
 		void launch(CudaStream& stream, cuAabb* boundingBoxes)
 		{
-			cuRunBoundingBoxReduce(stream, m_numNodes, m_largestNode, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD()).check(__FUNCTION__);
+			cuRunBoundingBoxReduce(stream, m_numNodes, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD()).check(__FUNCTION__);
 			m_nodeAabbs.toHost(stream);
 		}
 
@@ -402,7 +402,7 @@ namespace hdt
 
 		static int nodeCount(ColliderTree& tree)
 		{
-			int count = 1;
+			int count = tree.numCollider ? 1 : 0;
 			for (auto& child : tree.children)
 			{
 				count += nodeCount(child);
@@ -410,22 +410,29 @@ namespace hdt
 			return count;
 		}
 
-		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData, int* largestNode)
+		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData)
 		{
-			*nodeData++ = { tree.aabb - m_tree->aabb, tree.numCollider };
-			*largestNode = tree.numCollider;
+			if (tree.numCollider)
+			{
+				*nodeData++ = { tree.aabb - m_tree->aabb, tree.numCollider };
+			}
 			for (auto& child : tree.children)
 			{
-				int size;
-				nodeData = buildNodeData(child, nodeData, &size);
-				*largestNode = max(*largestNode, size);
+				nodeData = buildNodeData(child, nodeData);
 			}
 			return nodeData;
 		}
 
 		Aabb* updateBoundingBoxes(ColliderTree& tree, Aabb* boundingBoxes)
 		{
-			tree.aabbMe = *boundingBoxes++;
+			if (tree.numCollider)
+			{
+				tree.aabbMe = *boundingBoxes++;
+			}
+			else
+			{
+				tree.aabbMe.invalidate();
+			}
 			tree.aabbAll = tree.aabbMe;
 			for (auto& child : tree.children)
 			{
