@@ -11,16 +11,20 @@ namespace hdt
     // Block size for map type operations (vertex and bounding box calculations). Since there's no reduction
     // in these, we just set this for maximum occupancy (currently 100% for bounding boxes, 75% for vertex
     // calculation).
-    constexpr int cuMapBlockSize() { return 256; }
+    constexpr int cuMapBlockSize() { return 128; }
+
+    // Block size for bounding box reduction. Each warp here is independent - larger blocks just do multiple
+    // chunks at once. Should be at least 64 for maximum occupancy.
+    constexpr int cuReduceBlockSize() { return 64; }
 
     template<typename T>
     constexpr int collisionBlockSize();
 
     // Block size for collision checking. Must be a power of 2 for the simple inter-warp reductions to work.
     template<>
-    constexpr int collisionBlockSize<cuPerVertexInput>() { return 512; }
+    constexpr int collisionBlockSize<cuPerVertexInput>() { return 256; }
     template<>
-    constexpr int collisionBlockSize<cuPerTriangleInput>() { return 512; }
+    constexpr int collisionBlockSize<cuPerTriangleInput>() { return 256; }
 
     // Maximum number of vertices per patch
     __host__ __device__
@@ -29,7 +33,7 @@ namespace hdt
     // Maximum number of iterations of collision checking with a single vertex list. If there are too many
     // potential collisions to finish in this number of passes, we compute the second vertex list as well.
     __device__
-    constexpr int vertexListThresholdFactor() { return 2; }
+    constexpr int vertexListThresholdFactor() { return 4; }
 
     __device__ cuVector3::cuVector3()
     {}
@@ -145,11 +149,11 @@ namespace hdt
             b1.aabbMax.z < b2.aabbMin.z);
     }
 
-    __global__
-        void kernelPerVertexUpdate(int n, const cuPerVertexInput* __restrict__ in, cuAabb* __restrict__ out, const cuVector3* __restrict__ vertexData)
+    template <unsigned int BlockSize = cuMapBlockSize()>
+    __global__ void kernelPerVertexUpdate(int n, const cuPerVertexInput* __restrict__ in, cuAabb* __restrict__ out, const cuVector3* __restrict__ vertexData)
     {
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        int index = blockIdx.x * BlockSize + threadIdx.x;
+        int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
@@ -160,11 +164,11 @@ namespace hdt
         }
     }
 
-    __global__
-        void kernelPerTriangleUpdate(int n, const cuPerTriangleInput* __restrict__ in, cuAabb* __restrict__ out, const cuVector3* __restrict__ vertexData)
+    template <unsigned int BlockSize = cuMapBlockSize()>
+    __global__ void kernelPerTriangleUpdate(int n, const cuPerTriangleInput* __restrict__ in, cuAabb* __restrict__ out, const cuVector3* __restrict__ vertexData)
     {
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        int index = blockIdx.x * BlockSize + threadIdx.x;
+        int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
@@ -181,22 +185,25 @@ namespace hdt
         }
     }
 
-    __global__
-        void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const cuAabb* __restrict__ boundingBoxes, cuAabb* output)
+    template< unsigned int BlockSize = cuReduceBlockSize() >
+    __global__ void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const cuAabb* __restrict__ boundingBoxes, cuAabb* output)
     {
-        extern __shared__ cuAabb sharedBox[];
+        int tid = threadIdx.x;
+        int threadInWarp = tid & 0x1f;
+        int warpid = tid >> 5;
+        constexpr int nwarps = BlockSize >> 5;
+        int stride = gridDim.x * nwarps;
 
-        for (int block = blockIdx.x; block < n; block += gridDim.x)
+        for (int block = blockIdx.x * nwarps + warpid; block < n; block += stride)
         {
             const cuAabb* aabbStart = boundingBoxes + nodeData[block].first;
             int aabbCount = nodeData[block].second;
-            int tid = threadIdx.x;
 
             // Load the first block of bounding boxes
-            cuAabb temp = (tid < aabbCount) ? aabbStart[tid] : cuAabb();
+            cuAabb temp = (threadInWarp < aabbCount) ? aabbStart[threadInWarp] : cuAabb();
 
             // Take union with each successive block
-            for (int i = tid + blockDim.x; i < aabbCount; i += blockDim.x)
+            for (int i = threadInWarp + 32; i < aabbCount; i += 32)
             {
                 temp.aabbMin = perElementMin(temp.aabbMin, aabbStart[i].aabbMin);
                 temp.aabbMax = perElementMax(temp.aabbMax, aabbStart[i].aabbMax);
@@ -213,16 +220,11 @@ namespace hdt
                 temp.aabbMax.z = max(temp.aabbMax.z, __shfl_down_sync(0xffffffff, temp.aabbMax.z, j));
             }
 
-            // One-stage inter-warp reduce, to get maximum (theoretical) occupancy
-            if (tid == 32)
+            // Store result
+            if (threadInWarp == 0)
             {
-                sharedBox[0] = temp;
-            }
-            __syncthreads();
-            if (tid == 0)
-            {
-                output[block].aabbMin = perElementMin(temp.aabbMin, sharedBox[0].aabbMin);
-                output[block].aabbMax = perElementMax(temp.aabbMax, sharedBox[0].aabbMax);
+                output[block].aabbMin = temp.aabbMin;
+                output[block].aabbMax = temp.aabbMax;
             }
         }
     }
@@ -238,11 +240,11 @@ namespace hdt
         return result;
     }
 
-    __global__
-        void kernelBodyUpdate(int n, const cuVertex* __restrict__ in, cuVector3* __restrict__ out, const cuBone* __restrict__ boneData)
+    template <unsigned int BlockSize = cuMapBlockSize()>
+    __global__ void kernelBodyUpdate(int n, const cuVertex* __restrict__ in, cuVector3* __restrict__ out, const cuBone* __restrict__ boneData)
     {
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-        int stride = blockDim.x * gridDim.x;
+        int index = blockIdx.x * BlockSize + threadIdx.x;
+        int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
@@ -373,10 +375,10 @@ namespace hdt
         return true;
     }
 
+    template<int BlockSize>
     __device__ int kernelComputeVertexList(
         int start,
         int n,
-        int blockSize,
         int tid,
         const cuAabb* boundingBoxes,
         const cuAabb& boundingBox,
@@ -385,14 +387,14 @@ namespace hdt
     )
     {
         int* partialSums = intShared + 32;
-        int threadInWarp = threadIdx.x & 0x1f;
-        int warpid = threadIdx.x >> 5;
-        int nwarps = blockSize >> 5;
+        int threadInWarp = tid & 0x1f;
+        int warpid = tid >> 5;
+        constexpr int nwarps = BlockSize >> 5;
 
         // Set up vertex list for shape
-        int nCeil = (((n - 1) / blockSize) + 1) * blockSize;
+        int nCeil = (((n - 1) / BlockSize) + 1) * BlockSize;
         int blockStart = 0;
-        for (int i = tid; blockStart < vertexListSize() && i < nCeil; i += blockSize)
+        for (int i = tid; blockStart < vertexListSize() && i < nCeil; i += BlockSize)
         {
             int vertex = i + start;
             bool collision = i < n && boundingBoxCollision(boundingBoxes[vertex], boundingBox);
@@ -422,11 +424,10 @@ namespace hdt
 
             __syncthreads();
 
-            int warpStart = (warpid > 0) ? partialSums[warpid - 1] : blockStart;
-
             // Now we can calculate where to put the index, if it's a potential collision
             if (collision)
             {
+                int warpStart = (warpid > 0) ? partialSums[warpid - 1] : blockStart;
                 unsigned int lanemask = (1UL << threadInWarp) - 1;
                 int index = warpStart + __popc(mask & lanemask);
                 if (index < vertexListSize())
@@ -444,7 +445,7 @@ namespace hdt
 
     // kernelCollision does the supporting work for threading the collision checks and making sure that only
     // the deepest result is kept.
-    template <cuPenetrationType penType = eNone, typename T>
+    template <cuPenetrationType penType = eNone, typename T, int BlockSize = collisionBlockSize<T>()>
     __global__ void __launch_bounds__(collisionBlockSize<T>(), 1024 / collisionBlockSize<T>()) kernelCollision(
         int n,
         const cuCollisionSetup* __restrict__ setup,
@@ -456,18 +457,18 @@ namespace hdt
         const cuVector3* __restrict__ vertexDataB,
         cuCollisionResult* output)
     {
-        extern __shared__ float floatShared[];
+        __shared__ float floatShared[64 + 2 * vertexListSize()];
         int* intShared = reinterpret_cast<int*>(floatShared);
 
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
-        int warpid = threadIdx.x >> 5;
-        int nwarps = blockDim.x >> 5;
+        int warpid = tid >> 5;
+        constexpr int nwarps = BlockSize >> 5;
         
         for (int block = blockIdx.x; block < n; block += gridDim.x)
         {
             int nA = setup[block].sizeA;
-            int nB = setup[block].sizeB;
+            int nB = setup[block].sizeB; 
             int offsetA = setup[block].offsetA;
             int offsetB = setup[block].offsetB;
 
@@ -477,14 +478,14 @@ namespace hdt
             temp.depth = 1;
             int nPairs = nA * nB;
 
-            if (nPairs <= blockDim.x * vertexListThresholdFactor())
+            if (nPairs <= BlockSize * vertexListThresholdFactor())
             {
                 // If we have fewer possible collider pairs than threads, we can just check every pair in one
                 // step, and skip the bounding box check altogether.
-                for (int i = tid; i < nPairs; i += blockDim.x)
+                for (int i = tid; i < nPairs; i += BlockSize)
                 {
-                    int iA = offsetA + tid % nA;
-                    int iB = offsetB + tid / nA;
+                    int iA = offsetA + i % nA;
+                    int iB = offsetB + i / nA;
                     if (collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
                     {
                         temp.colliderA = static_cast<cuCollider*>(0) + iA;
@@ -507,10 +508,9 @@ namespace hdt
                 // blocks.
                 if (nA > nB)
                 {
-                    nA = kernelComputeVertexList(
+                    nA = kernelComputeVertexList<BlockSize>(
                         offsetA,
                         nA,
-                        blockDim.x,
                         tid,
                         boundingBoxesA,
                         setup[block].boundingBoxB,
@@ -518,12 +518,11 @@ namespace hdt
                         vertexListA
                     );
                     haveListA = true;
-                    if (nA * nB > blockDim.x * vertexListThresholdFactor())
+                    if (nA * nB > BlockSize * vertexListThresholdFactor())
                     {
-                        nB = kernelComputeVertexList(
+                        nB = kernelComputeVertexList<BlockSize>(
                             offsetB,
                             nB,
-                            blockDim.x,
                             tid,
                             boundingBoxesB,
                             setup[block].boundingBoxA,
@@ -535,10 +534,9 @@ namespace hdt
                 }
                 else
                 {
-                    nB = kernelComputeVertexList(
+                    nB = kernelComputeVertexList<BlockSize>(
                         offsetB,
                         nB,
-                        blockDim.x,
                         tid,
                         boundingBoxesB,
                         setup[block].boundingBoxA,
@@ -546,12 +544,11 @@ namespace hdt
                         vertexListB
                     );
                     haveListB = true;
-                    if (nA * nB > blockDim.x * vertexListThresholdFactor())
+                    if (nA * nB > BlockSize * vertexListThresholdFactor())
                     {
-                        nA = kernelComputeVertexList(
+                        nA = kernelComputeVertexList<BlockSize>(
                             offsetA,
                             nA,
-                            blockDim.x,
                             tid,
                             boundingBoxesA,
                             setup[block].boundingBoxB,
@@ -569,7 +566,7 @@ namespace hdt
 
                 nPairs = nA * nB;
 
-                for (int i = tid; i < nPairs; i += blockDim.x)
+                for (int i = tid; i < nPairs; i += BlockSize)
                 {
                     int iA = haveListA ? vertexListA[i % nA] : offsetA + i % nA;
                     int iB = haveListB ? vertexListB[i / nA] : offsetB + i / nA;
@@ -579,11 +576,11 @@ namespace hdt
                     // this at all if there are more pairs than threads - if there's only enough work for a
                     // single iteration (very common), there's no benefit to trying to reduce it.
 #ifdef GPU_BOUNDING_BOX_CHECK
-                    if (nPairs > blockDim.x)
+                    if (nPairs > BlockSize)
                     {
                         while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
                         {
-                            i += blockDim.x;
+                            i += BlockSize;
                             if (i < nPairs)
                             {
                                 iA = haveListA ? vertexListA[i % nA] : offsetA + i % nA;
@@ -723,8 +720,7 @@ namespace hdt
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
-        int sharedMemorySize = (64 + 2 * vertexListSize()) * sizeof(float);
-        kernelCollision<penType> <<<n, collisionBlockSize<T>(), sharedMemorySize, *s >>> (
+        kernelCollision<penType> <<<n, collisionBlockSize<T>(), 0, *s >>> (
             n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
         return cuResult();
     }
@@ -734,7 +730,9 @@ namespace hdt
         // Reduction kernel only uses a single warp per tree node, becoming linear performance if there are
         // more than 64 boxes. The reduction itself is entirely intra-warp, without any shared memory use.
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        kernelBoundingBoxReduce <<<n, 64, sizeof(cuAabb), *s >>> (n, setup, boundingBoxes, output);
+        constexpr int warpsPerBlock = cuReduceBlockSize() >> 5;
+        int nBlocks = ((n - 1) / warpsPerBlock) + 1;
+        kernelBoundingBoxReduce <<<nBlocks, cuReduceBlockSize(), 0, *s >>> (n, setup, boundingBoxes, output);
         return cuResult();
     }
 
