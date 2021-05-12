@@ -92,7 +92,9 @@ namespace hdt
 #ifndef __NVCC__
 		PlanarStruct(StructT* buffer, size_t n)
 			: m_buffer(reinterpret_cast<uint8_t*>(buffer)), m_size(n)
-		{}
+		{
+			static_assert(size == sizeof(StructT));
+		}
 #else
 		__host__ __device__ PlanarStruct(StructT* buffer, size_t n)
 			: m_buffer(reinterpret_cast<uint8_t*>(buffer)), m_size(n)
@@ -120,13 +122,13 @@ namespace hdt
 					return s->getPlane<N>()[n];
 				}
 			};
-			template <int N, typename... Ts>
-			struct Getter<N, PlanarStruct<Ts...>>
+			template <int N, typename T, typename... Ts>
+			struct Getter<N, PlanarStruct<T, Ts...>>
 			{
-				using type = PlanarStruct<Ts...>::GetHelper;
+				using type = PlanarStruct<T, Ts...>::GetHelper;
 				__device__ __forceinline__ static type get(PlanarStruct* s, size_t n)
 				{
-					return PlanarStruct<Ts...>::GetHelper(s->getPlane<N>(), n);
+					return PlanarStruct<T, Ts...>(reinterpret_cast<T*>(s->getPlane<N>()), s->m_size)[n];
 				}
 			};
 
@@ -191,6 +193,11 @@ namespace hdt
 		__device__ __forceinline__ GetHelper operator[](size_t i)
 		{
 			return GetHelper(this, i);
+		}
+
+		__device__ __forceinline__ const GetHelper operator[](size_t i) const
+		{
+			return GetHelper(const_cast<PlanarStruct*>(this), i);
 		}
 #endif
 
@@ -314,6 +321,9 @@ namespace hdt
 		cuAabb boundingBoxB;
 	};
 
+	using PlanarVectorArray = PlanarStruct<cuVector3, float, float, float, float>;
+	using PlanarBoundingBoxArray = PlanarStruct<cuAabb, PlanarVectorArray, PlanarVectorArray>;
+
 	cuResult cuCreateStream(void** ptr);
 
 	void cuDestroyStream(void* ptr);
@@ -330,11 +340,11 @@ namespace hdt
 
 	cuResult cuCopyToHost(void* dst, void* src, size_t n, void* stream);
 
-	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector3* output, cuBone* boneData);
+	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, PlanarVectorArray output, cuBone* boneData);
 
-	cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, cuAabb* output, cuVector3* vertexData);
+	cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, PlanarBoundingBoxArray output, PlanarVectorArray vertexData);
 
-	cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, cuAabb* output, cuVector3* vertexData);
+	cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, PlanarBoundingBoxArray output, PlanarVectorArray vertexData);
 
 	template <cuPenetrationType penType = eNone, typename T>
 	cuResult cuRunCollision(
@@ -343,13 +353,13 @@ namespace hdt
 		cuCollisionSetup* setup,
 		cuPerVertexInput* inA,
 		T* inB,
-		cuAabb* boundingBoxesA,
-		cuAabb* boundingBoxesB,
-		cuVector3* vertexDataA,
-		cuVector3* vertexDataB,
+		PlanarBoundingBoxArray boundingBoxesA,
+		PlanarBoundingBoxArray boundingBoxesB,
+		PlanarVectorArray vertexDataA,
+		PlanarVectorArray vertexDataB,
 		cuCollisionResult* output);
 
-	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, cuAabb* boundingBoxes, cuAabb* output);
+	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, PlanarBoundingBoxArray boundingBoxes, cuAabb* output);
 
 	cuResult cuSynchronize(void* stream = nullptr);
 

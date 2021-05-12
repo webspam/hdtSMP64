@@ -298,7 +298,6 @@ namespace hdt
 			m_vertexData.toDevice(m_stream);
 
 			body->m_bones.reset(m_bones.get(), NullDeleter<Bone[]>());
-			body->m_vpos.reset(m_vertexBuffer.get(), NullDeleter<VertexPos[]>());
 		}
 
 		void launch()
@@ -328,7 +327,7 @@ namespace hdt
 		}
 
 		CudaStream m_stream;
-		CudaBuffer<cuVector3, VertexPos> m_vertexBuffer;
+		CudaDeviceBuffer<PlanarVectorArray> m_vertexBuffer;
 
 	private:
 
@@ -384,7 +383,7 @@ namespace hdt
 			m_nodeData.toDevice(stream);
 		}
 
-		void launch(CudaStream& stream, cuAabb* boundingBoxes)
+		void launch(CudaStream& stream, PlanarBoundingBoxArray boundingBoxes)
 		{
 			cuRunBoundingBoxReduce(stream, m_numNodes, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD()).check(__FUNCTION__);
 			m_nodeAabbs.toHost(stream);
@@ -488,7 +487,7 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerTriangleInput> m_input;
-		CudaDeviceBuffer<cuAabb> m_output;
+		CudaDeviceBuffer<PlanarBoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		const cuPenetrationType m_penetrationType;
 	private:
@@ -558,7 +557,7 @@ namespace hdt
 		}
 
 		CudaBuffer<cuPerVertexInput> m_input;
-		CudaDeviceBuffer<cuAabb> m_output;
+		CudaDeviceBuffer<PlanarBoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		int m_numColliders;
 
