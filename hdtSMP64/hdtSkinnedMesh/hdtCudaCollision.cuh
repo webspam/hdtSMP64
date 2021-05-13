@@ -118,6 +118,8 @@ namespace hdt
 			struct Getter
 			{
 				using type = T&;
+				using value_type = T;
+
 				__device__ __forceinline__ static type get(PlanarStruct* s, size_t n)
 				{
 					return s->getPlane<N>()[n];
@@ -127,6 +129,8 @@ namespace hdt
 			struct Getter<N, PlanarStruct<T, Ts...>>
 			{
 				using type = typename PlanarStruct<T, Ts...>::GetHelper;
+				using value_type = T;
+
 				__device__ __forceinline__ static type get(PlanarStruct* s, size_t n)
 				{
 					return PlanarStruct<T, Ts...>(reinterpret_cast<T*>(s->getPlane<N>()), s->m_size)[n];
@@ -158,9 +162,10 @@ namespace hdt
 				return getStruct(std::make_index_sequence<sizeof...(Args)>());
 			}
 
-			__device__ __forceinline__ void operator=(const StructT& s)
+			__device__ __forceinline__ auto operator=(const StructT& s)
 			{
 				set(s, std::make_index_sequence<sizeof...(Args)>());
+				return *this;
 			}
 
 		private:
@@ -185,7 +190,7 @@ namespace hdt
 			template <std::size_t... I>
 			__device__ __forceinline__ void set(const StructT& s, std::index_sequence<I...>)
 			{
-				dummy((get<I>() = *reinterpret_cast<const typename std::remove_reference<typename Getter<I, Args>::type>::type*>(reinterpret_cast<const uint8_t*>(&s) + offset<I>))...);
+				dummy((get<I>() = *reinterpret_cast<const typename Getter<I, Args>::value_type*>(reinterpret_cast<const uint8_t*>(&s) + offset<I>))...);
 			}
 
 			PlanarStruct* m_s;
