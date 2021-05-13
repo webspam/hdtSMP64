@@ -139,7 +139,7 @@ namespace hdt
 		public:
 
 			CudaDeviceBuffer(int n)
-				: m_size(32 * ((n - 1) / 32) + 1),
+				: m_size(32 * (((n - 1) / 32) + 1)),
 				m_buffer(m_size)
 			{}
 
