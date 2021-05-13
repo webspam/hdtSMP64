@@ -6,6 +6,12 @@
 #include <tuple>
 #include <string>
 
+#ifndef __NVCC__
+#define __host__
+#define __device__
+#define __forceinline__ __forceinline
+#endif
+
 namespace hdt
 {
 	class CudaPerVertexShape;
@@ -89,19 +95,14 @@ namespace hdt
 
 	public:
 
-#ifndef __NVCC__
-		PlanarStruct(StructT* buffer, size_t n)
-			: m_buffer(reinterpret_cast<uint8_t*>(buffer)), m_size(n)
-		{
-			static_assert(size == sizeof(StructT));
-		}
-#else
 		__host__ __device__ PlanarStruct(StructT* buffer, size_t n)
 			: m_buffer(reinterpret_cast<uint8_t*>(buffer)), m_size(n)
-		{}
+		{
+			static_assert(size == sizeof(StructT), "Element sizes do not match");
+		}
 
 		template <int N>
-		__device__ __forceinline__ std::tuple_element<N, TupleT>::type* getPlane()
+		__device__ __forceinline__ auto getPlane()
 		{
 			return reinterpret_cast<typename std::tuple_element<N, TupleT>::type*>(
 				m_buffer + m_size * offset<N>);
@@ -125,7 +126,7 @@ namespace hdt
 			template <int N, typename T, typename... Ts>
 			struct Getter<N, PlanarStruct<T, Ts...>>
 			{
-				using type = PlanarStruct<T, Ts...>::GetHelper;
+				using type = typename PlanarStruct<T, Ts...>::GetHelper;
 				__device__ __forceinline__ static type get(PlanarStruct* s, size_t n)
 				{
 					return PlanarStruct<T, Ts...>(reinterpret_cast<T*>(s->getPlane<N>()), s->m_size)[n];
@@ -135,13 +136,14 @@ namespace hdt
 		public:
 
 			template <int N>
-			__device__ __forceinline__ Getter<N, std::tuple_element<N, TupleT>::type>::type get()
+			__device__ __forceinline__ auto get()
+				-> typename Getter<N, typename std::tuple_element<N, TupleT>::type>::type
 			{
 				return Getter<N, typename std::tuple_element<N, TupleT>::type>::get(m_s, m_n);
 			}
 
 			template <int N>
-			__device__ __forceinline__ const Getter<N, std::tuple_element<N, TupleT>::type>::type get() const
+			__device__ __forceinline__ const auto get() const
 			{
 				return Getter<N, typename std::tuple_element<N, TupleT>::type>::get(m_s, m_n);
 			}
@@ -199,7 +201,6 @@ namespace hdt
 		{
 			return GetHelper(const_cast<PlanarStruct*>(this), i);
 		}
-#endif
 
 	private:
 
