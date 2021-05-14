@@ -42,6 +42,15 @@ namespace hdt
         : x(ix), y(iy), z(iz), w(iw)
     {}
 
+    __device__ __forceinline__ cuVector4::cuVector4(const cuVector3& v)
+        : x(v.x), y(v.y), z(v.z)
+    {}
+
+    __device__ __forceinline__ cuVector4::operator cuVector3() const
+    {
+        return { x, y, z };
+    }
+
     __device__ __forceinline__ cuVector4 cuVector4::operator+(const cuVector4& o) const
     {
         return { x + o.x, y + o.y, z + o.z, w + o.w };
@@ -102,33 +111,51 @@ namespace hdt
         return *this * rsqrt(magnitude2());
     }
 
-    __device__ __forceinline__ cuVector4 perElementMin(const cuVector4& v1, const cuVector4& v2)
-    {
-        return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z), min(v1.w, v2.w) };
-    }
-
-    __device__ __forceinline__ cuVector4 perElementMax(const cuVector4& v1, const cuVector4& v2)
-    {
-        return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z), max(v1.w, v2.w) };
-    }
-
-    __device__ cuAabb::cuAabb()
-        : aabbMin({ FLT_MAX, FLT_MAX, FLT_MAX, 0 }), aabbMax({ -FLT_MAX, -FLT_MAX, -FLT_MAX, 0 })
+    __device__ cuVector3::cuVector3(float ix, float iy, float iz)
+        : x(ix), y(iy), z(iz)
     {}
 
-    __device__ cuAabb::cuAabb(const cuVector4& v)
+    __device__ __forceinline__ cuVector3 perElementMin(const cuVector3& v1, const cuVector4& v2)
+    {
+        return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z) };
+    }
+
+    __device__ __forceinline__ cuVector3 perElementMax(const cuVector3& v1, const cuVector4& v2)
+    {
+        return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z) };
+    }
+
+    __device__ __forceinline__ cuVector3 perElementMin(const cuVector3& v1, const cuVector3& v2)
+    {
+        return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z) };
+    }
+
+    __device__ __forceinline__ cuVector3 perElementMax(const cuVector3& v1, const cuVector3& v2)
+    {
+        return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z) };
+    }
+
+    __device__ cuAabb3::cuAabb3()
+        : aabbMin({ FLT_MAX, FLT_MAX, FLT_MAX }), aabbMax({ -FLT_MAX, -FLT_MAX, -FLT_MAX })
+    {}
+
+    __device__ cuAabb3::cuAabb3(const cuVector3& mins, const cuVector3& maxs)
+        : aabbMin(mins), aabbMax(maxs)
+    {}
+
+    __device__ cuAabb3::cuAabb3(const cuVector4& v)
         : aabbMin(v), aabbMax(v)
     {}
 
     template<typename... Args>
-    __device__ __forceinline__ cuAabb::cuAabb(const cuVector4& v, const Args&... args)
-        : cuAabb(args...)
+    __device__ __forceinline__ cuAabb3::cuAabb3(const cuVector4& v, const Args&... args)
+        : cuAabb3(args...)
     {
         aabbMin = perElementMin(aabbMin, v);
         aabbMax = perElementMax(aabbMax, v);
     }
 
-    __device__ void cuAabb::addMargin(const float margin)
+    __device__ void cuAabb3::addMargin(const float margin)
     {
         aabbMin.x -= margin;
         aabbMin.y -= margin;
@@ -139,7 +166,7 @@ namespace hdt
     }
 
     __device__
-        bool boundingBoxCollision(const cuAabb& b1, const cuAabb& b2)
+        bool boundingBoxCollision(const cuAabb3& b1, const cuAabb& b2)
     {
         return !(b1.aabbMin.x > b2.aabbMax.x ||
             b1.aabbMin.y > b2.aabbMax.y ||
@@ -158,7 +185,7 @@ namespace hdt
         for (int i = index; i < n; i += stride)
         {
             const cuVector4 v = vertexData[in[i].vertexIndex];
-            cuAabb aabb(v);
+            cuAabb3 aabb(v);
             aabb.addMargin(v.w * in[i].margin);
             out[i] = aabb;
         }
@@ -179,7 +206,7 @@ namespace hdt
             float penetration = abs(in[i].penetration);
             float margin = max((v0.w + v1.w + v2.w) * in[i].margin / 3, penetration);
 
-            cuAabb aabb(v0, v1, v2);
+            cuAabb3 aabb(v0, v1, v2);
             aabb.addMargin(margin);
             out[i] = aabb;
         }
@@ -200,7 +227,7 @@ namespace hdt
             int aabbCount = nodeData[block].second;
 
             // Load the first block of bounding boxes
-            cuAabb temp = (threadInWarp < aabbCount) ? boundingBoxes[firstBox + threadInWarp] : cuAabb();
+            cuAabb3 temp = (threadInWarp < aabbCount) ? boundingBoxes[firstBox + threadInWarp] : cuAabb3();
 
             // Take union with each successive block
             for (int i = threadInWarp + 32; i < aabbCount; i += 32)
@@ -443,6 +470,22 @@ namespace hdt
         return min(blockStart, vertexListSize());
     }
 
+    template<int BlockSize>
+    __device__ int kernelPopulateVertexList(
+        int start,
+        int n,
+        int tid,
+        int* vertexList
+    )
+    {
+        int size = min(n, vertexListSize());
+        if (tid < size)
+        {
+            vertexList[tid] = start + tid;
+        }
+        return size;
+    }
+
     // kernelCollision does the supporting work for threading the collision checks and making sure that only
     // the deepest result is kept.
     template <cuPenetrationType penType = eNone, typename T, int BlockSize = collisionBlockSize<T>()>
@@ -457,6 +500,8 @@ namespace hdt
         const cuVector4* vertexDataB,
         cuCollisionResult* output)
     {
+        static_assert(vertexListSize() <= BlockSize, "Vertex list must be smaller than block size");
+
         __shared__ float floatShared[64 + 2 * vertexListSize()];
         int* intShared = reinterpret_cast<int*>(floatShared);
 
@@ -476,37 +521,16 @@ namespace hdt
             // collision, and later for mutual exclusion.
             cuCollisionResult temp;
             temp.depth = 1;
-            int nPairs = nA * nB;
 
-            if (nPairs <= BlockSize * vertexListThresholdFactor())
+            int* vertexListA = intShared + 64;
+            int* vertexListB = vertexListA + vertexListSize();
+
+            // Calculate or populate vertex lists, if the number of possible pairs is large. Start with the
+            // larger one, and only do the second if the number of pairs is still too high.
+            bool order = nA > nB;
+            if (order)
             {
-                // If we have fewer possible collider pairs than threads, we can just check every pair in one
-                // step, and skip the bounding box check altogether.
-                for (int i = tid; i < nPairs; i += BlockSize)
-                {
-                    int iA = offsetA + i % nA;
-                    int iB = offsetB + i / nA;
-                    if (collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
-                    {
-                        temp.colliderA = static_cast<cuCollider*>(0) + iA;
-                        temp.colliderB = static_cast<cuCollider*>(0) + iB;
-                    }
-                }
-            }
-            else
-            {
-                int* vertexListA = intShared + 64;
-                int* vertexListB = vertexListA + vertexListSize();
-
-                bool haveListA = false;
-                bool haveListB = false;
-
-                // Try to get the number of pairs down to a reasonable size, by building a collider list in
-                // shared memory from the larger patch. If the result is still large, do the smaller one as
-                // well. The threshold for doing this may need some tweaking for optimal performance, but
-                // the full collision check is pretty expensive so it won't be more than a couple of
-                // blocks.
-                if (nA > nB)
+                if (nA * nB > BlockSize * vertexListThresholdFactor())
                 {
                     nA = kernelComputeVertexList<BlockSize>(
                         offsetA,
@@ -515,86 +539,84 @@ namespace hdt
                         boundingBoxesA,
                         setup[block].boundingBoxB,
                         intShared,
-                        vertexListA
-                    );
-                    haveListA = true;
-                    if (nA * nB > BlockSize * vertexListThresholdFactor())
-                    {
-                        nB = kernelComputeVertexList<BlockSize>(
-                            offsetB,
-                            nB,
-                            tid,
-                            boundingBoxesB,
-                            setup[block].boundingBoxA,
-                            intShared,
-                            vertexListB
-                        );
-                        haveListB = true;
-                    }
+                        vertexListA);
                 }
                 else
                 {
-                    nB = kernelComputeVertexList<BlockSize>(
-                        offsetB,
-                        nB,
-                        tid,
-                        boundingBoxesB,
-                        setup[block].boundingBoxA,
-                        intShared,
-                        vertexListB
-                    );
-                    haveListB = true;
-                    if (nA * nB > BlockSize * vertexListThresholdFactor())
-                    {
-                        nA = kernelComputeVertexList<BlockSize>(
-                            offsetA,
-                            nA,
-                            tid,
-                            boundingBoxesA,
-                            setup[block].boundingBoxB,
-                            intShared,
-                            vertexListA
-                        );
-                        haveListA = true;
-                    }
+                    nA = kernelPopulateVertexList<BlockSize>(offsetA, nA, tid, vertexListA);
                 }
+            }
 
-                // kernelComputeVertexList doesn't do a final synchronize, because it's OK to run it
-                // sequentially for both lists without synchronizing between them. So we need to synchronize
-                // now to make sure the vertex lists are fully visible.
-                __syncthreads();
+            if (nA * nB > BlockSize * vertexListThresholdFactor())
+            {
+                nB = kernelComputeVertexList<BlockSize>(
+                    offsetB,
+                    nB,
+                    tid,
+                    boundingBoxesB,
+                    setup[block].boundingBoxA,
+                    intShared,
+                    vertexListB);
+            }
+            else
+            {
+                nB = kernelPopulateVertexList<BlockSize>(offsetB, nB, tid, vertexListB);
+            }
 
-                nPairs = nA * nB;
-
-                for (int i = tid; i < nPairs; i += BlockSize)
+            if (!order)
+            {
+                if (nA * nB > BlockSize * vertexListThresholdFactor())
                 {
-                    int iA = haveListA ? vertexListA[i % nA] : offsetA + i % nA;
-                    int iB = haveListB ? vertexListB[i / nA] : offsetB + i / nA;
+                    nA = kernelComputeVertexList<BlockSize>(
+                        offsetA,
+                        nA,
+                        tid,
+                        boundingBoxesA,
+                        setup[block].boundingBoxB,
+                        intShared,
+                        vertexListA);
+                }
+                else
+                {
+                    nA = kernelPopulateVertexList<BlockSize>(offsetA, nA, tid, vertexListA);
+                }
+            }
 
-                    // Skip pairs until we find one with a bounding box collision. This should increase the
-                    // number of full checks done in parallel, and reduce divergence overall. Note we only do
-                    // this at all if there are more pairs than threads - if there's only enough work for a
-                    // single iteration (very common), there's no benefit to trying to reduce it.
+            // kernelComputeVertexList doesn't do a final synchronize, because it's OK to run it
+            // sequentially for both lists without synchronizing between them. So we need to synchronize
+            // now to make sure the vertex lists are fully visible.
+            __syncthreads();
+
+            int nPairs = nA * nB;
+
+            for (int i = tid; i < nPairs; i += BlockSize)
+            {
+                int iA = vertexListA[i % nA];
+                int iB = vertexListB[i / nA];
+
+                // Skip pairs until we find one with a bounding box collision. This should increase the
+                // number of full checks done in parallel, and reduce divergence overall. Note we only do
+                // this at all if there are more pairs than threads - if there's only enough work for a
+                // single iteration (very common), there's no benefit to trying to reduce it.
 #ifdef GPU_BOUNDING_BOX_CHECK
-                    if (nPairs > BlockSize)
+                if (nPairs > BlockSize)
+                {
+                    while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
                     {
-                        while (i < nPairs && !boundingBoxCollision(boundingBoxesA[iA], boundingBoxesB[iB]))
+                        i += BlockSize;
+                        if (i < nPairs)
                         {
-                            i += BlockSize;
-                            if (i < nPairs)
-                            {
-                                iA = haveListA ? vertexListA[i % nA] : offsetA + i % nA;
-                                iB = haveListB ? vertexListB[i / nA] : offsetB + i / nA;
-                            }
+                            iA = vertexListA[i % nA];
+                            iB = vertexListB[i / nA];
                         }
                     }
+                }
 #endif
 
-                    if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
-                    {
-                        temp.colliderA = static_cast<cuCollider*>(0) + iA;
-                        temp.colliderB = static_cast<cuCollider*>(0) + iB;
-                    }
+                if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
+                {
+                    temp.colliderA = static_cast<cuCollider*>(0) + iA;
+                    temp.colliderB = static_cast<cuCollider*>(0) + iB;
                 }
             }
 

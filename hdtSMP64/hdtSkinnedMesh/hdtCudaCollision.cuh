@@ -223,6 +223,8 @@ namespace hdt
 		eNone
 	};
 
+	struct cuVector3;
+
 	union cuVector4
 	{
 		struct {
@@ -236,6 +238,8 @@ namespace hdt
 #ifdef __NVCC__
 		__device__ cuVector4();
 		__device__ cuVector4(float ix, float iy, float iz, float iw);
+		__device__ cuVector4(const cuVector3& v);
+		__device__ explicit operator cuVector3() const;
 
 		__device__ cuVector4 operator+(const cuVector4& o) const;
 		__device__ cuVector4 operator-(const cuVector4& o) const;
@@ -249,6 +253,16 @@ namespace hdt
 		__device__ float magnitude() const;
 		__device__ cuVector4 normalize() const;
 #endif
+	};
+
+	struct cuVector3
+	{
+#ifdef __NVCC__
+		__device__ cuVector3(float ix, float iy, float iz);
+#endif
+		float x;
+		float y;
+		float z;
 	};
 
 	struct cuTriangle
@@ -271,18 +285,25 @@ namespace hdt
 		float penetration;
 	};
 
-	struct cuAabb
+	struct cuAabb3
 	{
 #ifdef __NVCC__
-		__device__ cuAabb();
-		__device__ explicit cuAabb(const cuVector4& v);
+		__device__ cuAabb3();
+		__device__ cuAabb3(const cuVector3& mins, const cuVector3& maxs);
+		__device__ explicit cuAabb3(const cuVector4& v);
 
 		template<typename... Args>
-		__device__ explicit cuAabb(const cuVector4& v, const Args&... args);
+		__device__ explicit cuAabb3(const cuVector4& v, const Args&... args);
 
 		__device__ void addMargin(const float margin);
 #endif
 
+		cuVector3 aabbMin;
+		cuVector3 aabbMax;
+	};
+
+	struct cuAabb
+	{
 		cuVector4 aabbMin;
 		cuVector4 aabbMax;
 	};
@@ -327,8 +348,8 @@ namespace hdt
 		cuAabb boundingBoxB;
 	};
 
-	using PlanarVectorArray = PlanarStruct<cuVector4, float, float, float, float>;
-	using PlanarBoundingBoxArray = PlanarStruct<cuAabb, PlanarVectorArray, PlanarVectorArray>;
+	using PlanarVectorArray = PlanarStruct<cuVector3, float, float, float>;
+	using PlanarBoundingBoxArray = PlanarStruct<cuAabb3, PlanarVectorArray, PlanarVectorArray>;
 
 	cuResult cuCreateStream(void** ptr);
 
