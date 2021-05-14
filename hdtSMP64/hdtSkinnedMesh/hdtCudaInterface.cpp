@@ -327,7 +327,7 @@ namespace hdt
 		}
 
 		CudaStream m_stream;
-		CudaDeviceBuffer<PlanarVectorArray> m_vertexBuffer;
+		CudaDeviceBuffer<cuVector4> m_vertexBuffer;
 
 	private:
 

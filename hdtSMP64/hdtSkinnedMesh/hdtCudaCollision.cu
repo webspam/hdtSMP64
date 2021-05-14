@@ -35,79 +35,79 @@ namespace hdt
     __device__
     constexpr int vertexListThresholdFactor() { return 4; }
 
-    __device__ cuVector3::cuVector3()
+    __device__ cuVector4::cuVector4()
     {}
 
-    __device__ __forceinline__ cuVector3::cuVector3(float ix, float iy, float iz, float iw)
+    __device__ __forceinline__ cuVector4::cuVector4(float ix, float iy, float iz, float iw)
         : x(ix), y(iy), z(iz), w(iw)
     {}
 
-    __device__ __forceinline__ cuVector3 cuVector3::operator+(const cuVector3& o) const
+    __device__ __forceinline__ cuVector4 cuVector4::operator+(const cuVector4& o) const
     {
         return { x + o.x, y + o.y, z + o.z, w + o.w };
     }
 
-    __device__ __forceinline__ cuVector3 cuVector3::operator-(const cuVector3& o) const
+    __device__ __forceinline__ cuVector4 cuVector4::operator-(const cuVector4& o) const
     {
         return { x - o.x, y - o.y, z - o.z, w - o.w };
     }
 
-    __device__ __forceinline__ cuVector3 cuVector3::operator*(const float c) const
+    __device__ __forceinline__ cuVector4 cuVector4::operator*(const float c) const
     {
         return { x * c, y * c, z * c, w * c };
     }
 
-    __device__ __forceinline__ cuVector3& cuVector3::operator+=(const cuVector3& o)
+    __device__ __forceinline__ cuVector4& cuVector4::operator+=(const cuVector4& o)
     {
         *this = *this + o;
         return *this;
     }
 
-    __device__ __forceinline__ cuVector3& cuVector3::operator-=(const cuVector3& o)
+    __device__ __forceinline__ cuVector4& cuVector4::operator-=(const cuVector4& o)
     {
         *this = *this - o;
         return *this;
     }
 
-    __device__ __forceinline__ cuVector3& cuVector3::operator *= (const float c)
+    __device__ __forceinline__ cuVector4& cuVector4::operator *= (const float c)
     {
         *this = *this * c;
         return *this;
     }
 
     __device__
-        cuVector3 crossProduct(const cuVector3& v1, const cuVector3& v2)
+        cuVector4 crossProduct(const cuVector4& v1, const cuVector4& v2)
     {
         return { v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x, 0 };
     }
 
     __device__
-        float dotProduct(const cuVector3& v1, const cuVector3& v2)
+        float dotProduct(const cuVector4& v1, const cuVector4& v2)
     {
         return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
     }
 
-    __device__ float cuVector3::magnitude2() const
+    __device__ float cuVector4::magnitude2() const
     {
         return dotProduct(*this, *this);
     }
 
-    __device__ float cuVector3::magnitude() const
+    __device__ float cuVector4::magnitude() const
     {
         return sqrt(magnitude2());
     }
 
-    __device__ cuVector3 cuVector3::normalize() const
+    __device__ cuVector4 cuVector4::normalize() const
     {
         return *this * rsqrt(magnitude2());
     }
 
-    __device__ __forceinline__ cuVector3 perElementMin(const cuVector3& v1, const cuVector3& v2)
+    __device__ __forceinline__ cuVector4 perElementMin(const cuVector4& v1, const cuVector4& v2)
     {
         return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z), min(v1.w, v2.w) };
     }
 
-    __device__ __forceinline__ cuVector3 perElementMax(const cuVector3& v1, const cuVector3& v2)
+    __device__ __forceinline__ cuVector4 perElementMax(const cuVector4& v1, const cuVector4& v2)
     {
         return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z), max(v1.w, v2.w) };
     }
@@ -116,12 +116,12 @@ namespace hdt
         : aabbMin({ FLT_MAX, FLT_MAX, FLT_MAX, 0 }), aabbMax({ -FLT_MAX, -FLT_MAX, -FLT_MAX, 0 })
     {}
 
-    __device__ cuAabb::cuAabb(const cuVector3& v)
+    __device__ cuAabb::cuAabb(const cuVector4& v)
         : aabbMin(v), aabbMax(v)
     {}
 
     template<typename... Args>
-    __device__ __forceinline__ cuAabb::cuAabb(const cuVector3& v, const Args&... args)
+    __device__ __forceinline__ cuAabb::cuAabb(const cuVector4& v, const Args&... args)
         : cuAabb(args...)
     {
         aabbMin = perElementMin(aabbMin, v);
@@ -150,14 +150,14 @@ namespace hdt
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelPerVertexUpdate(int n, const cuPerVertexInput* __restrict__ in, PlanarBoundingBoxArray out, const PlanarVectorArray vertexData)
+    __global__ void kernelPerVertexUpdate(int n, const cuPerVertexInput* __restrict__ in, PlanarBoundingBoxArray out, const cuVector4* vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            const cuVector3 v = vertexData[in[i].vertexIndex];
+            const cuVector4 v = vertexData[in[i].vertexIndex];
             cuAabb aabb(v);
             aabb.addMargin(v.w * in[i].margin);
             out[i] = aabb;
@@ -165,16 +165,16 @@ namespace hdt
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelPerTriangleUpdate(int n, const cuPerTriangleInput* __restrict__ in, PlanarBoundingBoxArray out, const PlanarVectorArray vertexData)
+    __global__ void kernelPerTriangleUpdate(int n, const cuPerTriangleInput* __restrict__ in, PlanarBoundingBoxArray out, const cuVector4* vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            const cuVector3 v0 = vertexData[in[i].vertexIndices[0]];
-            const cuVector3 v1 = vertexData[in[i].vertexIndices[1]];
-            const cuVector3 v2 = vertexData[in[i].vertexIndices[2]];
+            const cuVector4 v0 = vertexData[in[i].vertexIndices[0]];
+            const cuVector4 v1 = vertexData[in[i].vertexIndices[1]];
+            const cuVector4 v2 = vertexData[in[i].vertexIndices[2]];
 
             float penetration = abs(in[i].penetration);
             float margin = max((v0.w + v1.w + v2.w) * in[i].margin / 3, penetration);
@@ -229,9 +229,9 @@ namespace hdt
         }
     }
 
-    __device__ cuVector3 calcVertexState(const cuVector3& skinPos, const cuBone& bone, float w)
+    __device__ cuVector4 calcVertexState(const cuVector4& skinPos, const cuBone& bone, float w)
     {
-        cuVector3 result;
+        cuVector4 result;
         result.x = bone.transform[0].x * skinPos.x + bone.transform[1].x * skinPos.y + bone.transform[2].x * skinPos.z + bone.transform[3].x;
         result.y = bone.transform[0].y * skinPos.x + bone.transform[1].y * skinPos.y + bone.transform[2].y * skinPos.z + bone.transform[3].y;
         result.z = bone.transform[0].z * skinPos.x + bone.transform[1].z * skinPos.y + bone.transform[2].z * skinPos.z + bone.transform[3].z;
@@ -241,15 +241,15 @@ namespace hdt
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelBodyUpdate(int n, const cuVertex* __restrict__ in, PlanarVectorArray out, const cuBone* __restrict__ boneData)
+    __global__ void kernelBodyUpdate(int n, const cuVertex* __restrict__ in, cuVector4* out, const cuBone* __restrict__ boneData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            cuVector3 pos = in[i].position;
-            cuVector3 v = calcVertexState(pos, boneData[in[i].bones[0]], in[i].weights[0]);
+            cuVector4 pos = in[i].position;
+            cuVector4 v = calcVertexState(pos, boneData[in[i].bones[0]], in[i].weights[0]);
             for (int j = 1; j < 4; ++j)
             {
                 v += calcVertexState(pos, boneData[in[i].bones[j]], in[i].weights[j]);
@@ -264,17 +264,17 @@ namespace hdt
     __device__ bool collidePair(
         const cuPerVertexInput& __restrict__ inputA,
         const cuPerVertexInput& __restrict__ inputB,
-        const PlanarVectorArray vertexDataA,
-        const PlanarVectorArray vertexDataB,
+        const cuVector4* vertexDataA,
+        const cuVector4* vertexDataB,
         cuCollisionResult& output)
     {
-        const cuVector3 vA = vertexDataA[inputA.vertexIndex];
-        const cuVector3 vB = vertexDataB[inputB.vertexIndex];
+        const cuVector4 vA = vertexDataA[inputA.vertexIndex];
+        const cuVector4 vB = vertexDataB[inputB.vertexIndex];
 
         float rA = vA.w * inputA.margin;
         float rB = vB.w * inputB.margin;
         float bound2 = (rA + rB) * (rA + rB);
-        cuVector3 diff = vA - vB;
+        cuVector4 diff = vA - vB;
         float dist2 = diff.magnitude2();
         float len = sqrt(dist2);
         float dist = len - (rA + rB);
@@ -301,23 +301,23 @@ namespace hdt
     __device__ bool collidePair(
         const cuPerVertexInput& __restrict__ inputA,
         const cuPerTriangleInput& __restrict__ inputB,
-        const PlanarVectorArray vertexDataA,
-        const PlanarVectorArray vertexDataB,
+        const cuVector4* vertexDataA,
+        const cuVector4* vertexDataB,
         cuCollisionResult& output)
     {
-        cuVector3 s = vertexDataA[inputA.vertexIndex];
+        cuVector4 s = vertexDataA[inputA.vertexIndex];
         float r = s.w * inputA.margin;
-        cuVector3 p0 = vertexDataB[inputB.vertexIndices[0]];
-        cuVector3 p1 = vertexDataB[inputB.vertexIndices[1]];
-        cuVector3 p2 = vertexDataB[inputB.vertexIndices[2]];
+        cuVector4 p0 = vertexDataB[inputB.vertexIndices[0]];
+        cuVector4 p1 = vertexDataB[inputB.vertexIndices[1]];
+        cuVector4 p2 = vertexDataB[inputB.vertexIndices[2]];
         float margin = (p0.w + p1.w + p2.w) / 3.0;
         float penetration = inputB.penetration * margin;
         margin *= inputB.margin;
 
         // Compute unit normal and twice area of triangle
-        cuVector3 ab = p1 - p0;
-        cuVector3 ac = p2 - p0;
-        cuVector3 raw_normal = penType == eExternal ? crossProduct(ac, ab) : crossProduct(ab, ac);
+        cuVector4 ab = p1 - p0;
+        cuVector4 ac = p2 - p0;
+        cuVector4 raw_normal = penType == eExternal ? crossProduct(ac, ab) : crossProduct(ab, ac);
         float area2 = raw_normal.magnitude2();
         float area = sqrt(area2);
 
@@ -326,10 +326,10 @@ namespace hdt
         {
             return false;
         }
-        cuVector3 normal = raw_normal * (1.0 / area);
+        cuVector4 normal = raw_normal * (1.0 / area);
 
         // Compute distance from point to plane and its projection onto the plane
-        cuVector3 ap = s - p0;
+        cuVector4 ap = s - p0;
         float distance = dotProduct(ap, normal);
 
         float radiusWithMargin = r + margin;
@@ -356,8 +356,8 @@ namespace hdt
         }
 
         // Compute triple products and check the projection lies in the triangle
-        cuVector3 bp = s - p1;
-        cuVector3 cp = s - p2;
+        cuVector4 bp = s - p1;
+        cuVector4 cp = s - p2;
         ac = crossProduct(ap, bp);
         ab = crossProduct(cp, ap);
         float areaC = dotProduct(ac, raw_normal);
@@ -453,8 +453,8 @@ namespace hdt
         const T* __restrict__ inB,
         const PlanarBoundingBoxArray boundingBoxesA,
         const PlanarBoundingBoxArray boundingBoxesB,
-        const PlanarVectorArray vertexDataA,
-        const PlanarVectorArray vertexDataB,
+        const cuVector4* vertexDataA,
+        const cuVector4* vertexDataB,
         cuCollisionResult* output)
     {
         __shared__ float floatShared[64 + 2 * vertexListSize()];
@@ -678,7 +678,7 @@ namespace hdt
         return cudaMemcpyAsync(dst, src, n, cudaMemcpyDeviceToHost, *s);
     }
 
-    cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, PlanarVectorArray output, cuBone* boneData)
+    cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
@@ -687,7 +687,7 @@ namespace hdt
         return cuResult();
     }
 
-    cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, PlanarBoundingBoxArray output, PlanarVectorArray vertexData)
+    cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, PlanarBoundingBoxArray output, cuVector4* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
@@ -696,7 +696,7 @@ namespace hdt
         return cuResult();
     }
 
-    cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, PlanarBoundingBoxArray output, PlanarVectorArray vertexData)
+    cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, PlanarBoundingBoxArray output, cuVector4* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
@@ -714,8 +714,8 @@ namespace hdt
         T* inB,
         PlanarBoundingBoxArray boundingBoxesA,
         PlanarBoundingBoxArray boundingBoxesB,
-        PlanarVectorArray vertexDataA,
-        PlanarVectorArray vertexDataB,
+        cuVector4* vertexDataA,
+        cuVector4* vertexDataB,
         cuCollisionResult* output)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
@@ -787,8 +787,8 @@ namespace hdt
         return count;
     }
 
-    template cuResult cuRunCollision<eNone, cuPerVertexInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerVertexInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, PlanarVectorArray, PlanarVectorArray, cuCollisionResult*);
-    template cuResult cuRunCollision<eNone, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, PlanarVectorArray, PlanarVectorArray, cuCollisionResult*);
-    template cuResult cuRunCollision<eExternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, PlanarVectorArray, PlanarVectorArray, cuCollisionResult*);
-    template cuResult cuRunCollision<eInternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, PlanarVectorArray, PlanarVectorArray, cuCollisionResult*);
+    template cuResult cuRunCollision<eNone, cuPerVertexInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerVertexInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
+    template cuResult cuRunCollision<eNone, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
+    template cuResult cuRunCollision<eExternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
+    template cuResult cuRunCollision<eInternal, cuPerTriangleInput>(void*, int, cuCollisionSetup*, cuPerVertexInput*, cuPerTriangleInput*, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
 }

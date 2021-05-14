@@ -223,7 +223,7 @@ namespace hdt
 		eNone
 	};
 
-	union cuVector3
+	union cuVector4
 	{
 		struct {
 			float x;
@@ -234,28 +234,28 @@ namespace hdt
 		__m128 val;
 
 #ifdef __NVCC__
-		__device__ cuVector3();
-		__device__ cuVector3(float ix, float iy, float iz, float iw);
+		__device__ cuVector4();
+		__device__ cuVector4(float ix, float iy, float iz, float iw);
 
-		__device__ cuVector3 operator+(const cuVector3& o) const;
-		__device__ cuVector3 operator-(const cuVector3& o) const;
-		__device__ cuVector3 operator*(const float c) const;
+		__device__ cuVector4 operator+(const cuVector4& o) const;
+		__device__ cuVector4 operator-(const cuVector4& o) const;
+		__device__ cuVector4 operator*(const float c) const;
 
-		__device__ cuVector3& operator+=(const cuVector3& o);
-		__device__ cuVector3& operator-=(const cuVector3& o);
-		__device__ cuVector3& operator*=(const float c);
+		__device__ cuVector4& operator+=(const cuVector4& o);
+		__device__ cuVector4& operator-=(const cuVector4& o);
+		__device__ cuVector4& operator*=(const float c);
 
 		__device__ float magnitude2() const;
 		__device__ float magnitude() const;
-		__device__ cuVector3 normalize() const;
+		__device__ cuVector4 normalize() const;
 #endif
 	};
 
 	struct cuTriangle
 	{
-		cuVector3 pA;
-		cuVector3 pB;
-		cuVector3 pC;
+		cuVector4 pA;
+		cuVector4 pB;
+		cuVector4 pC;
 	};
 
 	struct cuPerVertexInput
@@ -275,27 +275,27 @@ namespace hdt
 	{
 #ifdef __NVCC__
 		__device__ cuAabb();
-		__device__ explicit cuAabb(const cuVector3& v);
+		__device__ explicit cuAabb(const cuVector4& v);
 
 		template<typename... Args>
-		__device__ explicit cuAabb(const cuVector3& v, const Args&... args);
+		__device__ explicit cuAabb(const cuVector4& v, const Args&... args);
 
 		__device__ void addMargin(const float margin);
 #endif
 
-		cuVector3 aabbMin;
-		cuVector3 aabbMax;
+		cuVector4 aabbMin;
+		cuVector4 aabbMax;
 	};
 
 	struct cuBone
 	{
-		cuVector3 transform[4];
-		cuVector3 marginMultiplier; // Note only w component actually used
+		cuVector4 transform[4];
+		cuVector4 marginMultiplier; // Note only w component actually used
 	};
 
 	struct cuVertex
 	{
-		cuVector3 position;
+		cuVector4 position;
 		float weights[4];
 		uint32_t bones[4];
 	};
@@ -309,9 +309,9 @@ namespace hdt
 
 	struct cuCollisionResult
 	{
-		cuVector3 posA;
-		cuVector3 posB;
-		cuVector3 normOnB;
+		cuVector4 posA;
+		cuVector4 posB;
+		cuVector4 normOnB;
 		cuCollider* colliderA;
 		cuCollider* colliderB;
 		float depth;
@@ -327,7 +327,7 @@ namespace hdt
 		cuAabb boundingBoxB;
 	};
 
-	using PlanarVectorArray = PlanarStruct<cuVector3, float, float, float, float>;
+	using PlanarVectorArray = PlanarStruct<cuVector4, float, float, float, float>;
 	using PlanarBoundingBoxArray = PlanarStruct<cuAabb, PlanarVectorArray, PlanarVectorArray>;
 
 	cuResult cuCreateStream(void** ptr);
@@ -346,11 +346,11 @@ namespace hdt
 
 	cuResult cuCopyToHost(void* dst, void* src, size_t n, void* stream);
 
-	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, PlanarVectorArray output, cuBone* boneData);
+	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData);
 
-	cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, PlanarBoundingBoxArray output, PlanarVectorArray vertexData);
+	cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, PlanarBoundingBoxArray output, cuVector4* vertexData);
 
-	cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, PlanarBoundingBoxArray output, PlanarVectorArray vertexData);
+	cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, PlanarBoundingBoxArray output, cuVector4* vertexData);
 
 	template <cuPenetrationType penType = eNone, typename T>
 	cuResult cuRunCollision(
@@ -361,8 +361,8 @@ namespace hdt
 		T* inB,
 		PlanarBoundingBoxArray boundingBoxesA,
 		PlanarBoundingBoxArray boundingBoxesB,
-		PlanarVectorArray vertexDataA,
-		PlanarVectorArray vertexDataB,
+		cuVector4* vertexDataA,
+		cuVector4* vertexDataB,
 		cuCollisionResult* output);
 
 	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, PlanarBoundingBoxArray boundingBoxes, cuAabb* output);
