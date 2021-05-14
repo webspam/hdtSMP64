@@ -168,6 +168,7 @@
     <ClInclude Include="hdtSkinnedMesh\hdtCudaCollision.cuh" />
     <ClInclude Include="hdtSkinnedMesh\hdtCudaInterface.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtDispatcher.h" />
+    <ClInclude Include="hdtSkinnedMesh\hdtFrameTimer.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtGroupConstraintSolver.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtSimulationIslandManager.h" />
@@ -208,6 +209,7 @@
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Include="hdtSkinnedMesh\hdtDispatcher.cpp" />
+    <ClCompile Include="hdtSkinnedMesh\hdtFrameTimer.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGroupConstraintSolver.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtSimulationIslandManager.cpp" />

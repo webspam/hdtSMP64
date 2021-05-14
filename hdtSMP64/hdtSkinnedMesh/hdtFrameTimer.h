@@ -1,0 +1,42 @@
+#pragma once
+
+namespace hdt
+{
+	class FrameTimer
+	{
+	public:
+
+		static FrameTimer* instance();
+
+		enum Events
+		{
+			e_Start,
+			e_Internal,
+			e_End
+		};
+
+		enum Measurements
+		{
+			e_InternalUpdate,
+			e_Collision,
+			e_Total
+		};
+
+		void reset(int nFrames);
+		void logEvent(Events e);
+
+		bool running();
+		bool cudaFrame();
+
+	private:
+
+		int m_nFrames;
+		std::map<Events, int64_t> m_timings;
+
+		int m_count;
+		std::map<Measurements, float> m_sumsCPU;
+		std::map<Measurements, float> m_sumsSquaredCPU;
+		std::map<Measurements, float> m_sumsGPU;
+		std::map<Measurements, float> m_sumsSquaredGPU;
+	};
+}

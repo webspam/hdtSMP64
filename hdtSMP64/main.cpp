@@ -19,6 +19,7 @@
 #include "skse64_common/BranchTrampoline.h"
 
 #include "hdtSkinnedMesh/hdtCudaInterface.h"
+#include "hdtSkinnedMesh/hdtFrameTimer.h"
 
 namespace hdt
 {
@@ -363,6 +364,12 @@ namespace hdt
 			{
 				Console_Print("CUDA collision disabled");
 			}
+			return true;
+		}
+		if (_strnicmp(buffer, "timing", MAX_PATH) == 0)
+		{
+			FrameTimer::instance()->reset(200);
+			Console_Print("Started frame timing");
 			return true;
 		}
 		if (_strnicmp(buffer, "dumptree", MAX_PATH) == 0)

@@ -134,6 +134,9 @@
     <ClInclude Include="hdtSkinnedMesh\hdtCudaInterface.h">
       <Filter>hdtSkinnedMesh</Filter>
     </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtFrameTimer.h">
+      <Filter>hdtSkinnedMesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
@@ -236,6 +239,9 @@
       <Filter>hdtSkyrimProxy</Filter>
     </ClCompile>
     <ClCompile Include="hdtSkinnedMesh\hdtCudaInterface.cpp">
+      <Filter>hdtSkinnedMesh</Filter>
+    </ClCompile>
+    <ClCompile Include="hdtSkinnedMesh\hdtFrameTimer.cpp">
       <Filter>hdtSkinnedMesh</Filter>
     </ClCompile>
   </ItemGroup>

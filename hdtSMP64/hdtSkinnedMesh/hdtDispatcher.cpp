@@ -2,11 +2,9 @@
 #include "hdtSkinnedMeshBody.h"
 #include "hdtSkinnedMeshAlgorithm.h"
 #include "hdtCudaInterface.h"
+#include "hdtFrameTimer.h"
 
 #include <LinearMath/btPoolAllocator.h>
-
-// Comparison of CPU and GPU internal update performance
-//#define MEASURE_PERFORMANCE
 
 namespace hdt
 {
@@ -111,13 +109,11 @@ namespace hdt
 			else getNearCallback()(pair, *this, dispatchInfo);
 		});
 
-#ifdef MEASURE_PERFORMANCE
-		LARGE_INTEGER ticks;
-		QueryPerformanceCounter(&ticks);
-		int64_t time_start = ticks.QuadPart;
-#endif
+		bool haveCude = CudaInterface::instance()->hasCuda() && (!FrameTimer::instance()->running() || FrameTimer::instance()->cudaFrame());
 
-		if (CudaInterface::instance()->hasCuda())
+		FrameTimer::instance()->logEvent(FrameTimer::e_Start);
+
+		if (haveCude)
 		{
 			std::vector<SkinnedMeshBody*> bodies;
 			bodies.reserve(to_update.size());
@@ -209,12 +205,7 @@ namespace hdt
 				o.first->m_bulletShape.m_aabb = o.first->m_shape->m_tree.aabbAll;
 			}
 		}
-#ifdef MEASURE_PERFORMANCE
-		QueryPerformanceCounter(&ticks);
-		int64_t time_gpu = ticks.QuadPart;
-#else
 		else
-#endif
 		{
 			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			{
@@ -231,17 +222,9 @@ namespace hdt
 			});
 		}
 
-#ifdef MEASURE_PERFORMANCE
-		QueryPerformanceCounter(&ticks);
-		int64_t time_end = ticks.QuadPart;
-		QueryPerformanceFrequency(&ticks);
-		int64_t ticks_per_us = ticks.QuadPart / 1e6;
-		int64_t cpu_time = (time_end - time_gpu) / ticks_per_us;
-		int64_t gpu_time = (time_gpu - time_start) / ticks_per_us;
-		_MESSAGE("Internal updates took %d us on GPU, %d us on CPU, difference %d", gpu_time, cpu_time, gpu_time - cpu_time);
-#endif
+		FrameTimer::instance()->logEvent(FrameTimer::e_Internal);
 
-		if (CudaInterface::instance()->hasCuda())
+		if (haveCude)
 		{
 			CudaInterface::instance()->clearBufferPool();
 
@@ -279,12 +262,7 @@ namespace hdt
 
 		m_pairs.clear();
 
-#ifdef MEASURE_PERFORMANCE
-		QueryPerformanceCounter(&ticks);
-		int64_t time_collide = ticks.QuadPart;
-		int64_t collide_time = (time_collide - time_end) / ticks_per_us;
-		_MESSAGE("Collision processing took %d us", collide_time);
-#endif
+		FrameTimer::instance()->logEvent(FrameTimer::e_End);
 	}
 
 	int CollisionDispatcher::getNumManifolds() const

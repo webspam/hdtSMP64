@@ -42,7 +42,7 @@ The following parts of the collision algortihm are currently GPU accelerated:
 * Vertex position calculations for skinned mesh bodies
 * Collider bounding box calculations for per-vertex and per-triangle shapes
 * Aggregate bounding box calculation for internal nodes of collider trees
-* Building collider lists for the final collision check (for one body only)
+* Building collider lists for the final collision check
 * Sphere-sphere and sphere-triangle collision checks
 
 The following parts are still CPU-based:
@@ -53,12 +53,12 @@ The following parts are still CPU-based:
 This is still experimental, and may not give good performance. The old CPU collision algorithm was heavily
 optimized, so matching its framerate is not easy.
 
-* On a 6850K processor (6 cores, 3.6GHz) with a 1080Ti GPU, framerate in crowded areas is significantly worse
-  than with the CPU-only algorithm. The GPU algorithm typically gives about half the framerate of the CPU
-  one when under heavy load. But most of the time, both algorithms easily reach the framerate cap at 60fps.
-* On the same hardware, the internal update (vertex position and bounding box calculations) takes about the
-  same time on CPU and GPU, typically around 3ms per frame. It's the main collision check algorithm and/or
-  its supporting code that kills performance.
+* On a 6850K processor (6 cores, 3.6GHz) with a 1080Ti GPU, framerate in crowded areas is a little worse
+  than with the CPU-only algorithm. Most of the time, both algorithms easily reach the framerate cap at
+  60fps.
+* On the same hardware with only two cores enabled, the total collision time is around 2-3 times faster on
+  GPU than CPU. Of course, this translates to a less impressive framerate difference, because collision
+  checking is only one part of the HDT-SMP algorithm.
 
 If you have an i3 or i5 CPU (or the AMD equivalent) with a fast graphics card, the GPU algorithm may help. If
 you have an i7 or i9 CPU, or your graphics card already struggles with the base game, stick with the CPU
@@ -90,6 +90,9 @@ plugin recognizes the following optional parameters:
 * reset attempts to reload all meshes and reset the whole HDT-SMP system. However, it is a little buggy and
   may fail to reload some meshes or constraints properly.
 * gpu toggles the CUDA collision algorithm, if there is at least one CUDA device available.
+* timing starts a timing sequence for the collision detection algorithm. The next 200 frames will alternate
+  between CPU and GPU collision. Once complete, mean and standard deviation of timings for the two collision
+  algorithms are displayed on the console.
 * dumptree dumps the entire node tree of the current targeted NPC to the log file.
 * detail shows extended details of all tracked actors, including active and inactive armour and head parts.
 * list shows a more concise list of tracked actors.
@@ -97,7 +100,7 @@ plugin recognizes the following optional parameters:
 ## Coming soon (maybe)
 
 + Reworked tag system for better compartmentalized .xml files.
-+ More parallelism on collision checking.
++ Continued work on CUDA algorithms.
 
 ## Known issues
 

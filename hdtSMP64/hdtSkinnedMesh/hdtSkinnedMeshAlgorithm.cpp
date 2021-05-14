@@ -322,7 +322,7 @@ namespace hdt
 	};
 
 	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
-	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CUDA>
+	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CPURefactored>
 	struct CollisionCheckAlgorithm : public CollisionCheckDispatcher<T, SwapResults, Algorithm>
 	{
 		template <typename... Ts>
