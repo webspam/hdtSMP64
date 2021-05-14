@@ -241,17 +241,41 @@ namespace hdt
 		_MESSAGE("Internal updates took %d us on GPU, %d us on CPU, difference %d", gpu_time, cpu_time, gpu_time - cpu_time);
 #endif
 
-		CudaInterface::instance()->clearBufferPool();
+		if (CudaInterface::instance()->hasCuda())
+		{
+			CudaInterface::instance()->clearBufferPool();
 
-		// Now we can process the collisions
-		concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
-			[this](std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)
+			// Queue up collisions
+			std::vector<std::function<void()>> collisionFuncs(m_pairs.size() * 2);
+			concurrency::parallel_for(static_cast<size_t>(0), m_pairs.size(), [&](int i)
+			{
+				auto& pair = m_pairs[i];
+				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
+				{
+					SkinnedMeshAlgorithm::queueCollision(collisionFuncs.begin() + 2*i, pair.first, pair.second, this);
+				}
+			});
+
+			// Run the collisions in parallel
+			concurrency::parallel_for_each(collisionFuncs.begin(), collisionFuncs.end(),
+				[](std::function<void()>& f)
+			{
+				if (f)
+					f();
+			});
+		}
+		else
+		{
+			// Now we can process the collisions
+			concurrency::parallel_for_each(m_pairs.begin(), m_pairs.end(),
+				[this](std::pair<SkinnedMeshBody*, SkinnedMeshBody*>& i)
 			{
 				if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
 				{
 					SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
 				}
 			});
+		}
 
 		m_pairs.clear();
 

@@ -1,6 +1,5 @@
 #include "hdtSkinnedMeshAlgorithm.h"
 #include "hdtCollider.h"
-#include "hdtCudaInterface.h"
 
 #include <numeric>
 
@@ -690,6 +689,34 @@ namespace hdt
 		int count = std::min(checkCollide(shape0, shape1, collision), MaxCollisionCount);
 		if (count > 0)
 			merge.doMerge(shape0, shape1, collision, count);
+	}
+
+	void SkinnedMeshAlgorithm::queueCollision(
+		std::vector<std::function<void()>>::iterator queue,
+		SkinnedMeshBody* body0,
+		SkinnedMeshBody* body1,
+		CollisionDispatcher* dispatcher)
+	{
+		std::shared_ptr<MergeBuffer> merge = std::make_shared<MergeBuffer>();
+		merge->alloc(body0->m_skinnedBones.size(), body1->m_skinnedBones.size());
+
+		auto apply = std::make_shared<std::function<void()>>([=]()
+		{
+			merge->apply(body0, body1, dispatcher);
+			merge->release();
+		});
+
+		if (body0->m_shape->asPerTriangleShape() && body1->m_shape->asPerTriangleShape())
+		{
+			*queue++ = CollisionRunner<PerTriangleShape, true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), merge, apply);
+			*queue++ = CollisionRunner<PerTriangleShape, false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge, apply);
+		}
+		else if (body0->m_shape->asPerTriangleShape())
+			*queue++ = CollisionRunner<PerTriangleShape, true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), merge, apply);
+		else if (body1->m_shape->asPerTriangleShape())
+			*queue++ = CollisionRunner<PerTriangleShape, false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge, apply);
+		else
+			*queue++ = CollisionRunner<PerVertexShape, false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), merge, apply);
 	}
 
 	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
