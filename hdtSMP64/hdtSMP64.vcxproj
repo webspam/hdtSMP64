@@ -167,6 +167,7 @@
     <ClInclude Include="hdtSkinnedMesh\hdtConstraintGroup.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtCudaCollision.cuh" />
     <ClInclude Include="hdtSkinnedMesh\hdtCudaInterface.h" />
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaPlanarStruct.cuh" />
     <ClInclude Include="hdtSkinnedMesh\hdtDispatcher.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtFrameTimer.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.h" />

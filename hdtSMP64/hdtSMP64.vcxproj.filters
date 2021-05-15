@@ -137,6 +137,9 @@
     <ClInclude Include="hdtSkinnedMesh\hdtFrameTimer.h">
       <Filter>hdtSkinnedMesh</Filter>
     </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaPlanarStruct.cuh">
+      <Filter>hdtSkinnedMesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
