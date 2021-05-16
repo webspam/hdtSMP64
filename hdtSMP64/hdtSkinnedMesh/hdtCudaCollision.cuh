@@ -111,11 +111,11 @@ namespace hdt
 		float z;
 	};
 
-	struct cuTriangle
+	struct cuTriangleIndices
 	{
-		cuVector4 pA;
-		cuVector4 pB;
-		cuVector4 pC;
+		int a;
+		int b;
+		int c;
 	};
 
 	struct cuPerVertexInput
@@ -126,7 +126,7 @@ namespace hdt
 
 	struct cuPerTriangleInput
 	{
-		int vertexIndices[3];
+		cuTriangleIndices vertexIndices;
 		float margin;
 		float penetration;
 	};
@@ -196,6 +196,8 @@ namespace hdt
 
 	using PlanarVectorArray = PlanarStruct<cuVector3, float, float, float>;
 	using PlanarBoundingBoxArray = PlanarStruct<cuAabb3, PlanarVectorArray, PlanarVectorArray>;
+	using PlanarVertexInput = PlanarStruct<cuPerVertexInput, int, float>;
+	using PlanarTriangleInput = PlanarStruct<cuPerTriangleInput, PlanarStruct<cuTriangleIndices, int, int, int>, float, float>;
 
 	cuResult cuCreateStream(void** ptr);
 
@@ -215,17 +217,17 @@ namespace hdt
 
 	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData);
 
-	cuResult cuRunPerVertexUpdate(void* stream, int n, cuPerVertexInput* input, PlanarBoundingBoxArray output, cuVector4* vertexData);
+	cuResult cuRunPerVertexUpdate(void* stream, int n, PlanarVertexInput input, PlanarBoundingBoxArray output, cuVector4* vertexData);
 
-	cuResult cuRunPerTriangleUpdate(void* stream, int n, cuPerTriangleInput* input, PlanarBoundingBoxArray output, cuVector4* vertexData);
+	cuResult cuRunPerTriangleUpdate(void* stream, int n, PlanarTriangleInput input, PlanarBoundingBoxArray output, cuVector4* vertexData);
 
 	template <cuPenetrationType penType = eNone, typename T>
 	cuResult cuRunCollision(
 		void* stream,
 		int n,
 		cuCollisionSetup* setup,
-		cuPerVertexInput* inA,
-		T* inB,
+		PlanarVertexInput inA,
+		T inB,
 		PlanarBoundingBoxArray boundingBoxesA,
 		PlanarBoundingBoxArray boundingBoxesB,
 		cuVector4* vertexDataA,

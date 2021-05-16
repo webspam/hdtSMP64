@@ -2,6 +2,7 @@
 
 #include <ppl.h>
 #include <immintrin.h>
+#include <type_traits>
 
 struct cudaStream_t;
 
@@ -109,6 +110,44 @@ namespace hdt
 			HostT* m_hostData;
 		};
 
+		template <typename DeviceT, typename... DeviceArgs, typename HostT, typename... HostArgs>
+		class CudaBuffer<PlanarStruct<DeviceT, DeviceArgs...>, PlanarStruct<HostT, HostArgs...>>
+		{
+		public:
+
+			CudaBuffer(int n)
+				: m_size(n),
+				m_allocatedSize(32 * (((n - 1) / 32) + 1)),
+				m_buffer(m_allocatedSize)
+			{}
+
+			void toDevice(CudaStream& stream)
+			{
+				m_buffer.toDevice(stream);
+			}
+
+			void toHost(CudaStream& stream)
+			{
+				m_buffer.toHost(stream);
+			}
+
+			PlanarStruct<HostT, HostArgs...> get()
+			{
+				return { m_buffer.get(), m_allocatedSize };
+			}
+
+			PlanarStruct<DeviceT, DeviceArgs...> getD()
+			{
+				return { m_buffer.getD(), m_allocatedSize };
+			}
+
+		private:
+
+			int m_size;
+			int m_allocatedSize;
+			CudaBuffer<HostT, DeviceT> m_buffer;
+		};
+
 		template <typename CudaT>
 		class CudaDeviceBuffer
 		{
@@ -152,7 +191,6 @@ namespace hdt
 			int m_size;
 			CudaDeviceBuffer<T> m_buffer;
 		};
-
 
 		// Memory pool for small short-lived objects. This can grow arbitrarily in size, to the maximum required
 		// in a single frame. All allocations get cleared at the end of the frame.
@@ -456,11 +494,13 @@ namespace hdt
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
-				m_input[i].vertexIndices[0] = shape->m_colliders[i].vertices[0];
-				m_input[i].vertexIndices[1] = shape->m_colliders[i].vertices[1];
-				m_input[i].vertexIndices[2] = shape->m_colliders[i].vertices[2];
-				m_input[i].margin = shape->m_shapeProp.margin;
-				m_input[i].penetration = -abs(shape->m_shapeProp.penetration);
+				m_input.get()[i] = {
+					{ static_cast<int>(shape->m_colliders[i].vertices[0]),
+						static_cast<int>(shape->m_colliders[i].vertices[1]),
+						static_cast<int>(shape->m_colliders[i].vertices[2]) },
+					shape->m_shapeProp.margin,
+					-abs(shape->m_shapeProp.penetration)
+				};
 			}
 			m_input.toDevice(m_body->m_stream);
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
@@ -486,7 +526,7 @@ namespace hdt
 			m_tree.update();
 		}
 
-		CudaBuffer<cuPerTriangleInput> m_input;
+		CudaBuffer<PlanarTriangleInput> m_input;
 		CudaDeviceBuffer<PlanarBoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		const cuPenetrationType m_penetrationType;
@@ -529,8 +569,7 @@ namespace hdt
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
-				m_input[i].vertexIndex = shape->m_colliders[i].vertex;
-				m_input[i].margin = shape->m_shapeProp.margin;
+				m_input.get()[i] = { static_cast<int>(shape->m_colliders[i].vertex), shape->m_shapeProp.margin };
 			}
 			m_input.toDevice(m_body->m_stream);
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
@@ -556,7 +595,7 @@ namespace hdt
 			m_tree.update();
 		}
 
-		CudaBuffer<cuPerVertexInput> m_input;
+		CudaBuffer<PlanarVertexInput> m_input;
 		CudaDeviceBuffer<PlanarBoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		int m_numColliders;
@@ -669,29 +708,36 @@ namespace hdt
 		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
 		CudaPooledBuffer<cuCollisionSetup> m_setupBuffer;
 
-		auto collisionFunc() -> decltype(cuRunCollision<eNone, std::remove_pointer<decltype(m_shapeB->m_imp->m_input.getD())>::type>)*;
+		template<typename T>
+		struct InputType;
+		template<>
+		struct InputType<CudaPerVertexShape> { using type = PlanarVertexInput; };
+		template<>
+		struct InputType<CudaPerTriangleShape> { using type = PlanarTriangleInput; };
+
+		auto collisionFunc() -> decltype(cuRunCollision<eNone, typename InputType<T>::type>)*;
 	};
 
 	template<>
 	auto CudaCollisionPair<CudaPerVertexShape>::Imp::collisionFunc()
-		-> decltype(cuRunCollision<eNone, cuPerVertexInput>)*
+		-> decltype(cuRunCollision<eNone, PlanarVertexInput>)*
 	{
-		return cuRunCollision<eNone, cuPerVertexInput>;
+		return cuRunCollision<eNone, PlanarVertexInput>;
 	}
 
 	template<>
 	auto CudaCollisionPair<CudaPerTriangleShape>::Imp::collisionFunc()
-		-> decltype(cuRunCollision<eNone, cuPerTriangleInput>)*
+		-> decltype(cuRunCollision<eNone, PlanarTriangleInput>)*
 	{
 		switch (m_shapeB->m_imp->m_penetrationType)
 		{
 		case eNone:
-			return cuRunCollision<eNone, cuPerTriangleInput>;
+			return cuRunCollision<eNone, PlanarTriangleInput>;
 		case eInternal:
-			return cuRunCollision<eInternal, cuPerTriangleInput>;
+			return cuRunCollision<eInternal, PlanarTriangleInput>;
 		case eExternal:
 		default:
-			return cuRunCollision<eExternal, cuPerTriangleInput>;
+			return cuRunCollision<eExternal, PlanarTriangleInput>;
 		}
 	}
 
