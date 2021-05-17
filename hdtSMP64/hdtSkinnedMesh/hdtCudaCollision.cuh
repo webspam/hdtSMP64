@@ -60,12 +60,12 @@ namespace hdt
 	};
 
 	// Internal penetration is the most common case where penetration is positive
-	// External penetration is where penetration is negative, and the orientation of the triangle is reversed
 	// No penetration is where it is zero, and the triangle is treated as unoriented
+	// If penetration is negative, we handle it at the interface level by swapping two vertices and negating
+	// penetration, making it equivalent to the internal case.
 	enum cuPenetrationType
 	{
 		eInternal,
-		eExternal,
 		eNone
 	};
 
@@ -194,10 +194,10 @@ namespace hdt
 		cuAabb boundingBoxB;
 	};
 
-	using PlanarVectorArray = PlanarStruct<cuVector3, float, float, float>;
-	using PlanarBoundingBoxArray = PlanarStruct<cuAabb3, PlanarVectorArray, PlanarVectorArray>;
-	using PlanarVertexInput = PlanarStruct<cuPerVertexInput, int, float>;
-	using PlanarTriangleInput = PlanarStruct<cuPerTriangleInput, PlanarStruct<cuTriangleIndices, int, int, int>, float, float>;
+	using VectorArray = ArrayType<cuVector3, float, float, float>;
+	using BoundingBoxArray = ArrayType<cuAabb3, VectorArray, VectorArray>;
+	using VertexInputArray = ArrayType<cuPerVertexInput, int, float>;
+	using TriangleInputArray = ArrayType<cuPerTriangleInput, ArrayType<cuTriangleIndices, int, int, int>, float, float>;
 
 	cuResult cuCreateStream(void** ptr);
 
@@ -217,24 +217,24 @@ namespace hdt
 
 	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData);
 
-	cuResult cuRunPerVertexUpdate(void* stream, int n, PlanarVertexInput input, PlanarBoundingBoxArray output, cuVector4* vertexData);
+	cuResult cuRunPerVertexUpdate(void* stream, int n, VertexInputArray input, BoundingBoxArray output, cuVector4* vertexData);
 
-	cuResult cuRunPerTriangleUpdate(void* stream, int n, PlanarTriangleInput input, PlanarBoundingBoxArray output, cuVector4* vertexData);
+	cuResult cuRunPerTriangleUpdate(void* stream, int n, TriangleInputArray input, BoundingBoxArray output, cuVector4* vertexData);
 
 	template <cuPenetrationType penType = eNone, typename T>
 	cuResult cuRunCollision(
 		void* stream,
 		int n,
 		cuCollisionSetup* setup,
-		PlanarVertexInput inA,
+		VertexInputArray inA,
 		T inB,
-		PlanarBoundingBoxArray boundingBoxesA,
-		PlanarBoundingBoxArray boundingBoxesB,
+		BoundingBoxArray boundingBoxesA,
+		BoundingBoxArray boundingBoxesB,
 		cuVector4* vertexDataA,
 		cuVector4* vertexDataB,
 		cuCollisionResult* output);
 
-	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, PlanarBoundingBoxArray boundingBoxes, cuAabb* output);
+	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, BoundingBoxArray boundingBoxes, cuAabb* output);
 
 	cuResult cuSynchronize(void* stream = nullptr);
 

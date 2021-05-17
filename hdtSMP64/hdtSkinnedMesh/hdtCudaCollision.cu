@@ -22,9 +22,9 @@ namespace hdt
 
     // Block size for collision checking. Must be a power of 2 for the simple inter-warp reductions to work.
     template<>
-    constexpr int collisionBlockSize<PlanarVertexInput>() { return 256; }
+    constexpr int collisionBlockSize<VertexInputArray>() { return 256; }
     template<>
-    constexpr int collisionBlockSize<PlanarTriangleInput>() { return 256; }
+    constexpr int collisionBlockSize<TriangleInputArray>() { return 256; }
 
     // Maximum number of vertices per patch
     __host__ __device__
@@ -177,34 +177,36 @@ namespace hdt
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelPerVertexUpdate(int n, PlanarVertexInput in, PlanarBoundingBoxArray out, const cuVector4* vertexData)
+    __global__ void kernelPerVertexUpdate(int n, VertexInputArray in, BoundingBoxArray out, const cuVector4* vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            const cuVector4 v = vertexData[in[i].get<0>()];
+            const cuPerVertexInput data = in[i];
+            const cuVector4 v = vertexData[data.vertexIndex];
             cuAabb3 aabb(v);
-            aabb.addMargin(v.w * in[i].get<1>());
+            aabb.addMargin(v.w * data.margin);
             out[i] = aabb;
         }
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelPerTriangleUpdate(int n, PlanarTriangleInput in, PlanarBoundingBoxArray out, const cuVector4* vertexData)
+    __global__ void kernelPerTriangleUpdate(int n, TriangleInputArray in, BoundingBoxArray out, const cuVector4* vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
 
         for (int i = index; i < n; i += stride)
         {
-            const cuVector4 v0 = vertexData[in[i].get<0>().get<0>()];
-            const cuVector4 v1 = vertexData[in[i].get<0>().get<1>()];
-            const cuVector4 v2 = vertexData[in[i].get<0>().get<2>()];
+            const cuPerTriangleInput data = in[i];
+            const cuVector4 v0 = vertexData[data.vertexIndices.a];
+            const cuVector4 v1 = vertexData[data.vertexIndices.b];
+            const cuVector4 v2 = vertexData[data.vertexIndices.c];
 
-            float penetration = abs(in[i].get<2>());
-            float margin = max((v0.w + v1.w + v2.w) * in[i].get<1>() / 3, penetration);
+            float penetration = abs(data.penetration);
+            float margin = max((v0.w + v1.w + v2.w) * data.margin / 3, penetration);
 
             cuAabb3 aabb(v0, v1, v2);
             aabb.addMargin(margin);
@@ -213,7 +215,7 @@ namespace hdt
     }
 
     template< unsigned int BlockSize = cuReduceBlockSize() >
-    __global__ void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const PlanarBoundingBoxArray boundingBoxes, cuAabb* output)
+    __global__ void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const BoundingBoxArray boundingBoxes, cuAabb* output)
     {
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
@@ -232,8 +234,9 @@ namespace hdt
             // Take union with each successive block
             for (int i = threadInWarp + 32; i < aabbCount; i += 32)
             {
-                temp.aabbMin = perElementMin(temp.aabbMin, boundingBoxes[firstBox + i].get<0>());
-                temp.aabbMax = perElementMax(temp.aabbMax, boundingBoxes[firstBox + i].get<1>());
+                cuAabb3 box = boundingBoxes[firstBox + i];
+                temp.aabbMin = perElementMin(temp.aabbMin, box.aabbMin);
+                temp.aabbMax = perElementMax(temp.aabbMax, box.aabbMax);
             }
 
             // Intra-warp reduce
@@ -344,7 +347,7 @@ namespace hdt
         // Compute unit normal and twice area of triangle
         cuVector4 ab = p1 - p0;
         cuVector4 ac = p2 - p0;
-        cuVector4 raw_normal = penType == eExternal ? crossProduct(ac, ab) : crossProduct(ab, ac);
+        cuVector4 raw_normal = crossProduct(ab, ac);
         float area2 = raw_normal.magnitude2();
         float area = sqrt(area2);
 
@@ -407,7 +410,7 @@ namespace hdt
         int start,
         int n,
         int tid,
-        const PlanarBoundingBoxArray boundingBoxes,
+        const BoundingBoxArray boundingBoxes,
         const cuAabb& boundingBox,
         int* intShared,
         int* vertexList
@@ -492,10 +495,10 @@ namespace hdt
     __global__ void __launch_bounds__(collisionBlockSize<T>(), 1024 / collisionBlockSize<T>()) kernelCollision(
         int n,
         const cuCollisionSetup* __restrict__ setup,
-        const PlanarVertexInput inA,
+        const VertexInputArray inA,
         const T inB,
-        const PlanarBoundingBoxArray boundingBoxesA,
-        const PlanarBoundingBoxArray boundingBoxesB,
+        const BoundingBoxArray boundingBoxesA,
+        const BoundingBoxArray boundingBoxesB,
         const cuVector4* vertexDataA,
         const cuVector4* vertexDataB,
         cuCollisionResult* output)
@@ -709,7 +712,7 @@ namespace hdt
         return cuResult();
     }
 
-    cuResult cuRunPerVertexUpdate(void* stream, int n, PlanarVertexInput input, PlanarBoundingBoxArray output, cuVector4* vertexData)
+    cuResult cuRunPerVertexUpdate(void* stream, int n, VertexInputArray input, BoundingBoxArray output, cuVector4* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
@@ -718,7 +721,7 @@ namespace hdt
         return cuResult();
     }
 
-    cuResult cuRunPerTriangleUpdate(void* stream, int n, PlanarTriangleInput input, PlanarBoundingBoxArray output, cuVector4* vertexData)
+    cuResult cuRunPerTriangleUpdate(void* stream, int n, TriangleInputArray input, BoundingBoxArray output, cuVector4* vertexData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
         int numBlocks = (n - 1) / cuMapBlockSize() + 1;
@@ -732,10 +735,10 @@ namespace hdt
         void* stream,
         int n,
         cuCollisionSetup* setup,
-        PlanarVertexInput inA,
+        VertexInputArray inA,
         T inB,
-        PlanarBoundingBoxArray boundingBoxesA,
-        PlanarBoundingBoxArray boundingBoxesB,
+        BoundingBoxArray boundingBoxesA,
+        BoundingBoxArray boundingBoxesB,
         cuVector4* vertexDataA,
         cuVector4* vertexDataB,
         cuCollisionResult* output)
@@ -747,7 +750,7 @@ namespace hdt
         return cuResult();
     }
 
-    cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, PlanarBoundingBoxArray boundingBoxes, cuAabb* output)
+    cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, BoundingBoxArray boundingBoxes, cuAabb* output)
     {
         // Reduction kernel only uses a single warp per tree node, becoming linear performance if there are
         // more than 64 boxes. The reduction itself is entirely intra-warp, without any shared memory use.
@@ -809,8 +812,7 @@ namespace hdt
         return count;
     }
 
-    template cuResult cuRunCollision<eNone, PlanarVertexInput>(void*, int, cuCollisionSetup*, PlanarVertexInput, PlanarVertexInput, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
-    template cuResult cuRunCollision<eNone, PlanarTriangleInput>(void*, int, cuCollisionSetup*, PlanarVertexInput, PlanarTriangleInput, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
-    template cuResult cuRunCollision<eExternal, PlanarTriangleInput>(void*, int, cuCollisionSetup*, PlanarVertexInput, PlanarTriangleInput, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
-    template cuResult cuRunCollision<eInternal, PlanarTriangleInput>(void*, int, cuCollisionSetup*, PlanarVertexInput, PlanarTriangleInput, PlanarBoundingBoxArray, PlanarBoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
+    template cuResult cuRunCollision<eNone, VertexInputArray>(void*, int, cuCollisionSetup*, VertexInputArray, VertexInputArray, BoundingBoxArray, BoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
+    template cuResult cuRunCollision<eNone, TriangleInputArray>(void*, int, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
+    template cuResult cuRunCollision<eInternal, TriangleInputArray>(void*, int, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
 }

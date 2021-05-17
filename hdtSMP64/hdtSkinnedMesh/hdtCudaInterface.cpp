@@ -111,7 +111,7 @@ namespace hdt
 		};
 
 		template <typename DeviceT, typename... DeviceArgs, typename HostT, typename... HostArgs>
-		class CudaBuffer<PlanarStruct<DeviceT, DeviceArgs...>, PlanarStruct<HostT, HostArgs...>>
+		class CudaBuffer<ArrayType<DeviceT, DeviceArgs...>, ArrayType<HostT, HostArgs...>>
 		{
 		public:
 
@@ -131,12 +131,12 @@ namespace hdt
 				m_buffer.toHost(stream);
 			}
 
-			PlanarStruct<HostT, HostArgs...> get()
+			ArrayType<HostT, HostArgs...> get()
 			{
 				return { m_buffer.get(), m_allocatedSize };
 			}
 
-			PlanarStruct<DeviceT, DeviceArgs...> getD()
+			ArrayType<DeviceT, DeviceArgs...> getD()
 			{
 				return { m_buffer.getD(), m_allocatedSize };
 			}
@@ -173,7 +173,7 @@ namespace hdt
 		};
 
 		template <typename T, typename... Ts>
-		class CudaDeviceBuffer<PlanarStruct<T, Ts...>>
+		class CudaDeviceBuffer<ArrayType<T, Ts...>>
 		{
 		public:
 
@@ -182,8 +182,8 @@ namespace hdt
 				m_buffer(m_size)
 			{}
 
-			PlanarStruct<T, Ts...> getD() {
-				return PlanarStruct<T, Ts...>(m_buffer.getD(), m_size);
+			ArrayType<T, Ts...> getD() {
+				return ArrayType<T, Ts...>(m_buffer.getD(), m_size);
 			}
 
 		private:
@@ -421,7 +421,7 @@ namespace hdt
 			m_nodeData.toDevice(stream);
 		}
 
-		void launch(CudaStream& stream, PlanarBoundingBoxArray boundingBoxes)
+		void launch(CudaStream& stream, BoundingBoxArray boundingBoxes)
 		{
 			cuRunBoundingBoxReduce(stream, m_numNodes, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD()).check(__FUNCTION__);
 			m_nodeAabbs.toHost(stream);
@@ -486,7 +486,7 @@ namespace hdt
 
 		Imp(PerTriangleShape* shape)
 			: m_numColliders(shape->m_colliders.size()),
-			m_penetrationType(shape->m_shapeProp.penetration > FLT_EPSILON ? eInternal : shape->m_shapeProp.penetration < -FLT_EPSILON ? eExternal : eNone),
+			m_penetrationType(abs(shape->m_shapeProp.penetration) > FLT_EPSILON ? eInternal : eNone),
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size()),
@@ -494,13 +494,26 @@ namespace hdt
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
-				m_input.get()[i] = {
-					{ static_cast<int>(shape->m_colliders[i].vertices[0]),
-						static_cast<int>(shape->m_colliders[i].vertices[1]),
-						static_cast<int>(shape->m_colliders[i].vertices[2]) },
-					shape->m_shapeProp.margin,
-					-abs(shape->m_shapeProp.penetration)
-				};
+				if (shape->m_shapeProp.penetration < 0)
+				{
+					m_input.get()[i] = {
+						{ static_cast<int>(shape->m_colliders[i].vertices[1]),
+							static_cast<int>(shape->m_colliders[i].vertices[0]),
+							static_cast<int>(shape->m_colliders[i].vertices[2]) },
+						shape->m_shapeProp.margin,
+						shape->m_shapeProp.penetration
+					};
+				}
+				else
+				{
+					m_input.get()[i] = {
+						{ static_cast<int>(shape->m_colliders[i].vertices[0]),
+							static_cast<int>(shape->m_colliders[i].vertices[1]),
+							static_cast<int>(shape->m_colliders[i].vertices[2]) },
+						shape->m_shapeProp.margin,
+						-shape->m_shapeProp.penetration
+					};
+				}
 			}
 			m_input.toDevice(m_body->m_stream);
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
@@ -526,8 +539,8 @@ namespace hdt
 			m_tree.update();
 		}
 
-		CudaBuffer<PlanarTriangleInput> m_input;
-		CudaDeviceBuffer<PlanarBoundingBoxArray> m_output;
+		CudaBuffer<TriangleInputArray> m_input;
+		CudaDeviceBuffer<BoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		const cuPenetrationType m_penetrationType;
 	private:
@@ -595,8 +608,8 @@ namespace hdt
 			m_tree.update();
 		}
 
-		CudaBuffer<PlanarVertexInput> m_input;
-		CudaDeviceBuffer<PlanarBoundingBoxArray> m_output;
+		CudaBuffer<VertexInputArray> m_input;
+		CudaDeviceBuffer<BoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		int m_numColliders;
 
@@ -711,33 +724,30 @@ namespace hdt
 		template<typename T>
 		struct InputType;
 		template<>
-		struct InputType<CudaPerVertexShape> { using type = PlanarVertexInput; };
+		struct InputType<CudaPerVertexShape> { using type = VertexInputArray; };
 		template<>
-		struct InputType<CudaPerTriangleShape> { using type = PlanarTriangleInput; };
+		struct InputType<CudaPerTriangleShape> { using type = TriangleInputArray; };
 
 		auto collisionFunc() -> decltype(cuRunCollision<eNone, typename InputType<T>::type>)*;
 	};
 
 	template<>
 	auto CudaCollisionPair<CudaPerVertexShape>::Imp::collisionFunc()
-		-> decltype(cuRunCollision<eNone, PlanarVertexInput>)*
+		-> decltype(cuRunCollision<eNone, VertexInputArray>)*
 	{
-		return cuRunCollision<eNone, PlanarVertexInput>;
+		return cuRunCollision<eNone, VertexInputArray>;
 	}
 
 	template<>
 	auto CudaCollisionPair<CudaPerTriangleShape>::Imp::collisionFunc()
-		-> decltype(cuRunCollision<eNone, PlanarTriangleInput>)*
+		-> decltype(cuRunCollision<eNone, TriangleInputArray>)*
 	{
 		switch (m_shapeB->m_imp->m_penetrationType)
 		{
 		case eNone:
-			return cuRunCollision<eNone, PlanarTriangleInput>;
+			return cuRunCollision<eNone, TriangleInputArray>;
 		case eInternal:
-			return cuRunCollision<eInternal, PlanarTriangleInput>;
-		case eExternal:
-		default:
-			return cuRunCollision<eExternal, PlanarTriangleInput>;
+			return cuRunCollision<eInternal, TriangleInputArray>;
 		}
 	}
 

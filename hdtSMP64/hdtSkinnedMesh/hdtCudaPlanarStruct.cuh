@@ -9,7 +9,35 @@
 namespace hdt
 {
     template<typename StructT, typename... Args>
+    struct InterleavedStruct;
+
+    template<typename StructT, typename... Args>
     struct PlanarStruct;
+
+    template<typename... Args>
+    using ArrayType = InterleavedStruct<Args...>;
+
+    template<typename StructT, typename...>
+    struct InterleavedStruct
+    {
+        __host__ __device__ __forceinline__ InterleavedStruct(StructT* buffer, int)
+            : m_buffer(buffer)
+        {}
+
+        __host__ __device__ __forceinline__ StructT& operator[](int i)
+        {
+            return m_buffer[i];
+        }
+
+        __host__ __device__ __forceinline__ const StructT& operator[](int i) const
+        {
+            return m_buffer[i];
+        }
+
+    private:
+
+        StructT* const m_buffer;
+    };
 
     template<int... Vals>
     struct PackSum;
@@ -176,7 +204,7 @@ namespace hdt
         ptrType m_pointers;
     };
 
-    template<typename BaseT, typename StructT, typename T, int Offset, int N>
+    template<typename BaseT, typename StructT, typename T, int Offset>
     struct Getter
     {
         __host__ __device__ __forceinline__ static T& get(const BaseT& s, const int i)
@@ -185,8 +213,8 @@ namespace hdt
         }
     };
 
-    template<typename BaseT, typename StructT, typename T, typename... Ts, int Offset, int N>
-    struct Getter<BaseT, StructT, PlanarStruct<T, Ts...>, Offset, N>
+    template<typename BaseT, typename StructT, typename T, typename... Ts, int Offset>
+    struct Getter<BaseT, StructT, PlanarStruct<T, Ts...>, Offset>
     {
         __host__ __device__ __forceinline__ static PlanarAccessor<BaseT, PlanarStruct<T, Ts...>, Offset> get(const BaseT& s, const int i)
         {
@@ -200,18 +228,6 @@ namespace hdt
         __host__ __device__ __forceinline__ PlanarAccessor(const BaseT& s, const int i)
             : m_s(s), m_i(i)
         {}
-
-        template<int N>
-        __host__ __device__ __forceinline__ auto get() -> decltype(Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index, N>::get(std::declval<BaseT>(), std::declval<int>()))
-        {
-            return Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index, N>::get(m_s, m_i);
-        }
-
-        template<int N>
-        __host__ __device__ __forceinline__ auto get() const -> const decltype(Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index, N>::get(std::declval<BaseT>(), std::declval<int>()))
-        {
-            return Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index, N>::get(m_s, m_i);
-        }
 
         __host__ __device__ __forceinline__ operator typename StructT::type()
         {
@@ -244,6 +260,18 @@ namespace hdt
 
     private:
 
+        template<int N>
+        __host__ __device__ __forceinline__ auto get() -> decltype(Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index>::get(std::declval<BaseT>(), std::declval<int>()))
+        {
+            return Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index>::get(m_s, m_i);
+        }
+
+        template<int N>
+        __host__ __device__ __forceinline__ auto get() const -> const decltype(Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index>::get(std::declval<BaseT>(), std::declval<int>()))
+        {
+            return Getter<BaseT, StructT, typename StructT::template ElementData<N>::type, Offset + StructT::template ElementData<N>::index>::get(m_s, m_i);
+        }
+
         template<typename... Ts>
         __host__ __device__ __forceinline__ static void dummy(Ts&&...) {}
 
@@ -268,7 +296,7 @@ namespace hdt
         template<int... Ints>
         __host__ __device__ __forceinline__ void assign(const typename StructT::type& o, std::index_sequence<Ints...>)
         {
-            dummy(Getter<BaseT, typename StructT::flatType, typename StructT::flatType::template ElementData<Ints>::type, Offset + StructT::flatType::template ElementData<Ints>::index, Ints>::get(m_s, m_i)
+            dummy(Getter<BaseT, typename StructT::flatType, typename StructT::flatType::template ElementData<Ints>::type, Offset + StructT::flatType::template ElementData<Ints>::index>::get(m_s, m_i)
                 = *reinterpret_cast<const typename StructT::flatType::template ElementData<Ints>::type*>(reinterpret_cast<const uint8_t*>(&o) + StructT::flatType::template ElementData<Ints>::offset)...);
         }
 
