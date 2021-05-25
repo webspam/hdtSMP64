@@ -6,7 +6,8 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 ## Changes 
 
 + Added CUDA support for several parts of collision detection (still a work in progress). This includes
-  everything that had OpenCL support in earlier releases, as well as the final collision check.
+  everything that had OpenCL support in earlier releases, as well as the final collision check. CPU collision
+  is still fully supported, and should be used as a fallback if a CUDA-capable GPU is not available.
 + Added distance check in ActorManager to disable NPCs more than a certain distance from the player. This
   resolves the massive FPS drop in certain cell transitions (such as Blue Palace -> Solitude). Default
   maximum distance is 10000, which resolves that issue, but I recommend something around 2000 for better
@@ -67,7 +68,12 @@ version.
 ## Radeon support?
 
 Nope, sorry. CUDA and nVidia cards are pretty much the industry standard for scientific computing, so that's
-what I use. In any case, I can't support GPU architectures that I don't have.
+what I use. In any case, I can't support GPU architectures that I don't have. The plugin should work fine in
+CPU mode with any type of card.
+
+The plugin will use the most powerful available CUDA-capable card, regardless of whether it's being used for
+anything else. In theory, it's possible to have a Radeon as the primary graphics card, and an nVidia card in
+the same machine for CUDA and physics. I haven't tested that configuration.
 
 ## Note about NPC head parts
 
@@ -114,12 +120,14 @@ plugin recognizes the following optional parameters:
 + It's not possible to refer to bones in facegen data that aren't used explicitly by at least one mesh. Most
   HDT hairs won't work as non-wig hair on NPCs without altering constraints. Probably possible but annoying
   to fix.
-+ Probably any open bug listed on Nexus that isn't resolved in changes, above. This list only contains
++ Physics enabled hair colours are sometimes wrong. This appears to happen there are two NPCs nearby using
+  the same hair model.
++ Probably any open bug listed on Nexus tha t isn't resolved in changes, above. This list only contains
   issues I have personally observed.
 
 ## Build Instructions
 
-Requires Visual Studio 2019 (Community Edition is fine)
+Requires Visual Studio 2019 (Community Edition is fine) and CUDA Toolkit (10.2 is known to work).
 
 1) Download the clean skse64 source from [skse's website](http://skse.silverlock.org/)
 2) Extract or clone this repository into the skse64 folder of the source. You can safely delete skse64_loader, skse64_steam_loader, skse64_loader_common, and the skse64 solution.
