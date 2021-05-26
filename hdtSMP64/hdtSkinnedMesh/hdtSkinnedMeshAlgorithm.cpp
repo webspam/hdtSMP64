@@ -228,7 +228,7 @@ namespace hdt
 			// Now if every pair of elements in aa sums to no more than area, then the point is inside the triangle
 			aa = _mm_add_ps(aa, _mm_shuffle_ps(aa, aa, _MM_SHUFFLE(3, 0, 2, 1)));
 			aa = _mm_cmpgt_ps(aa, area);
-			auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
+			auto pointInTriangle = _mm_test_all_zeros(_mm_set_epi32(0, -1, -1, -1), _mm_castps_si128(aa));
 
 			res.colliderA = a;
 			res.colliderB = b;
