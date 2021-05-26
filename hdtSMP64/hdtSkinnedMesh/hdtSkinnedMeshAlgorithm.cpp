@@ -230,7 +230,7 @@ namespace hdt
 			aa = _mm_or_ps(aa, ab);
 			aa = _mm_or_ps(aa, ac);
 			aa = _mm_cmpgt_ps(_mm_set1_ps(0.0), aa);
-			auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
+			auto pointInTriangle = _mm_test_all_zeros(_mm_set_epi32(0, -1, -1, -1), _mm_castps_si128(aa));
 
 			res.colliderA = a;
 			res.colliderB = b;
