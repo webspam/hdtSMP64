@@ -20,6 +20,8 @@ namespace hdt
     template<typename StructT, typename...>
     struct InterleavedStruct
     {
+        using type = StructT;
+
         __host__ __device__ __forceinline__ InterleavedStruct(StructT* buffer, int)
             : m_buffer(buffer)
         {}

@@ -20,7 +20,8 @@ namespace hdt
     template<typename T>
     constexpr int collisionBlockSize();
 
-    // Block size for collision checking. Must be a power of 2 for the simple inter-warp reductions to work.
+    // Block size for collision checking. Must be a power of 2 for the simple inter-warp reductions to work,
+    // and at least 128 for the merge buffer updates (because they are currently written to require 4 warps)
     template<>
     constexpr int collisionBlockSize<VertexInputArray>() { return 256; }
     template<>
@@ -489,19 +490,60 @@ namespace hdt
         return size;
     }
 
+    template<typename T>
+    __device__ constexpr int BoneCount();
+    template<>
+    __device__ constexpr int BoneCount<cuPerVertexInput>() { return 4; }
+    template<>
+    __device__ constexpr int BoneCount<cuPerTriangleInput>() { return 12; }
+
+    __device__ uint32_t getBone(const cuVertex* vertexSetup, const cuPerVertexInput& collider, int i)
+    {
+        return vertexSetup[collider.vertexIndex].bones[i];
+    }
+
+    __device__ uint32_t getBone(const cuVertex* vertexSetup, const cuPerTriangleInput& collider, int i)
+    {
+        int index = (i < 4) ? collider.vertexIndices.a
+            : (i < 8) ? collider.vertexIndices.b
+            : collider.vertexIndices.c;
+
+        return vertexSetup[index].bones[i & 3];
+    }
+
+    __device__ float getBoneWeight(const cuVertex* vertexSetup, const cuPerVertexInput& collider, int i)
+    {
+        return vertexSetup[collider.vertexIndex].weights[i];
+    }
+
+    __device__ float getBoneWeight(const cuVertex* vertexSetup, const cuPerTriangleInput& collider, int i)
+    {
+        int index = (i < 4) ? collider.vertexIndices.a
+            : (i < 8) ? collider.vertexIndices.b
+            : collider.vertexIndices.c;
+
+        return vertexSetup[index].weights[i & 3];
+    }
+
     // kernelCollision does the supporting work for threading the collision checks and making sure that only
     // the deepest result is kept.
     template <cuPenetrationType penType = eNone, typename T, int BlockSize = collisionBlockSize<T>()>
     __global__ void __launch_bounds__(collisionBlockSize<T>(), 1024 / collisionBlockSize<T>()) kernelCollision(
         int n,
+        bool swap,
         const cuCollisionSetup* __restrict__ setup,
         const VertexInputArray inA,
         const T inB,
         const BoundingBoxArray boundingBoxesA,
         const BoundingBoxArray boundingBoxesB,
+        const cuVertex* vertexSetupA,
+        const cuVertex* vertexSetupB,
         const cuVector4* vertexDataA,
         const cuVector4* vertexDataB,
-        cuCollisionResult* output)
+        const float* boneWeightsA,
+        const float* boneWeightsB,
+        cuCollisionMerge* mergeBuffer,
+        int mergeWidth)
     {
         static_assert(vertexListSize() <= BlockSize, "Vertex list must be smaller than block size");
 
@@ -618,8 +660,8 @@ namespace hdt
 
                 if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
                 {
-                    temp.colliderA = static_cast<cuCollider*>(0) + iA;
-                    temp.colliderB = static_cast<cuCollider*>(0) + iB;
+                    temp.colliderA = iA;
+                    temp.colliderB = iB;
                 }
             }
 
@@ -650,11 +692,75 @@ namespace hdt
             }
             __syncthreads();
 
+            if (floatShared[0] > -FLT_EPSILON)
+            {
+                return;
+            }
+
             // If the depth of this thread is equal to the minimum, try to set the result. Do an atomic
             // exchange with the first value to ensure that only one thread gets to do this in case of ties.
+            cuCollisionResult* result = reinterpret_cast<cuCollisionResult*>(floatShared + 32);
             if (floatShared[0] == temp.depth && atomicExch(floatShared, 2) == temp.depth)
             {
-                output[block] = temp;
+                *result = temp;
+            }
+
+            __syncthreads();
+
+            // Update cumulative values in the merge buffer. Use the first four warps, each processing four
+            // or twelve entries, depending on the type of collision.
+            if (warpid < BoneCount<cuPerVertexInput>() && threadInWarp < BoneCount<T::type>())
+            {
+                uint32_t indexA = getBone(vertexSetupA, inA[result->colliderA], warpid);
+                uint32_t indexB = getBone(vertexSetupB, inB[result->colliderB], threadInWarp);
+
+                float weightA = getBoneWeight(vertexSetupA, inA[result->colliderA], warpid);
+                float weightB = getBoneWeight(vertexSetupB, inB[result->colliderB], threadInWarp);
+
+                if (weightA <= boneWeightsA[indexA] || weightB <= boneWeightsB[indexB])
+                {
+                    return;
+                }
+
+                // FIXME: Get this from collider data, if it even does anything useful
+                float flexible = 1.0;
+
+                float w = flexible * result->depth;
+                float w2 = w * w;
+                cuCollisionMerge* c = mergeBuffer + (swap ? indexA * mergeWidth + indexB : indexB * mergeWidth + indexA);
+
+                atomicAdd(&c->weight, w2);
+
+                if (swap)
+                {
+                    atomicAdd(&c->normal.x, -result->normOnB.x * w * w2);
+                    atomicAdd(&c->normal.y, -result->normOnB.y * w * w2);
+                    atomicAdd(&c->normal.z, -result->normOnB.z * w * w2);
+                    atomicAdd(&c->normal.w, -result->normOnB.w * w * w2);
+                    atomicAdd(&c->posA.x, result->posB.x * w2);
+                    atomicAdd(&c->posA.y, result->posB.y * w2);
+                    atomicAdd(&c->posA.z, result->posB.z * w2);
+                    atomicAdd(&c->posA.w, result->posB.w * w2);
+                    atomicAdd(&c->posB.x, result->posA.x * w2);
+                    atomicAdd(&c->posB.y, result->posA.y * w2);
+                    atomicAdd(&c->posB.z, result->posA.z * w2);
+                    atomicAdd(&c->posB.w, result->posA.w * w2);
+                }
+                else
+                {
+                    atomicAdd(&c->normal.x, result->normOnB.x * w * w2);
+                    atomicAdd(&c->normal.y, result->normOnB.y * w * w2);
+                    atomicAdd(&c->normal.z, result->normOnB.z * w * w2);
+                    atomicAdd(&c->normal.w, result->normOnB.w * w * w2);
+                    atomicAdd(&c->posA.x, result->posA.x * w2);
+                    atomicAdd(&c->posA.y, result->posA.y * w2);
+                    atomicAdd(&c->posA.z, result->posA.z * w2);
+                    atomicAdd(&c->posA.w, result->posA.w * w2);
+                    atomicAdd(&c->posB.x, result->posB.x * w2);
+                    atomicAdd(&c->posB.y, result->posB.y * w2);
+                    atomicAdd(&c->posB.z, result->posB.z * w2);
+                    atomicAdd(&c->posB.w, result->posB.w * w2);
+                }
             }
         }
     }
@@ -734,19 +840,25 @@ namespace hdt
     cuResult cuRunCollision(
         void* stream,
         int n,
+        bool swap,
         cuCollisionSetup* setup,
         VertexInputArray inA,
         T inB,
         BoundingBoxArray boundingBoxesA,
         BoundingBoxArray boundingBoxesB,
+        cuVertex* vertexSetupA,
+        cuVertex* vertexSetupB,
         cuVector4* vertexDataA,
         cuVector4* vertexDataB,
-        cuCollisionResult* output)
+        float* boneWeightsA,
+        float* boneWeightsB,
+        cuCollisionMerge* mergeBuffer,
+        int mergeWidth)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), 0, *s >>> (
-            n, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexDataA, vertexDataB, output);
+            n, swap, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexSetupA, vertexSetupB, vertexDataA, vertexDataB, boneWeightsA, boneWeightsB, mergeBuffer, mergeWidth);
         return cuResult();
     }
 
@@ -812,7 +924,16 @@ namespace hdt
         return count;
     }
 
-    template cuResult cuRunCollision<eNone, VertexInputArray>(void*, int, cuCollisionSetup*, VertexInputArray, VertexInputArray, BoundingBoxArray, BoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
-    template cuResult cuRunCollision<eNone, TriangleInputArray>(void*, int, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
-    template cuResult cuRunCollision<eInternal, TriangleInputArray>(void*, int, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray, cuVector4*, cuVector4*, cuCollisionResult*);
+    template cuResult cuRunCollision<eNone, VertexInputArray>(
+        void*, int, bool, cuCollisionSetup*, VertexInputArray, VertexInputArray, BoundingBoxArray, BoundingBoxArray,
+        cuVertex*, cuVertex*, cuVector4*, cuVector4*,
+        float*, float*, cuCollisionMerge*, int);
+    template cuResult cuRunCollision<eNone, TriangleInputArray>(
+        void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
+        cuVertex*, cuVertex*, cuVector4*, cuVector4*,
+        float*, float*, cuCollisionMerge*, int);
+    template cuResult cuRunCollision<eInternal, TriangleInputArray>(
+        void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
+        cuVertex*, cuVertex*, cuVector4*, cuVector4*,
+        float*, float*, cuCollisionMerge*, int);
 }

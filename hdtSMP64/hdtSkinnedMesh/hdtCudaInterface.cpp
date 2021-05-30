@@ -284,7 +284,7 @@ namespace hdt
 		};
 
 		// CUDA buffer for short-lived per-frame objects. There is no way to deallocate these explicitly - they
-		// remain manually until the buffer pool is cleared at the end of the frame, and then all become unsafe.
+		// remain until the buffer pool is cleared manually at the end of the frame, and then all become unsafe.
 		template <typename CudaT, typename HostT = CudaT>
 		class CudaPooledBuffer
 		{
@@ -329,11 +329,18 @@ namespace hdt
 		Imp(SkinnedMeshBody* body)
 			: m_numVertices(body->m_vertices.size()),
 			m_bones(body->m_skinnedBones.size()),
+			m_boneWeights(body->m_skinnedBones.size()),
 			m_vertexData(body->m_vertices.size()),
 			m_vertexBuffer(body->m_vertices.size())
 		{
 			std::copy(body->m_vertices.begin(), body->m_vertices.end(), m_vertexData.get());
 			m_vertexData.toDevice(m_stream);
+
+			for (int i = 0; i < body->m_skinnedBones.size(); ++i)
+			{
+				m_boneWeights[i] = body->m_skinnedBones[i].weightThreshold;
+			}
+			m_boneWeights.toDevice(m_stream);
 
 			body->m_bones.reset(m_bones.get(), NullDeleter<Bone[]>());
 		}
@@ -366,6 +373,8 @@ namespace hdt
 
 		CudaStream m_stream;
 		CudaDeviceBuffer<cuVector4> m_vertexBuffer;
+		CudaBuffer<cuVertex, Vertex> m_vertexData;
+		CudaBuffer<float> m_boneWeights;
 
 	private:
 
@@ -373,7 +382,6 @@ namespace hdt
 
 		int m_numVertices;
 		CudaBuffer<cuBone, Bone> m_bones;
-		CudaBuffer<cuVertex, Vertex> m_vertexData;
 	};
 
 	CudaBody::CudaBody(SkinnedMeshBody* body)
@@ -637,6 +645,91 @@ namespace hdt
 		m_imp->updateTree();
 	}
 
+	class CudaMergeBuffer::Imp
+	{
+	public:
+
+		Imp(int x, int y)
+			: m_x(x),
+			m_y(y),
+			m_stream(),
+			m_buffer(x*y)
+		{
+			new (m_buffer.get()) cuCollisionMerge[x * y];
+			m_buffer.toDevice(m_stream);
+		}
+
+		void launchTransfer()
+		{
+			m_buffer.toHost(m_stream);
+		}
+
+		void apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1, CollisionDispatcher* dispatcher)
+		{
+			cuSynchronize(m_stream).check(__FUNCTION__);
+
+			for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
+			{
+				if (!body1->canCollideWith(body0->m_skinnedBones[i].ptr)) continue;
+				for (int j = 0; j < body1->m_skinnedBones.size(); ++j)
+				{
+					if (!body0->canCollideWith(body1->m_skinnedBones[j].ptr)) continue;
+
+					auto c = m_buffer.get() + j * m_x + i;
+
+					if (c->weight < FLT_EPSILON) continue;
+
+					if (body0->m_skinnedBones[i].isKinematic && body1->m_skinnedBones[j].isKinematic) continue;
+
+					auto rb0 = body0->m_skinnedBones[i].ptr;
+					auto rb1 = body1->m_skinnedBones[j].ptr;
+					if (rb0 == rb1) continue;
+
+					float invWeight = 1.0f / c->weight;
+
+					auto maniford = dispatcher->getNewManifold(&rb0->m_rig, &rb1->m_rig);
+					auto worldA = btVector4(c->posA.val) * invWeight;
+					auto worldB = btVector4(c->posB.val) * invWeight;
+					auto localA = rb0->m_rig.getWorldTransform().invXform(worldA);
+					auto localB = rb1->m_rig.getWorldTransform().invXform(worldB);
+					auto normal = btVector4(c->normal.val) * invWeight;
+					if (normal.fuzzyZero()) continue;
+					auto depth = -normal.length();
+					normal = -normal.normalized();
+
+					if (depth >= -FLT_EPSILON) continue;
+
+					btManifoldPoint newPt(localA, localB, normal, depth);
+					newPt.m_positionWorldOnA = worldA;
+					newPt.m_positionWorldOnB = worldB;
+					newPt.m_combinedFriction = rb0->m_rig.getFriction() * rb1->m_rig.getFriction();
+					newPt.m_combinedRestitution = rb0->m_rig.getRestitution() * rb1->m_rig.getRestitution();
+					newPt.m_combinedRollingFriction = rb0->m_rig.getRollingFriction() * rb1->m_rig.getRollingFriction();
+					maniford->addManifoldPoint(newPt);
+				}
+			}
+		}
+
+		int m_x;
+		int m_y;
+		CudaStream m_stream;
+		CudaPooledBuffer<cuCollisionMerge> m_buffer;
+	};
+
+	CudaMergeBuffer::CudaMergeBuffer(int x, int y)
+		: m_imp(new Imp(x, y))
+	{}
+
+	void CudaMergeBuffer::launchTransfer()
+	{
+		m_imp->launchTransfer();
+	}
+
+	void CudaMergeBuffer::apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1, CollisionDispatcher* dispatcher)
+	{
+		m_imp->apply(body0, body1, dispatcher);
+	}
+
 	template <typename T>
 	class CudaCollisionPair<T>::Imp
 	{
@@ -645,18 +738,13 @@ namespace hdt
 		Imp(
 			CudaPerVertexShape* shapeA,
 			T* shapeB,
-			int numCollisionPairs,
-			CollisionResult** results)
+			int numCollisionPairs)
 			: m_shapeA(shapeA),
 			m_shapeB(shapeB),
 			m_numCollisionPairs(numCollisionPairs),
 			m_nextPair(0),
-			m_stream(),
-			m_resultBuffer(numCollisionPairs),
 			m_setupBuffer(numCollisionPairs)
-		{
-			*results = m_resultBuffer.get();
-		}
+		{}
 
 		void addPair(
 			int offsetA,
@@ -678,31 +766,30 @@ namespace hdt
 			};
 		}
 
-		void launch()
+		void launch(CudaMergeBuffer* merge, bool swap)
 		{
 			if (m_nextPair > 0)
 			{
-				m_setupBuffer.toDevice(m_stream);
+				m_setupBuffer.toDevice(merge->m_imp->m_stream);
 
 				collisionFunc()(
-					m_stream,
+					merge->m_imp->m_stream,
 					m_nextPair,
+					swap,
 					m_setupBuffer.getD(),
 					m_shapeA->m_imp->m_input.getD(),
 					m_shapeB->m_imp->m_input.getD(),
 					m_shapeA->m_imp->m_output.getD(),
 					m_shapeB->m_imp->m_output.getD(),
+					m_shapeA->m_imp->m_body->m_vertexData.getD(),
+					m_shapeB->m_imp->m_body->m_vertexData.getD(),
 					m_shapeA->m_imp->m_body->m_vertexBuffer.getD(),
 					m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
-					m_resultBuffer.getD()).check(__FUNCTION__);
-
-				m_resultBuffer.toHost(m_stream);
+					m_shapeA->m_imp->m_body->m_boneWeights.getD(),
+					m_shapeB->m_imp->m_body->m_boneWeights.getD(),
+					merge->m_imp->m_buffer.getD(),
+					merge->m_imp->m_x).check(__FUNCTION__);
 			}
-		}
-
-		void synchronize()
-		{
-			cuSynchronize(m_stream).check(__FUNCTION__);
 		}
 
 		int numPairs()
@@ -717,8 +804,6 @@ namespace hdt
 		int m_numCollisionPairs;
 		int m_nextPair;
 
-		CudaStream m_stream;
-		CudaPooledBuffer<cuCollisionResult, CollisionResult> m_resultBuffer;
 		CudaPooledBuffer<cuCollisionSetup> m_setupBuffer;
 
 		template<typename T>
@@ -747,6 +832,7 @@ namespace hdt
 		case eNone:
 			return cuRunCollision<eNone, TriangleInputArray>;
 		case eInternal:
+		default:
 			return cuRunCollision<eInternal, TriangleInputArray>;
 		}
 	}
@@ -755,9 +841,8 @@ namespace hdt
 	CudaCollisionPair<T>::CudaCollisionPair(
 		CudaPerVertexShape* shapeA,
 		T* shapeB, 
-		int numCollisionPairs,
-		CollisionResult** results)
-		: m_imp(new Imp(shapeA, shapeB, numCollisionPairs, results))
+		int numCollisionPairs)
+		: m_imp(new Imp(shapeA, shapeB, numCollisionPairs))
 	{}
 
 	template <typename T>
@@ -773,15 +858,9 @@ namespace hdt
 	}
 
 	template <typename T>
-	void CudaCollisionPair<T>::launch()
+	void CudaCollisionPair<T>::launch(CudaMergeBuffer* merge, bool swap)
 	{
-		m_imp->launch();
-	}
-
-	template <typename T>
-	void CudaCollisionPair<T>::synchronize()
-	{
-		m_imp->synchronize();
+		m_imp->launch(merge, swap);
 	}
 
 	template <typename T>

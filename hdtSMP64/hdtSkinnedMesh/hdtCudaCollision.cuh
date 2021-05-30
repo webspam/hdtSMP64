@@ -179,8 +179,8 @@ namespace hdt
 		cuVector4 posA;
 		cuVector4 posB;
 		cuVector4 normOnB;
-		cuCollider* colliderA;
-		cuCollider* colliderB;
+		int colliderA;
+		int colliderB;
 		float depth;
 	};
 
@@ -192,6 +192,22 @@ namespace hdt
 		int offsetB;
 		cuAabb boundingBoxA;
 		cuAabb boundingBoxB;
+	};
+
+	struct cuCollisionMerge
+	{
+		cuCollisionMerge()
+		{
+			normal = { 0, 0, 0, 0 };
+			posA = { 0, 0, 0, 0 };
+			posB = { 0, 0, 0, 0 };
+			weight = 0;
+		}
+
+		cuVector4 normal;
+		cuVector4 posA;
+		cuVector4 posB;
+		float weight;
 	};
 
 	using VectorArray = ArrayType<cuVector3, float, float, float>;
@@ -225,14 +241,20 @@ namespace hdt
 	cuResult cuRunCollision(
 		void* stream,
 		int n,
+		bool swap,
 		cuCollisionSetup* setup,
 		VertexInputArray inA,
 		T inB,
 		BoundingBoxArray boundingBoxesA,
 		BoundingBoxArray boundingBoxesB,
+		cuVertex* vertexSetupA,
+		cuVertex* vertexSetupB,
 		cuVector4* vertexDataA,
 		cuVector4* vertexDataB,
-		cuCollisionResult* output);
+		float* boneWeightsA,
+		float* boneWeightsB,
+		cuCollisionMerge* mergeBuffer,
+		int mergeWidth);
 
 	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, BoundingBoxArray boundingBoxes, cuAabb* output);
 

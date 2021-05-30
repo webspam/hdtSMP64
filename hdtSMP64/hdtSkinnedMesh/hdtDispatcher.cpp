@@ -109,11 +109,11 @@ namespace hdt
 			else getNearCallback()(pair, *this, dispatchInfo);
 		});
 
-		bool haveCude = CudaInterface::instance()->hasCuda() && (!FrameTimer::instance()->running() || FrameTimer::instance()->cudaFrame());
+		bool haveCuda = CudaInterface::instance()->hasCuda() && (!FrameTimer::instance()->running() || FrameTimer::instance()->cudaFrame());
 
 		FrameTimer::instance()->logEvent(FrameTimer::e_Start);
 
-		if (haveCude)
+		if (haveCuda)
 		{
 			std::vector<SkinnedMeshBody*> bodies;
 			bodies.reserve(to_update.size());
@@ -224,22 +224,22 @@ namespace hdt
 
 		FrameTimer::instance()->logEvent(FrameTimer::e_Internal);
 
-		if (haveCude)
+		if (haveCuda)
 		{
 			CudaInterface::instance()->clearBufferPool();
 
-			// Queue up collisions
-			std::vector<std::function<void()>> collisionFuncs(m_pairs.size() * 2);
+			// Launch collision checking
+			std::vector<std::function<void()>> collisionFuncs(m_pairs.size());
 			concurrency::parallel_for(static_cast<size_t>(0), m_pairs.size(), [&](int i)
 			{
 				auto& pair = m_pairs[i];
 				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
 				{
-					SkinnedMeshAlgorithm::queueCollision(collisionFuncs.begin() + 2*i, pair.first, pair.second, this);
+					SkinnedMeshAlgorithm::queueCollision(collisionFuncs.begin() + i, pair.first, pair.second, this);
 				}
 			});
 
-			// Run the collisions in parallel
+			// Synchronize and apply the collision results
 			concurrency::parallel_for_each(collisionFuncs.begin(), collisionFuncs.end(),
 				[](std::function<void()>& f)
 			{

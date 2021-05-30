@@ -15,12 +15,10 @@ namespace hdt
 	// Algorithm selection for collision checking.
 	// e_CPU is the original one, optimized for CPU performance.
 	// e_CPURefactored is an alternate CPU one, modified for conversion to GPU but still using CPU in practice.
-	// e_CUDA does collision on the GPU, but is currently still slow.
 	enum CollisionCheckAlgorithmType
 	{
 		e_CPU,
-		e_CPURefactored,
-		e_CUDA
+		e_CPURefactored
 	};
 
 	// CollisionCheckBase1 provides data members and the basic constructor for the target types. Note that we
@@ -409,76 +407,6 @@ namespace hdt
 		}
 	};
 
-	template <typename T, bool SwapResults>
-	struct CollisionCheckAlgorithm<T, SwapResults, e_CUDA> : public CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>
-	{
-		template <typename... Ts>
-		CollisionCheckAlgorithm(Ts&&... ts)
-			: CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>(std::forward<Ts>(ts)...)
-		{}
-
-		int operator()()
-		{
-			if (!CudaInterface::instance()->hasCuda())
-			{
-				return CollisionCheckAlgorithm<T, SwapResults, e_CPURefactored>::operator()();
-			}
-			std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
-			pairs.reserve(c0->colliders.size() + c1->colliders.size());
-			c0->checkCollisionL(c1, pairs);
-			if (pairs.empty()) return 0;
-			int npairs = pairs.size();
-
-			// Create buffers for collision processing
-			CollisionResult* results;
-			CudaCollisionPair<T::CudaType> collisionPair(
-				shapeA->m_cudaObject.get(),
-				shapeB->m_cudaObject.get(),
-				npairs,
-				&results);
-
-			// Set up data for each pair of collision trees
-			for (int i = 0; i < npairs; ++i)
-			{
-				auto a = pairs[i].first;
-				auto b = pairs[i].second;
-				auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
-				auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
-
-				if (asize > 0 && bsize > 0)
-				{
-					collisionPair.addPair(
-						pairs[i].first->cbuf - shapeA->m_colliders.data(),
-						pairs[i].second->cbuf - shapeB->m_colliders.data(),
-						asize,
-						bsize,
-						a->aabbMe,
-						b->aabbMe);
-				}
-			}
-
-			// Run the kernel and get the results
-			collisionPair.launch();
-			collisionPair.synchronize();
-
-			for (int i = 0; i < collisionPair.numPairs(); ++i)
-			{
-				if (results[i].depth <= 0)
-				{
-					// Kernel doesn't know real collider addresses, so it sets colliders referenced to 0.
-					// We need to convert them to corresponding addresses in the real host-side data.
-					int ciA = results[i].colliderA - static_cast<Collider*>(0);
-					int ciB = results[i].colliderB - static_cast<Collider*>(0);
-					results[i].colliderA = shapeA->m_colliders.data() + ciA;
-					results[i].colliderB = shapeB->m_colliders.data() + ciB;
-					addResult(results[i]);
-				}
-			}
-
-			return numResults;
-		}
-	};
-
 	// Old algorithm - lower memory use, possibly faster (for CPU), but not at all suited to GPU processing
 	template <typename T, bool SwapResults>
 	struct CollisionCheckAlgorithm<T, SwapResults, e_CPU> : public CollisionChecker<T, SwapResults>
@@ -691,32 +619,78 @@ namespace hdt
 			merge.doMerge(shape0, shape1, collision, count);
 	}
 
+	template<bool Swap, typename T>
+	void launchCollision(
+		PerVertexShape* shape0,
+		T* shape1,
+		std::shared_ptr<CudaMergeBuffer> cudaMerge)
+	{
+		ColliderTree* c0 = &shape0->m_tree;
+		ColliderTree* c1 = &shape1->m_tree;
+
+		std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
+		pairs.reserve(c0->colliders.size() + c1->colliders.size());
+		c0->checkCollisionL(c1, pairs);
+		if (pairs.empty()) return;
+		int npairs = pairs.size();
+
+		// Create buffers for collision processing
+		CudaCollisionPair<T::CudaType> collisionPair(
+			shape0->m_cudaObject.get(),
+			shape1->m_cudaObject.get(),
+			npairs);
+
+		// Set up data for each pair of collision trees
+		for (int i = 0; i < npairs; ++i)
+		{
+			auto a = pairs[i].first;
+			auto b = pairs[i].second;
+			auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
+			auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
+
+			if (asize > 0 && bsize > 0)
+			{
+				collisionPair.addPair(
+					pairs[i].first->cbuf - shape0->m_colliders.data(),
+					pairs[i].second->cbuf - shape1->m_colliders.data(),
+					asize,
+					bsize,
+					a->aabbMe,
+					b->aabbMe);
+			}
+		}
+
+		// Run the kernel
+		collisionPair.launch(cudaMerge.get(), Swap);
+	}
+
 	void SkinnedMeshAlgorithm::queueCollision(
 		std::vector<std::function<void()>>::iterator queue,
 		SkinnedMeshBody* body0,
 		SkinnedMeshBody* body1,
 		CollisionDispatcher* dispatcher)
 	{
-		std::shared_ptr<MergeBuffer> merge = std::make_shared<MergeBuffer>();
-		merge->alloc(body0->m_skinnedBones.size(), body1->m_skinnedBones.size());
+		std::shared_ptr<CudaMergeBuffer> cudaMerge = std::make_shared<CudaMergeBuffer>(body0->m_skinnedBones.size(), body1->m_skinnedBones.size());
 
-		auto apply = std::make_shared<std::function<void()>>([=]()
+		auto apply = std::function<void()>([=]()
 		{
-			merge->apply(body0, body1, dispatcher);
-			merge->release();
+			cudaMerge->apply(body0, body1, dispatcher);
 		});
 
 		if (body0->m_shape->asPerTriangleShape() && body1->m_shape->asPerTriangleShape())
 		{
-			*queue++ = CollisionRunner<PerTriangleShape, true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), merge, apply);
-			*queue++ = CollisionRunner<PerTriangleShape, false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge, apply);
+			launchCollision<true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), cudaMerge);
+			launchCollision<false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), cudaMerge);
 		}
 		else if (body0->m_shape->asPerTriangleShape())
-			*queue++ = CollisionRunner<PerTriangleShape, true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), merge, apply);
+			launchCollision<true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), cudaMerge);
 		else if (body1->m_shape->asPerTriangleShape())
-			*queue++ = CollisionRunner<PerTriangleShape, false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge, apply);
+			launchCollision<false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), cudaMerge);
 		else
-			*queue++ = CollisionRunner<PerVertexShape, false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), merge, apply);
+			launchCollision<false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), cudaMerge);
+
+		cudaMerge->launchTransfer();
+		*queue = apply;
 	}
 
 	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,

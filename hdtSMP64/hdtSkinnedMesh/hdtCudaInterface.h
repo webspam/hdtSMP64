@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hdtSkinnedMeshShape.h"
+#include "hdtDispatcher.h"
 
 namespace hdt
 {
@@ -52,6 +53,23 @@ namespace hdt
 		std::shared_ptr<Imp> m_imp;
 	};
 
+	class CudaMergeBuffer
+	{
+		template <typename T>
+		friend class CudaCollisionPair;
+	public:
+		class Imp;
+
+		CudaMergeBuffer(int x, int y);
+
+		void launchTransfer();
+
+		void apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1, CollisionDispatcher* dispatcher);
+
+	private:
+		std::shared_ptr<Imp> m_imp;
+	};
+
 	template <typename T>
 	class CudaCollisionPair
 	{
@@ -59,8 +77,7 @@ namespace hdt
 		CudaCollisionPair(
 			CudaPerVertexShape* shapeA,
 			T* shapeB,
-			int numCollisionPairs,
-			CollisionResult** results);
+			int numCollisionPairs);
 
 		void addPair(
 			int offsetA,
@@ -70,9 +87,7 @@ namespace hdt
 			const Aabb& aabbA,
 			const Aabb& aabbB);
 
-		void launch();
-
-		void synchronize();
+		void launch(CudaMergeBuffer* merge, bool swap);
 
 		int numPairs();
 
