@@ -196,14 +196,6 @@ namespace hdt
 
 	struct cuCollisionMerge
 	{
-		cuCollisionMerge()
-		{
-			normal = { 0, 0, 0, 0 };
-			posA = { 0, 0, 0, 0 };
-			posB = { 0, 0, 0, 0 };
-			weight = 0;
-		}
-
 		cuVector4 normal;
 		cuVector4 posA;
 		cuVector4 posB;
@@ -230,6 +222,8 @@ namespace hdt
 	cuResult cuCopyToDevice(void* dst, void* src, size_t n, void* stream);
 
 	cuResult cuCopyToHost(void* dst, void* src, size_t n, void* stream);
+
+	cuResult cuMemset(void* buf, int value, size_t n, void* stream);
 
 	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData);
 

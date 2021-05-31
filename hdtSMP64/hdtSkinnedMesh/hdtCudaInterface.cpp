@@ -309,6 +309,11 @@ namespace hdt
 				cuCopyToHost(m_hostData, m_deviceData, m_size, stream).check(__FUNCTION__);
 			}
 
+			void zero(CudaStream& stream)
+			{
+				cuMemset(m_deviceData, 0, m_size, stream).check(__FUNCTION__);
+			}
+
 			operator HostT* () { return m_hostData; }
 			HostT* get() { return m_hostData; }
 
@@ -655,8 +660,7 @@ namespace hdt
 			m_stream(),
 			m_buffer(x*y)
 		{
-			new (m_buffer.get()) cuCollisionMerge[x * y];
-			m_buffer.toDevice(m_stream);
+			m_buffer.zero(m_stream);
 		}
 
 		void launchTransfer()

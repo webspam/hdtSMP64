@@ -809,6 +809,12 @@ namespace hdt
         return cudaMemcpyAsync(dst, src, n, cudaMemcpyDeviceToHost, *s);
     }
 
+    cuResult cuMemset(void* buf, int value, size_t n, void* stream)
+    {
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+        return cudaMemsetAsync(buf, value, n, *s);
+    }
+
     cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
