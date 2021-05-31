@@ -206,8 +206,6 @@ __kernel void updateVertices(
 		m_shape->remapVertices(map.data());
 		m_vertices.resize(numUsed);
 		m_vpos.reset(new VertexPos[numUsed]);
-
-		m_useBoundingSphere = m_shape->m_colliders.size() > 10;
 	}
 
 	bool SkinnedMeshBody::canCollideWith(const SkinnedMeshBody* body) const
@@ -237,9 +235,6 @@ __kernel void updateVertices(
 			i.worldBoundingSphere = BoundingSphere(tr * sp.center(), tr.getScale() * sp.radius());
 			m_bulletShape.m_aabb.merge(i.worldBoundingSphere.getAabb());
 		}
-
-		if (!m_useBoundingSphere)
-			internalUpdate();
 	}
 
 	bool SkinnedMeshBody::isBoundingSphereCollided(SkinnedMeshBody* rhs)

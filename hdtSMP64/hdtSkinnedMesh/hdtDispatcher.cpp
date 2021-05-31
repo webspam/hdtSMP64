@@ -162,7 +162,6 @@ namespace hdt
 			}
 
 			// Update the aggregate parts of the AABB trees
-//			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
 			for (auto o : to_update)
 			{
 				o.first->m_cudaObject->synchronize();
