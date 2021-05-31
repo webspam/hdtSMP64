@@ -230,14 +230,14 @@ namespace hdt
 
 			// Launch collision checking
 			std::vector<std::function<void()>> collisionFuncs(m_pairs.size());
-			concurrency::parallel_for(static_cast<size_t>(0), m_pairs.size(), [&](int i)
+			for (int i = 0; i < m_pairs.size(); ++i)
 			{
 				auto& pair = m_pairs[i];
 				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
 				{
 					SkinnedMeshAlgorithm::queueCollision(collisionFuncs.begin() + i, pair.first, pair.second, this);
 				}
-			});
+			}
 
 			// Synchronize and apply the collision results
 			concurrency::parallel_for_each(collisionFuncs.begin(), collisionFuncs.end(),
