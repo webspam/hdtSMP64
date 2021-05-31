@@ -11,11 +11,11 @@ namespace hdt
     // Block size for map type operations (vertex and bounding box calculations). Since there's no reduction
     // in these, we just set this for maximum occupancy (currently 100% for bounding boxes, 75% for vertex
     // calculation).
-    constexpr int cuMapBlockSize() { return 128; }
+    __host__ __device__ constexpr int cuMapBlockSize() { return 128; }
 
     // Block size for bounding box reduction. Each warp here is independent - larger blocks just do multiple
     // chunks at once. Should be at least 64 for maximum occupancy.
-    constexpr int cuReduceBlockSize() { return 64; }
+    __host__ __device__ constexpr int cuReduceBlockSize() { return 64; }
 
     template<typename T>
     constexpr int collisionBlockSize();
@@ -765,6 +765,54 @@ namespace hdt
         }
     }
 
+    __global__ void fullInternalUpdate(
+        int nVertices,
+        const cuVertex* __restrict__ verticesIn,
+        cuVector4* vertexData,
+        const cuBone* __restrict__ boneData,
+        int nVertexColliders,
+        VertexInputArray perVertexIn,
+        BoundingBoxArray perVertexOut,
+        int nVertexNodes,
+        const std::pair<int, int>* __restrict__ vertexNodeData,
+        cuAabb* vertexNodeOutput,
+        int nTriangleColliders,
+        TriangleInputArray perTriangleIn,
+        BoundingBoxArray perTriangleOut,
+        int nTriangleNodes,
+        const std::pair<int, int>* __restrict__ triangleNodeData,
+        cuAabb* triangleNodeOutput )
+    {
+        if (threadIdx.x == 0)
+        {
+            int nBodyBlocks = (nVertices - 1) / cuMapBlockSize() + 1;
+            kernelBodyUpdate <<<nBodyBlocks, cuMapBlockSize()>>> (nVertices, verticesIn, vertexData, boneData);
+
+            constexpr int warpsPerBlock = cuReduceBlockSize() >> 5;
+
+            if (nVertexColliders > 0)
+            {
+                cudaStream_t s;
+                cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
+                int nVertexBlocks = (nVertexColliders - 1) / cuMapBlockSize() + 1;
+                kernelPerVertexUpdate <<<nVertexBlocks, cuMapBlockSize(), 0, s>>> (nVertexColliders, perVertexIn, perVertexOut, vertexData);
+                int nReduceBlocks = ((nVertexNodes - 1) / warpsPerBlock) + 1;
+                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0, s>>> (nVertexNodes, vertexNodeData, perVertexOut, vertexNodeOutput);
+                cudaStreamDestroy(s);
+            }
+            if (nTriangleColliders > 0)
+            {
+                cudaStream_t s;
+                cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
+                int nTriangleBlocks = (nTriangleColliders - 1) / cuMapBlockSize() + 1;
+                kernelPerTriangleUpdate <<<nTriangleBlocks, cuMapBlockSize(), 0, s>>> (nTriangleColliders, perTriangleIn, perTriangleOut, vertexData);
+                int nReduceBlocks = ((nTriangleNodes - 1) / warpsPerBlock) + 1;
+                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0, s>>> (nTriangleNodes, triangleNodeData, perTriangleOut, triangleNodeOutput);
+                cudaStreamDestroy(s);
+            }
+        }
+    }
+
     cuResult cuCreateStream(void** ptr)
     {
         *ptr = new cudaStream_t;
@@ -865,6 +913,47 @@ namespace hdt
 
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), 0, *s >>> (
             n, swap, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexSetupA, vertexSetupB, vertexDataA, vertexDataB, boneWeightsA, boneWeightsB, mergeBuffer, mergeWidth);
+        return cuResult();
+    }
+
+    cuResult cuInternalUpdate(
+        void* stream,
+        int nVertices,
+        const cuVertex* verticesIn,
+        cuVector4* vertexData,
+        const cuBone* boneData,
+        int nVertexColliders,
+        VertexInputArray perVertexIn,
+        BoundingBoxArray perVertexOut,
+        int nVertexNodes,
+        const std::pair<int, int>* vertexNodeData,
+        cuAabb* vertexNodeOutput,
+        int nTriangleColliders,
+        TriangleInputArray perTriangleIn,
+        BoundingBoxArray perTriangleOut,
+        int nTriangleNodes,
+        const std::pair<int, int>* triangleNodeData,
+        cuAabb* triangleNodeOutput)
+    {
+        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
+
+        fullInternalUpdate <<<1, 1, 0, *s >>> (
+            nVertices,
+            verticesIn,
+            vertexData,
+            boneData,
+            nVertexColliders,
+            perVertexIn,
+            perVertexOut,
+            nVertexNodes,
+            vertexNodeData,
+            vertexNodeOutput,
+            nTriangleColliders,
+            perTriangleIn,
+            perTriangleOut,
+            nTriangleNodes,
+            triangleNodeData,
+            triangleNodeOutput);
         return cuResult();
     }
 

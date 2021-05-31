@@ -115,29 +115,20 @@ namespace hdt
 
 		if (haveCuda)
 		{
-			std::vector<SkinnedMeshBody*> bodies;
-			bodies.reserve(to_update.size());
-			std::vector<PerVertexShape*> vertexShapes;
-			vertexShapes.reserve(to_update.size());
-			std::vector<PerTriangleShape*> triangleShapes;
-			triangleShapes.reserve(to_update.size());
 			bool initialized = true;
 
 			// Build simple vectors of the things to update, and determine whether any new CUDA objects need
 			// to be created
 			for (auto& o : to_update)
 			{
-				bodies.push_back(o.first);
-				initialized &= static_cast<bool>(bodies.back()->m_cudaObject);
+				initialized &= static_cast<bool>(o.first->m_cudaObject);
 				if (o.second.first)
 				{
-					vertexShapes.push_back(o.second.first);
-					initialized &= static_cast<bool>(vertexShapes.back()->m_cudaObject);
+					initialized &= static_cast<bool>(o.second.first->m_cudaObject);
 				}
 				if (o.second.second)
 				{
-					triangleShapes.push_back(o.second.second);
-					initialized &= static_cast<bool>(triangleShapes.back()->m_cudaObject);
+					initialized &= static_cast<bool>(o.second.second->m_cudaObject);
 				}
 			}
 
@@ -161,32 +152,13 @@ namespace hdt
 				});
 			}
 
-			// Update bone transforms and launch the vertex calculation kernel
-			for (auto body : bodies)
+			for (auto o : to_update)
 			{
-				body->updateBones();
-				body->m_cudaObject->launch();
-			}
-
-			// Launch per-triangle kernels. Theoretically we should get better performance launching kernels
-			// breadth-first like this.
-			for (auto triangleShape : triangleShapes)
-			{
-				triangleShape->m_cudaObject->launch();
-			}
-			for (auto triangleShape : triangleShapes)
-			{
-				triangleShape->m_cudaObject->launchTree();
-			}
-
-			// Launch per-vertex kernels
-			for (auto vertexShape : vertexShapes)
-			{
-				vertexShape->m_cudaObject->launch();
-			}
-			for (auto vertexShape : vertexShapes)
-			{
-				vertexShape->m_cudaObject->launchTree();
+				o.first->updateBones();
+				CudaInterface::launchInternalUpdate(
+					o.first->m_cudaObject,
+					o.second.first ? o.second.first->m_cudaObject : nullptr,
+					o.second.second ? o.second.second->m_cudaObject : nullptr);
 			}
 
 			// Update the aggregate parts of the AABB trees

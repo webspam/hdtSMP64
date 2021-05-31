@@ -250,6 +250,25 @@ namespace hdt
 		cuCollisionMerge* mergeBuffer,
 		int mergeWidth);
 
+	cuResult cuInternalUpdate(
+		void* stream,
+		int nVertices,
+		const cuVertex* verticesIn,
+		cuVector4* vertexData,
+		const cuBone* boneData,
+		int nVertexColliders,
+		VertexInputArray perVertexIn,
+		BoundingBoxArray perVertexOut,
+		int nVertexNodes,
+		const std::pair<int, int>* vertexNodeData,
+		cuAabb* vertexNodeOutput,
+		int nTriangleColliders,
+		TriangleInputArray perTriangleIn,
+		BoundingBoxArray perTriangleOut,
+		int nTriangleNodes,
+		const std::pair<int, int>* triangleNodeData,
+		cuAabb* triangleNodeOutput);
+
 	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, BoundingBoxArray boundingBoxes, cuAabb* output);
 
 	cuResult cuSynchronize(void* stream = nullptr);

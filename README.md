@@ -38,6 +38,10 @@ automatically fall back to the CPU algorithm if you do not have any CUDA capable
 check capabilities of any cards it finds, so may crash if your card is too old. It was developed for a
 GeForce 10 series card, so should work on those or anything newer.
 
+The absolute minimum required compute capability is 3.5, to support dynamic parallelism. However, the plugin
+is compiled for compute capability 5.0 for better performance with atomic operations. Therefore you will need
+at least a Maxwell card to use the stock plugin, or a late model Kepler card if you compile it yourself.
+
 The following parts of the collision algortihm are currently GPU accelerated:
 
 * Vertex position calculations for skinned mesh bodies
@@ -45,10 +49,12 @@ The following parts of the collision algortihm are currently GPU accelerated:
 * Aggregate bounding box calculation for internal nodes of collider trees
 * Building collider lists for the final collision check
 * Sphere-sphere and sphere-triangle collision checks
+* Merging collision results (note that this may reduce performance for objects with lots of bones, as the
+  merge buffer can get quite big - still working on this!)
 
 The following parts are still CPU-based:
 
-* Merging collision results and converting to manifolds for the Bullet library to work with
+* Converting collision results to manifolds for the Bullet library to work with
 * And, of course, the solver itself, which is part of the Bullet library, not the HDT-SMP plugin
 
 This is still experimental, and may not give good performance. The old CPU collision algorithm was heavily

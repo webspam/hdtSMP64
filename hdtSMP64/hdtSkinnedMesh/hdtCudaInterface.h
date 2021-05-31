@@ -9,12 +9,11 @@ namespace hdt
 	{
 		friend class CudaPerTriangleShape;
 		friend class CudaPerVertexShape;
+		friend class CudaInterface;
 	public:
 		CudaBody(SkinnedMeshBody* body);
 		void launch();
 		void synchronize();
-		void waitForAaabData();
-		void recordState();
 
 	private:
 		class Imp;
@@ -25,6 +24,7 @@ namespace hdt
 	{
 		template <typename T>
 		friend class CudaCollisionPair;
+		friend class CudaInterface;
 	public:
 		class Imp;
 
@@ -41,6 +41,7 @@ namespace hdt
 	{
 		template <typename T>
 		friend class CudaCollisionPair;
+		friend class CudaInterface;
 	public:
 		class Imp;
 
@@ -110,6 +111,11 @@ namespace hdt
 		void synchronize();
 
 		void clearBufferPool();
+
+		static void launchInternalUpdate(
+			std::shared_ptr<CudaBody> body,
+			std::shared_ptr<CudaPerVertexShape> vertexShape,
+			std::shared_ptr<CudaPerTriangleShape> triangleShape);
 
 	private:
 

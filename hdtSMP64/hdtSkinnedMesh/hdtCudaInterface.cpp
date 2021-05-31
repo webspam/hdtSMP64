@@ -366,25 +366,10 @@ namespace hdt
 			cuSynchronize(m_stream).check(__FUNCTION__);
 		}
 
-		void recordState()
-		{
-			m_event.record(m_stream);
-		}
-
-		void waitForAabbData()
-		{
-			m_event.wait();
-		}
-
 		CudaStream m_stream;
 		CudaDeviceBuffer<cuVector4> m_vertexBuffer;
 		CudaBuffer<cuVertex, Vertex> m_vertexData;
 		CudaBuffer<float> m_boneWeights;
-
-	private:
-
-		CudaEvent m_event;
-
 		int m_numVertices;
 		CudaBuffer<cuBone, Bone> m_bones;
 	};
@@ -403,23 +388,11 @@ namespace hdt
 		m_imp->synchronize();
 	}
 
-	void CudaBody::waitForAaabData()
-	{
-		m_imp->waitForAabbData();
-	}
-
-	void CudaBody::recordState()
-	{
-		m_imp->recordState();
-	}
-
 	class CudaColliderTree
 	{
 		using NodePair = std::pair<int, int>;
 
 		ColliderTree* m_tree;
-		int m_numNodes;
-		int m_largestNode;
 
 	public:
 
@@ -445,6 +418,7 @@ namespace hdt
 			updateBoundingBoxes(*m_tree, m_nodeAabbs);
 		}
 
+		int m_numNodes;
 		CudaBuffer<NodePair> m_nodeData;
 		CudaBuffer<cuAabb, Aabb> m_nodeAabbs;
 
@@ -556,8 +530,6 @@ namespace hdt
 		CudaDeviceBuffer<BoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		const cuPenetrationType m_penetrationType;
-	private:
-
 		int m_numColliders;
 		CudaColliderTree m_tree;
 
@@ -625,9 +597,6 @@ namespace hdt
 		CudaDeviceBuffer<BoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		int m_numColliders;
-
-	private:
-
 		CudaColliderTree m_tree;
 	};
 
@@ -894,6 +863,41 @@ namespace hdt
 	void CudaInterface::clearBufferPool()
 	{
 		CudaBufferPool::instance()->clear();
+	}
+
+	void CudaInterface::launchInternalUpdate(
+		std::shared_ptr<CudaBody> body,
+		std::shared_ptr<CudaPerVertexShape> vertexShape,
+		std::shared_ptr<CudaPerTriangleShape> triangleShape)
+	{
+		body->m_imp->m_bones.toDevice(body->m_imp->m_stream);
+
+		cuInternalUpdate(
+			body->m_imp->m_stream,
+			body->m_imp->m_numVertices,
+			body->m_imp->m_vertexData.getD(),
+			body->m_imp->m_vertexBuffer.getD(),
+			body->m_imp->m_bones.getD(),
+			vertexShape ? vertexShape->m_imp->m_numColliders : 0,
+			vertexShape ? vertexShape->m_imp->m_input.getD() : VertexInputArray(nullptr, 0),
+			vertexShape ? vertexShape->m_imp->m_output.getD() : BoundingBoxArray(nullptr, 0),
+			vertexShape ? vertexShape->m_imp->m_tree.m_numNodes : 0,
+			vertexShape ? vertexShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
+			vertexShape ? vertexShape->m_imp->m_tree.m_nodeAabbs.getD() : nullptr,
+			triangleShape ? triangleShape->m_imp->m_numColliders : 0,
+			triangleShape ? triangleShape->m_imp->m_input.getD() : TriangleInputArray(nullptr, 0),
+			triangleShape ? triangleShape->m_imp->m_output.getD() : BoundingBoxArray(nullptr, 0),
+			triangleShape ? triangleShape->m_imp->m_tree.m_numNodes : 0,
+			triangleShape ? triangleShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
+			triangleShape ? triangleShape->m_imp->m_tree.m_nodeAabbs.getD() : nullptr).check(__FUNCTION__);
+		if (vertexShape)
+		{
+			vertexShape->m_imp->m_tree.m_nodeAabbs.toHost(body->m_imp->m_stream);
+		}
+		if (triangleShape)
+		{
+			triangleShape->m_imp->m_tree.m_nodeAabbs.toHost(body->m_imp->m_stream);
+		}
 	}
 
 	CudaInterface::CudaInterface()
