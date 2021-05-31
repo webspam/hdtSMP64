@@ -343,12 +343,14 @@ namespace hdt
 			std::copy(body->m_vertices.begin(), body->m_vertices.end(), m_vertexData.get());
 			m_vertexData.toDevice(m_stream);
 
+			m_invBoneMap.reserve(body->m_skinnedBones.size());
 			for (int i = 0; i < body->m_skinnedBones.size(); ++i)
 			{
 				m_boneWeights[i] = body->m_skinnedBones[i].weightThreshold;
 				if (!body->m_skinnedBones[i].isKinematic)
 				{
 					m_boneMap[i] = m_numDynamicBones++;
+					m_invBoneMap.push_back(i);
 				}
 				else
 				{
@@ -382,6 +384,7 @@ namespace hdt
 		CudaBuffer<cuVertex, Vertex> m_vertexData;
 		CudaBuffer<float> m_boneWeights;
 		CudaBuffer<int> m_boneMap;
+		std::vector<int> m_invBoneMap;
 		int m_numVertices;
 		int m_numDynamicBones;
 		CudaBuffer<cuBone, Bone> m_bones;
@@ -651,60 +654,98 @@ namespace hdt
 			m_buffer.toHost(m_stream);
 		}
 
+		void addManifold(cuCollisionMerge* c, SkinnedMeshBone* rb0, SkinnedMeshBone* rb1, CollisionDispatcher* dispatcher)
+		{
+			if (c->weight < FLT_EPSILON) return;
+
+			if (rb0 == rb1) return;
+
+			float invWeight = 1.0f / c->weight;
+
+			auto maniford = dispatcher->getNewManifold(&rb0->m_rig, &rb1->m_rig);
+			auto worldA = btVector4(c->posA.val) * invWeight;
+			auto worldB = btVector4(c->posB.val) * invWeight;
+			auto localA = rb0->m_rig.getWorldTransform().invXform(worldA);
+			auto localB = rb1->m_rig.getWorldTransform().invXform(worldB);
+			auto normal = btVector4(c->normal.val) * invWeight;
+			if (normal.fuzzyZero()) return;
+			auto depth = -normal.length();
+			normal = -normal.normalized();
+
+			if (depth >= -FLT_EPSILON) return;
+
+			btManifoldPoint newPt(localA, localB, normal, depth);
+			newPt.m_positionWorldOnA = worldA;
+			newPt.m_positionWorldOnB = worldB;
+			newPt.m_combinedFriction = rb0->m_rig.getFriction() * rb1->m_rig.getFriction();
+			newPt.m_combinedRestitution = rb0->m_rig.getRestitution() * rb1->m_rig.getRestitution();
+			newPt.m_combinedRollingFriction = rb0->m_rig.getRollingFriction() * rb1->m_rig.getRollingFriction();
+			maniford->addManifoldPoint(newPt);
+		}
+
 		void apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1, CollisionDispatcher* dispatcher)
 		{
+			// Checking can-collide-with and no-collide-with involves a list search, so just do it once for each bone
+			std::vector<bool> canCollide0(body0->m_skinnedBones.size());
+			for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
+			{
+				canCollide0[i] = body1->canCollideWith(body0->m_skinnedBones[i].ptr);
+			}
+			std::vector<bool> canCollide1(body1->m_skinnedBones.size());
+			for (int i = 0; i < body1->m_skinnedBones.size(); ++i)
+			{
+				canCollide1[i] = body0->canCollideWith(body1->m_skinnedBones[i].ptr);
+			}
+
 			cuSynchronize(m_stream).check(__FUNCTION__);
 
 			int* map0 = body0->m_cudaObject->m_imp->m_boneMap.get();
 			int* map1 = body1->m_cudaObject->m_imp->m_boneMap.get();
 
-			for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
+			// First check each dynamic bone of body 0 against every bone of body 1
+			for (int dyn = 0; dyn < body0->m_cudaObject->m_imp->m_invBoneMap.size(); ++dyn)
 			{
-				if (!body1->canCollideWith(body0->m_skinnedBones[i].ptr)) continue;
+				int i = body0->m_cudaObject->m_imp->m_invBoneMap[dyn];
+				if (!canCollide0[i])
+				{
+					continue;
+				}
+
 				for (int j = 0; j < body1->m_skinnedBones.size(); ++j)
 				{
-					if (!body0->canCollideWith(body1->m_skinnedBones[j].ptr)) continue;
-
-					if (map0[i] == -1 && map1[i] == -1) continue;
-
-					cuCollisionMerge* c;
-					
-					if (map0[i] == -1)
+					if (!canCollide1[j])
 					{
-						c = m_buffer.get() + m_dynx * m_y + m_x * map1[j] + i;
-					}
-					else
-					{
-						c = m_buffer.get() + map0[i] * m_y + j;
+						continue;
 					}
 
-					if (c->weight < FLT_EPSILON) continue;
-
+					cuCollisionMerge* c = m_buffer.get() + dyn * m_y + j;
 					auto rb0 = body0->m_skinnedBones[i].ptr;
 					auto rb1 = body1->m_skinnedBones[j].ptr;
-					if (rb0 == rb1) continue;
+					addManifold(c, rb0, rb1, dispatcher);
 
-					float invWeight = 1.0f / c->weight;
+				}
+			}
 
-					auto maniford = dispatcher->getNewManifold(&rb0->m_rig, &rb1->m_rig);
-					auto worldA = btVector4(c->posA.val) * invWeight;
-					auto worldB = btVector4(c->posB.val) * invWeight;
-					auto localA = rb0->m_rig.getWorldTransform().invXform(worldA);
-					auto localB = rb1->m_rig.getWorldTransform().invXform(worldB);
-					auto normal = btVector4(c->normal.val) * invWeight;
-					if (normal.fuzzyZero()) continue;
-					auto depth = -normal.length();
-					normal = -normal.normalized();
+			// Then check each dynamic bone of body 1 against each kinematic bone of body 0
+			for (int dyn = 0; dyn < body1->m_cudaObject->m_imp->m_invBoneMap.size(); ++dyn)
+			{
+				int j = body1->m_cudaObject->m_imp->m_invBoneMap[dyn];
+				if (!canCollide1[j])
+				{
+					continue;
+				}
 
-					if (depth >= -FLT_EPSILON) continue;
+				for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
+				{
+					if (!body0->m_skinnedBones[i].isKinematic || !canCollide0[i])
+					{
+						continue;
+					}
 
-					btManifoldPoint newPt(localA, localB, normal, depth);
-					newPt.m_positionWorldOnA = worldA;
-					newPt.m_positionWorldOnB = worldB;
-					newPt.m_combinedFriction = rb0->m_rig.getFriction() * rb1->m_rig.getFriction();
-					newPt.m_combinedRestitution = rb0->m_rig.getRestitution() * rb1->m_rig.getRestitution();
-					newPt.m_combinedRollingFriction = rb0->m_rig.getRollingFriction() * rb1->m_rig.getRollingFriction();
-					maniford->addManifoldPoint(newPt);
+					cuCollisionMerge* c = m_buffer.get() + m_dynx * m_y + m_x * dyn + i;
+					auto rb0 = body0->m_skinnedBones[i].ptr;
+					auto rb1 = body1->m_skinnedBones[j].ptr;
+					addManifold(c, rb0, rb1, dispatcher);
 				}
 			}
 		}

@@ -162,7 +162,8 @@ namespace hdt
 			}
 
 			// Update the aggregate parts of the AABB trees
-			for (auto& o : to_update)
+//			concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+			for (auto o : to_update)
 			{
 				o.first->m_cudaObject->synchronize();
 
@@ -211,13 +212,11 @@ namespace hdt
 				}
 			}
 
-			// Synchronize and apply the collision results
-			concurrency::parallel_for_each(collisionFuncs.begin(), collisionFuncs.end(),
-				[](std::function<void()>& f)
+			for (auto f : collisionFuncs)
 			{
 				if (f)
 					f();
-			});
+			}
 		}
 		else
 		{
