@@ -655,9 +655,6 @@ namespace hdt
 		{
 			cuSynchronize(m_stream).check(__FUNCTION__);
 
-			int nx = body0->m_skinnedBones.size();
-			int ny = body1->m_skinnedBones.size();
-			int dynx = body0->m_cudaObject->m_imp->m_numDynamicBones;
 			int* map0 = body0->m_cudaObject->m_imp->m_boneMap.get();
 			int* map1 = body1->m_cudaObject->m_imp->m_boneMap.get();
 
@@ -674,11 +671,11 @@ namespace hdt
 					
 					if (map0[i] == -1)
 					{
-						c = m_buffer.get() + dynx * ny + (nx - dynx) * map1[j] + i;
+						c = m_buffer.get() + m_dynx * m_y + m_x * map1[j] + i;
 					}
 					else
 					{
-						c = m_buffer.get() + map0[i] * ny + j;
+						c = m_buffer.get() + map0[i] * m_y + j;
 					}
 
 					if (c->weight < FLT_EPSILON) continue;

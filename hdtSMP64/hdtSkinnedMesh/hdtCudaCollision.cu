@@ -733,16 +733,19 @@ namespace hdt
                 float w2 = w * w;
 
                 int i = swap ? indexB : indexA;
+                int i_map = swap ? boneMapB[indexB] : boneMapA[indexA];
                 int j = swap ? indexA : indexB;
+                int j_map = swap ? boneMapA[indexA] : boneMapB[indexB];
+
                 cuCollisionMerge* c;
 
-                if (boneMapA[i] == -1 && boneMapB[j] != -1)
+                if (i_map == -1 && j_map != -1)
                 {
-                    c = mergeBuffer + mergeDynX * mergeY + (mergeX - mergeDynX) * boneMapB[j] + i;
+                    c = mergeBuffer + mergeDynX * mergeY + mergeX * j_map + i;
                 }
-                else if (boneMapA[i] != -1)
+                else if (i_map != -1)
                 {
-                    c = mergeBuffer + boneMapA[i] * mergeY + j;
+                    c = mergeBuffer + i_map * mergeY + j;
                 }
                 else
                 {
