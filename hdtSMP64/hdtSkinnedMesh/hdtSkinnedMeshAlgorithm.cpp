@@ -670,7 +670,7 @@ namespace hdt
 		SkinnedMeshBody* body1,
 		CollisionDispatcher* dispatcher)
 	{
-		std::shared_ptr<CudaMergeBuffer> cudaMerge = std::make_shared<CudaMergeBuffer>(body0->m_skinnedBones.size(), body1->m_skinnedBones.size());
+		std::shared_ptr<CudaMergeBuffer> cudaMerge = std::make_shared<CudaMergeBuffer>(body0, body1);
 
 		auto apply = std::function<void()>([=]()
 		{

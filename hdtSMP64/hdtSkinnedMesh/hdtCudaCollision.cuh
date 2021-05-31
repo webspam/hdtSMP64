@@ -247,8 +247,12 @@ namespace hdt
 		cuVector4* vertexDataB,
 		float* boneWeightsA,
 		float* boneWeightsB,
+		int* boneMapA,
+		int* boneMapB,
 		cuCollisionMerge* mergeBuffer,
-		int mergeWidth);
+		int mergeX,
+		int mergeDynX,
+		int mergeY);
 
 	cuResult cuInternalUpdate(
 		void* stream,

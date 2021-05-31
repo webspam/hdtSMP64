@@ -10,6 +10,7 @@ namespace hdt
 		friend class CudaPerTriangleShape;
 		friend class CudaPerVertexShape;
 		friend class CudaInterface;
+		friend class CudaMergeBuffer;
 	public:
 		CudaBody(SkinnedMeshBody* body);
 		void launch();
@@ -61,7 +62,7 @@ namespace hdt
 	public:
 		class Imp;
 
-		CudaMergeBuffer(int x, int y);
+		CudaMergeBuffer(SkinnedMeshBody* body0, SkinnedMeshBody* body1);
 
 		void launchTransfer();
 

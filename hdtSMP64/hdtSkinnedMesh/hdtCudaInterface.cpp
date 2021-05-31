@@ -333,8 +333,10 @@ namespace hdt
 
 		Imp(SkinnedMeshBody* body)
 			: m_numVertices(body->m_vertices.size()),
+			m_numDynamicBones(0),
 			m_bones(body->m_skinnedBones.size()),
 			m_boneWeights(body->m_skinnedBones.size()),
+			m_boneMap(body->m_skinnedBones.size()),
 			m_vertexData(body->m_vertices.size()),
 			m_vertexBuffer(body->m_vertices.size())
 		{
@@ -344,8 +346,17 @@ namespace hdt
 			for (int i = 0; i < body->m_skinnedBones.size(); ++i)
 			{
 				m_boneWeights[i] = body->m_skinnedBones[i].weightThreshold;
+				if (!body->m_skinnedBones[i].isKinematic)
+				{
+					m_boneMap[i] = m_numDynamicBones++;
+				}
+				else
+				{
+					m_boneMap[i] = -1;
+				}
 			}
 			m_boneWeights.toDevice(m_stream);
+			m_boneMap.toDevice(m_stream);
 
 			body->m_bones.reset(m_bones.get(), NullDeleter<Bone[]>());
 		}
@@ -370,7 +381,9 @@ namespace hdt
 		CudaDeviceBuffer<cuVector4> m_vertexBuffer;
 		CudaBuffer<cuVertex, Vertex> m_vertexData;
 		CudaBuffer<float> m_boneWeights;
+		CudaBuffer<int> m_boneMap;
 		int m_numVertices;
+		int m_numDynamicBones;
 		CudaBuffer<cuBone, Bone> m_bones;
 	};
 
@@ -623,11 +636,12 @@ namespace hdt
 	{
 	public:
 
-		Imp(int x, int y)
-			: m_x(x),
-			m_y(y),
+		Imp(SkinnedMeshBody* body0, SkinnedMeshBody* body1)
+			: m_x(body0->m_skinnedBones.size()),
+			m_y(body1->m_skinnedBones.size()),
+			m_dynx(body0->m_cudaObject->m_imp->m_numDynamicBones),
 			m_stream(),
-			m_buffer(x*y)
+			m_buffer(m_dynx * m_y + m_x * body1->m_cudaObject->m_imp->m_numDynamicBones)
 		{
 			m_buffer.zero(m_stream);
 		}
@@ -641,6 +655,12 @@ namespace hdt
 		{
 			cuSynchronize(m_stream).check(__FUNCTION__);
 
+			int nx = body0->m_skinnedBones.size();
+			int ny = body1->m_skinnedBones.size();
+			int dynx = body0->m_cudaObject->m_imp->m_numDynamicBones;
+			int* map0 = body0->m_cudaObject->m_imp->m_boneMap.get();
+			int* map1 = body1->m_cudaObject->m_imp->m_boneMap.get();
+
 			for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
 			{
 				if (!body1->canCollideWith(body0->m_skinnedBones[i].ptr)) continue;
@@ -648,11 +668,20 @@ namespace hdt
 				{
 					if (!body0->canCollideWith(body1->m_skinnedBones[j].ptr)) continue;
 
-					auto c = m_buffer.get() + j * m_x + i;
+					if (map0[i] == -1 && map1[i] == -1) continue;
+
+					cuCollisionMerge* c;
+					
+					if (map0[i] == -1)
+					{
+						c = m_buffer.get() + dynx * ny + (nx - dynx) * map1[j] + i;
+					}
+					else
+					{
+						c = m_buffer.get() + map0[i] * ny + j;
+					}
 
 					if (c->weight < FLT_EPSILON) continue;
-
-					if (body0->m_skinnedBones[i].isKinematic && body1->m_skinnedBones[j].isKinematic) continue;
 
 					auto rb0 = body0->m_skinnedBones[i].ptr;
 					auto rb1 = body1->m_skinnedBones[j].ptr;
@@ -685,12 +714,13 @@ namespace hdt
 
 		int m_x;
 		int m_y;
+		int m_dynx;
 		CudaStream m_stream;
 		CudaPooledBuffer<cuCollisionMerge> m_buffer;
 	};
 
-	CudaMergeBuffer::CudaMergeBuffer(int x, int y)
-		: m_imp(new Imp(x, y))
+	CudaMergeBuffer::CudaMergeBuffer(SkinnedMeshBody* body0, SkinnedMeshBody* body1)
+		: m_imp(new Imp(body0, body1))
 	{}
 
 	void CudaMergeBuffer::launchTransfer()
@@ -760,8 +790,12 @@ namespace hdt
 					m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
 					m_shapeA->m_imp->m_body->m_boneWeights.getD(),
 					m_shapeB->m_imp->m_body->m_boneWeights.getD(),
+					m_shapeA->m_imp->m_body->m_boneMap.getD(),
+					m_shapeB->m_imp->m_body->m_boneMap.getD(),
 					merge->m_imp->m_buffer.getD(),
-					merge->m_imp->m_x).check(__FUNCTION__);
+					merge->m_imp->m_x,
+					merge->m_imp->m_dynx,
+					merge->m_imp->m_y).check(__FUNCTION__);
 			}
 		}
 
