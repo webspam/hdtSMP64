@@ -206,6 +206,8 @@ __kernel void updateVertices(
 		m_shape->remapVertices(map.data());
 		m_vertices.resize(numUsed);
 		m_vpos.reset(new VertexPos[numUsed]);
+
+		m_useBoundingSphere = m_shape->m_colliders.size() > 10;
 	}
 
 	bool SkinnedMeshBody::canCollideWith(const SkinnedMeshBody* body) const
@@ -227,13 +229,22 @@ __kernel void updateVertices(
 
 	void SkinnedMeshBody::updateBoundingSphereAabb()
 	{
-		m_bulletShape.m_aabb.invalidate();
-		for (auto& i : m_skinnedBones)
+		if (m_useBoundingSphere)
 		{
-			auto sp = i.localBoundingSphere;
-			auto tr = i.ptr->m_currentTransform;
-			i.worldBoundingSphere = BoundingSphere(tr * sp.center(), tr.getScale() * sp.radius());
-			m_bulletShape.m_aabb.merge(i.worldBoundingSphere.getAabb());
+			m_bulletShape.m_aabb.invalidate();
+			for (auto& i : m_skinnedBones)
+			{
+				auto sp = i.localBoundingSphere;
+				auto tr = i.ptr->m_currentTransform;
+				i.worldBoundingSphere = BoundingSphere(tr * sp.center(), tr.getScale() * sp.radius());
+				m_bulletShape.m_aabb.merge(i.worldBoundingSphere.getAabb());
+			}
+		}
+		else
+		{
+			internalUpdate();
+			m_shape->internalUpdate();
+			m_bulletShape.m_aabb = m_shape->m_tree.aabbAll;
 		}
 	}
 

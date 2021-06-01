@@ -71,6 +71,7 @@ namespace hdt
 
 		//		int m_priority;
 		bool m_isKinematic;
+		bool m_useBoundingSphere;
 		Ref<SkinnedMeshShape> m_shape;
 
 		int addBone(SkinnedMeshBone* bone, const btQsTransform& verticesToBone, const BoundingSphere& boundingSphere);
