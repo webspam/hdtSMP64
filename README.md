@@ -63,48 +63,115 @@ infamous dark face bug. Special restrictions apply to NPCs that do have facegen 
 
 ## Build Instructions
 
-Requires Visual Studio 2019 (Community Edition is fine)
+These should be complete instructions to set up and build the plugin, without assuming prior coding
+experience. I'm checking everything out into D:\Dev-noAVX and building without AVX support, but of course you
+can use any directory.
 
-1) Download the clean skse64 source from [skse's website](http://skse.silverlock.org/)
-2) Extract or clone this repository into the skse64 folder of the source. You can safely delete skse64_loader, skse64_steam_loader, skse64_loader_common, and the skse64 solution.
-3) Download and build [bullet physics](https://github.com/bulletphysics/bullet3) using cmake and Visual Studio. Update the hdtSMP64 project to point to your bullet source and built libraries. The Release configuration is intended to be built with Bullet's "Use MSVC AVX" cmake option enabled, and Release_noavx without.
-4) Download and build [Microsoft's detours library](https://github.com/microsoft/Detours) using nmake. Update the hdtSMP64 project to point to your built library.
-5) Make the edits to SKSE source described below.
-6) Build the solution :)
+You will need:
++ Visual Studio 2019 (any edition)
++ Git
++ CMake
 
-## SKSE Edits
+Open a VS2019 command prompt ("x64 Native Tools Command Prompt for VS2019"). Download and build Detours and
+Bullet:
 
-GameMenus.h line 1090: 
-
-add function 
-```cpp
-	bool                IsGamePaused() { return numPauseGame > 0; }
 ```
-to MenuManager class
-
-GameEvents.h line 662:
-
-replace unk840 with
-```cpp
-EventDispatcher<TESMoveAttachDetachEvent>    		unk840;					//  840 - sink offset 0C8
+d:
+mkdir Dev-noAVX
+cd Dev-noAVX
+git clone https://github.com/microsoft/Detours.git
+git clone https://github.com/bulletphysics/bullet3.git
+cd Detours
+nmake
+cd ..\bullet3
+cmake .
 ```
 
-NiObjects.h around line 207:
+If you want AVX support in Bullet, use `cmake-gui` instead of `cmake`, and check the `USE_MSVC_AVX` box
+before clicking Configure then Generate. This should give a fairly significant performance boost if your CPU
+supports it.
++ Note that AVX support in Bullet and the HDT-SMP plugin itself are independent configuration options. Enable
+  it in both for maximum performance; disable it in both for maximum compatibility.
 
-replace 
+Open D:\Dev-noAVX\bullet3\BULLET_PHYSICS.sln in Visual Studio, select the Release configuration, then 
+Build -> Build solution.
 
-```cpp
-	float		unkF8;				// 0F8
-	UInt32		unkFC;				// 0FC
+Download skse64_2_00_19.7z and unpack into Dev-noAVX (source code is included in the official distribution),
+then get the HDT-SMP source:
+
+```
+cd D:\Dev-noAVX\skse64_2_00_19\src\skse64
+git init
+git remote add origin https://github/com/Karonar1/hdtSMP64.git
+git fetch
+git checkout master
 ```
 
-with
+Open D:\Dev-noAVX\skse64_2_00_19\src\skse64\hdtSMP64.sln in Visual Studio. If you are asked to retarget
+projects, just accept the defaults and click OK.
 
+Open properties for the hdtSMP64 project. Select "All Configurations" at the top, and the C/C++ page. Add the
+following to Additional Include Directories (just delete anything that was there before):
++ D:\Dev-noAVX\Detours\include
++ D:\Dev-noAVX\bullet3\src
++ D:\Dev-noAVX\skse64_2_00_19\src
+
+On the Linker -> General page, add the following to Additional Library Directories:
++ D:\Dev-noAVX\bullet3\lib\Release
++ D:\Dev-noAVX\Detours\lib.X64
+
+Open properties for the skse64 project. Select General, and change Configuration Type from "Dynamic Library
+(.dll)" to "Static Library (.lib)".
+
+Make the following changes to the SKSE code:
+
+In NiObjects.h, at line 81, delete:
 ```cpp
-	TESObjectREFR* m_owner; // 0F8
+virtual void			* Unk_05(void);
 ```
 
-You will need to add a forward declaration or include for TESObjectREFR in NiObjects.h as well.
+and replace it with:
+```cpp
+virtual BSFadeNode		* GetAsBSFadeNode(void);
+```
+
+At line 88, delete:
+```cpp
+virtual void			* Unk_0C(void);
+```
+
+and replace it with:
+```cpp
+virtual BSDynamicTriShape	* GetAsBSDynamicTriShape(void);
+```
+
+In the same file, at line 36 (the end of the list of class declarations), add:
+```cpp
+class BSDynamicTriShape;
+class BSFadeNode;
+```
+
+And at line 174 (inside the `enum` definition), add:
+```cpp
+kNone =		0,
+```
+
+In GameEvents.h, at line 667, delete:
+```cpp
+EventDispatcher<void>								unk840;					//  840 - sink offset 0C8
+```
+
+and replace it with:
+```cpp
+EventDispatcher<TESMoveAttachDetachEvent>			unk840;					//  840 - sink offset 0C8
+```
+
+In GameMenus.h, befor line 1105 (just before the GetSingleton declaration), add:
+```cpp
+bool IsGamePaused() { return numPauseGame > 0; }
+```
+
+Now you should be able to select the Release or Release_noAVX configuration and build the plugin.
 
 ## Credits
 
