@@ -64,14 +64,12 @@ namespace hdt
 		m_pairs.reserve(size);
 		auto pairs = pairCache->getOverlappingPairArrayPtr();
 
-		SpinLock lock;
-
 		using UpdateMap = std::unordered_map<SkinnedMeshBody*, std::pair<PerVertexShape*, PerTriangleShape*> >;
 		UpdateMap to_update;
 
 		// Find bodies and meshes that need collision checking. We want to keep them together in a map so they can
 		// be grouped by CUDA stream
-		concurrency::parallel_for(0, size, [&](int i)
+		for (int i = 0; i < size; ++i)
 		{
 			auto& pair = pairs[i];
 
@@ -82,8 +80,6 @@ namespace hdt
 			{
 				if (hdt::needsCollision(shape0, shape1) && shape0->isBoundingSphereCollided(shape1))
 				{
-					HDT_LOCK_GUARD(l, lock);
-
 					auto it0 = to_update.insert({ shape0, {nullptr, nullptr} }).first;
 					auto it1 = to_update.insert({ shape1, {nullptr, nullptr} }).first;
 
@@ -107,7 +103,7 @@ namespace hdt
 				}
 			}
 			else getNearCallback()(pair, *this, dispatchInfo);
-		});
+		}
 
 		bool haveCuda = CudaInterface::instance()->hasCuda() && (!FrameTimer::instance()->running() || FrameTimer::instance()->cudaFrame());
 
