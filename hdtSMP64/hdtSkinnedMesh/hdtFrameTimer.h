@@ -23,6 +23,7 @@ namespace hdt
 		};
 
 		void reset(int nFrames);
+		void addManifoldCount(int nManifolds);
 		void logEvent(Events e);
 
 		bool running();
@@ -38,5 +39,10 @@ namespace hdt
 		std::map<Measurements, float> m_sumsSquaredCPU;
 		std::map<Measurements, float> m_sumsGPU;
 		std::map<Measurements, float> m_sumsSquaredGPU;
+
+		int m_nManifoldsCPU;
+		int m_nManifolds2CPU;
+		int m_nManifoldsGPU;
+		int m_nManifolds2GPU;
 	};
 }

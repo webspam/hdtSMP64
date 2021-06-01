@@ -228,6 +228,7 @@ namespace hdt
 
 		m_pairs.clear();
 
+		FrameTimer::instance()->addManifoldCount(getNumManifolds());
 		FrameTimer::instance()->logEvent(FrameTimer::e_End);
 	}
 

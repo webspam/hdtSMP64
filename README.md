@@ -116,6 +116,8 @@ plugin recognizes the following optional parameters:
 
 ## Known issues
 
++ In some locations, enabling GPU collision dramatically reduces framerate, even though the collision runtime
+  still seems to be OK. Apparently the game actually uses the GPU most of the time - who'd have thought?
 + Several options, including shape and collision definitions on bones, exist but don't seem to do anything.
 + Sphere-triangle collision check without penetration defined is obviously wrong, but fixing the test
   doesn't improve things. Needs further investigation.

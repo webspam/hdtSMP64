@@ -18,6 +18,10 @@ namespace hdt
 		m_sumsSquaredCPU.clear();
 		m_sumsGPU.clear();
 		m_sumsSquaredGPU.clear();
+		m_nManifoldsCPU = 0;
+		m_nManifolds2CPU = 0;
+		m_nManifoldsGPU = 0;
+		m_nManifolds2GPU = 0;
 	}
 
 	void FrameTimer::logEvent(FrameTimer::Events e)
@@ -74,6 +78,11 @@ namespace hdt
 				Console_Print("    Total mean %f us, std %f us",
 					mean,
 					sqrt(m_sumsSquaredCPU[e_Total] / m_count - mean * mean));
+				mean = m_nManifoldsCPU / m_count;
+				Console_Print("    Collision manifolds %f, std %f",
+					mean,
+					sqrt(m_nManifolds2CPU / m_count - mean * mean));
+
 				Console_Print("  GPU:");
 				mean = m_sumsGPU[e_InternalUpdate] / m_count;
 				Console_Print("    Internal update mean %f us, std %f us",
@@ -87,7 +96,25 @@ namespace hdt
 				Console_Print("    Total mean %f us, std %f us",
 					mean,
 					sqrt(m_sumsSquaredGPU[e_Total] / m_count - mean * mean));
+				mean = m_nManifoldsGPU / m_count;
+				Console_Print("    Collision manifolds %f, std %f",
+					mean,
+					sqrt(m_nManifolds2GPU / m_count - mean * mean));
 			}
+		}
+	}
+
+	void FrameTimer::addManifoldCount(int nManifolds)
+	{
+		if (cudaFrame())
+		{
+			m_nManifoldsGPU += nManifolds;
+			m_nManifolds2GPU += nManifolds * nManifolds;
+		}
+		else
+		{
+			m_nManifoldsCPU += nManifolds;
+			m_nManifolds2CPU += nManifolds * nManifolds;
 		}
 	}
 
