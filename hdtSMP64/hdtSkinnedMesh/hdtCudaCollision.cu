@@ -886,33 +886,6 @@ namespace hdt
         return cudaMemsetAsync(buf, value, n, *s);
     }
 
-    cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData)
-    {
-        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / cuMapBlockSize() + 1;
-
-        kernelBodyUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, boneData);
-        return cuResult();
-    }
-
-    cuResult cuRunPerVertexUpdate(void* stream, int n, VertexInputArray input, BoundingBoxArray output, cuVector4* vertexData)
-    {
-        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / cuMapBlockSize() + 1;
-
-        kernelPerVertexUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, vertexData);
-        return cuResult();
-    }
-
-    cuResult cuRunPerTriangleUpdate(void* stream, int n, TriangleInputArray input, BoundingBoxArray output, cuVector4* vertexData)
-    {
-        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        int numBlocks = (n - 1) / cuMapBlockSize() + 1;
-
-        kernelPerTriangleUpdate <<<numBlocks, cuMapBlockSize(), 0, *s >>> (n, input, output, vertexData);
-        return cuResult();
-    }
-
     template<cuPenetrationType penType, typename T>
     cuResult cuRunCollision(
         void* stream,
@@ -984,17 +957,6 @@ namespace hdt
         return cuResult();
     }
 
-    cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, BoundingBoxArray boundingBoxes, cuAabb* output)
-    {
-        // Reduction kernel only uses a single warp per tree node, becoming linear performance if there are
-        // more than 64 boxes. The reduction itself is entirely intra-warp, without any shared memory use.
-        cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
-        constexpr int warpsPerBlock = cuReduceBlockSize() >> 5;
-        int nBlocks = ((n - 1) / warpsPerBlock) + 1;
-        kernelBoundingBoxReduce <<<nBlocks, cuReduceBlockSize(), 0, *s >>> (n, setup, boundingBoxes, output);
-        return cuResult();
-    }
-
     cuResult cuSynchronize(void* stream)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
@@ -1036,7 +998,7 @@ namespace hdt
 
     void cuInitialize()
     {
-        cudaSetDeviceFlags(cudaDeviceScheduleYield);
+//        cudaSetDeviceFlags(cudaDeviceScheduleYield);
     }
 
     int cuDeviceCount()

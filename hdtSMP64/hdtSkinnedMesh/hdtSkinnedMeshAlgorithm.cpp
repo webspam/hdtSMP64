@@ -664,18 +664,12 @@ namespace hdt
 		collisionPair.launch(cudaMerge.get(), Swap);
 	}
 
-	void SkinnedMeshAlgorithm::queueCollision(
-		std::vector<std::function<void()>>::iterator queue,
+	std::function<void()> SkinnedMeshAlgorithm::queueCollision(
 		SkinnedMeshBody* body0,
 		SkinnedMeshBody* body1,
 		CollisionDispatcher* dispatcher)
 	{
 		std::shared_ptr<CudaMergeBuffer> cudaMerge = std::make_shared<CudaMergeBuffer>(body0, body1);
-
-		auto apply = std::function<void()>([=]()
-		{
-			cudaMerge->apply(body0, body1, dispatcher);
-		});
 
 		if (body0->m_shape->asPerTriangleShape() && body1->m_shape->asPerTriangleShape())
 		{
@@ -690,7 +684,11 @@ namespace hdt
 			launchCollision<false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), cudaMerge);
 
 		cudaMerge->launchTransfer();
-		*queue = apply;
+
+		return [=]()
+		{
+			cudaMerge->apply(body0, body1, dispatcher);
+		};
 	}
 
 	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,

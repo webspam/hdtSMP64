@@ -363,17 +363,6 @@ namespace hdt
 			body->m_bones.reset(m_bones.get(), NullDeleter<Bone[]>());
 		}
 
-		void launch()
-		{
-			m_bones.toDevice(m_stream);
-			cuRunBodyUpdate(
-				m_stream,
-				m_numVertices,
-				m_vertexData.getD(),
-				m_vertexBuffer.getD(),
-				m_bones.getD()).check(__FUNCTION__);
-		}
-
 		void synchronize()
 		{
 			cuSynchronize(m_stream).check(__FUNCTION__);
@@ -393,11 +382,6 @@ namespace hdt
 	CudaBody::CudaBody(SkinnedMeshBody* body)
 		: m_imp(new Imp(body))
 	{}
-
-	void CudaBody::launch()
-	{
-		m_imp->launch();
-	}
 
 	void CudaBody::synchronize()
 	{
@@ -421,12 +405,6 @@ namespace hdt
 			std::vector<NodePair> nodeData;
 			buildNodeData(*tree, m_nodeData.get());
 			m_nodeData.toDevice(stream);
-		}
-
-		void launch(CudaStream& stream, BoundingBoxArray boundingBoxes)
-		{
-			cuRunBoundingBoxReduce(stream, m_numNodes, m_nodeData.getD(), boundingBoxes, m_nodeAabbs.getD()).check(__FUNCTION__);
-			m_nodeAabbs.toHost(stream);
 		}
 
 		void update()
@@ -522,21 +500,6 @@ namespace hdt
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
 		}
 
-		void launch()
-		{
-			cuRunPerTriangleUpdate(
-				m_body->m_stream,
-				m_numColliders,
-				m_input.getD(),
-				m_output.getD(),
-				m_body->m_vertexBuffer.getD()).check(__FUNCTION__);
-		}
-
-		void launchTree()
-		{
-			m_tree.launch(m_body->m_stream, m_output.getD());
-		}
-
 		void updateTree()
 		{
 			m_tree.update();
@@ -554,16 +517,6 @@ namespace hdt
 	CudaPerTriangleShape::CudaPerTriangleShape(PerTriangleShape* shape)
 		: m_imp(new Imp(shape))
 	{}
-
-	void CudaPerTriangleShape::launch()
-	{
-		m_imp->launch();
-	}
-
-	void CudaPerTriangleShape::launchTree()
-	{
-		m_imp->launchTree();
-	}
 
 	void CudaPerTriangleShape::updateTree()
 	{
@@ -589,21 +542,6 @@ namespace hdt
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
 		}
 
-		void launch()
-		{
-			cuRunPerVertexUpdate(
-				m_body->m_stream,
-				m_numColliders,
-				m_input.getD(),
-				m_output.getD(),
-				m_body->m_vertexBuffer.getD()).check(__FUNCTION__);
-		}
-
-		void launchTree()
-		{
-			m_tree.launch(m_body->m_stream, m_output.getD());
-		}
-
 		void updateTree()
 		{
 			m_tree.update();
@@ -619,16 +557,6 @@ namespace hdt
 	CudaPerVertexShape::CudaPerVertexShape(PerVertexShape* shape)
 		: m_imp(new Imp(shape))
 	{}
-
-	void CudaPerVertexShape::launch()
-	{
-		m_imp->launch();
-	}
-
-	void CudaPerVertexShape::launchTree()
-	{
-		m_imp->launchTree();
-	}
 
 	void CudaPerVertexShape::updateTree()
 	{

@@ -45,8 +45,7 @@ namespace hdt
 
 		static const int MaxCollisionCount = 256;
 
-		static void queueCollision(
-			std::vector<std::function<void()>>::iterator queue,
+		static std::function<void()> queueCollision(
 			SkinnedMeshBody* body0Wrap,
 			SkinnedMeshBody* body1Wrap,
 			CollisionDispatcher* dispatcher);

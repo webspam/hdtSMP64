@@ -197,20 +197,20 @@ namespace hdt
 			CudaInterface::instance()->clearBufferPool();
 
 			// Launch collision checking
-			std::vector<std::function<void()>> collisionFuncs(m_pairs.size());
+			std::vector<std::function<void()>> collisionFuncs;
+			collisionFuncs.reserve(m_pairs.size());
 			for (int i = 0; i < m_pairs.size(); ++i)
 			{
 				auto& pair = m_pairs[i];
 				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
 				{
-					SkinnedMeshAlgorithm::queueCollision(collisionFuncs.begin() + i, pair.first, pair.second, this);
+					collisionFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
 				}
 			}
 
 			for (auto f : collisionFuncs)
 			{
-				if (f)
-					f();
+				f();
 			}
 		}
 		else

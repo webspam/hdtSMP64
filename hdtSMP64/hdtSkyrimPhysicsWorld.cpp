@@ -60,6 +60,8 @@ namespace hdt
 
 		//ScanHair();
 
+		auto startTime = GetTickCount();
+
 		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
 		auto tick = std::min(m_averageInterval, m_timeTick);
 
@@ -76,6 +78,10 @@ namespace hdt
 			m_accumulatedInterval = 0;
 			writeTransform();
 		}
+
+		auto time = GetTickCount() - startTime;
+
+		m_averageProcessingTime = (m_averageProcessingTime + time) / 2.0;
 	}
 
 	btVector3 SkyrimPhysicsWorld::applyTranslationOffset()

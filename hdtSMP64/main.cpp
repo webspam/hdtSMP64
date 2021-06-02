@@ -446,6 +446,7 @@ namespace hdt
 		Console_Print("[HDT-SMP] active armor addons: %d", activeArmors);
 		Console_Print("[HDT-SMP] active head parts: %d", activeHeadParts);
 		Console_Print("[HDT-SMP] active collision meshes: %d", activeCollisionMeshes);
+		Console_Print("[HDT-SMP] average physics processing time: %f ms", SkyrimPhysicsWorld::get()->m_averageProcessingTime);
 
 		return true;
 	}

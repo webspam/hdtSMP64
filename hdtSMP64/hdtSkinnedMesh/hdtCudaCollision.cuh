@@ -225,12 +225,6 @@ namespace hdt
 
 	cuResult cuMemset(void* buf, int value, size_t n, void* stream);
 
-	cuResult cuRunBodyUpdate(void* stream, int n, cuVertex* input, cuVector4* output, cuBone* boneData);
-
-	cuResult cuRunPerVertexUpdate(void* stream, int n, VertexInputArray input, BoundingBoxArray output, cuVector4* vertexData);
-
-	cuResult cuRunPerTriangleUpdate(void* stream, int n, TriangleInputArray input, BoundingBoxArray output, cuVector4* vertexData);
-
 	template <cuPenetrationType penType = eNone, typename T>
 	cuResult cuRunCollision(
 		void* stream,
@@ -272,8 +266,6 @@ namespace hdt
 		int nTriangleNodes,
 		const std::pair<int, int>* triangleNodeData,
 		cuAabb* triangleNodeOutput);
-
-	cuResult cuRunBoundingBoxReduce(void* stream, int n, std::pair<int, int>* setup, BoundingBoxArray boundingBoxes, cuAabb* output);
 
 	cuResult cuSynchronize(void* stream = nullptr);
 

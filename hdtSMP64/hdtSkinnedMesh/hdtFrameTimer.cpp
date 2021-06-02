@@ -125,6 +125,6 @@ namespace hdt
 
 	bool FrameTimer::cudaFrame()
 	{
-		return m_nFrames & 1;
+		return m_nFrames > m_count;
 	}
 }

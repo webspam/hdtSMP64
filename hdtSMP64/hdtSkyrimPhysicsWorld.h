@@ -64,6 +64,8 @@ namespace hdt
 		float m_unclampedResetAngle = 120.0f;
 		uint8_t m_resetPc;
 
+		float m_averageProcessingTime;
+
 	private:
 
 		SkyrimPhysicsWorld(void);

@@ -13,7 +13,6 @@ namespace hdt
 		friend class CudaMergeBuffer;
 	public:
 		CudaBody(SkinnedMeshBody* body);
-		void launch();
 		void synchronize();
 
 	private:
@@ -30,8 +29,6 @@ namespace hdt
 		class Imp;
 
 		CudaPerTriangleShape(PerTriangleShape* shape);
-		void launch();
-		void launchTree();
 		void updateTree();
 
 	private:
@@ -47,8 +44,6 @@ namespace hdt
 		class Imp;
 
 		CudaPerVertexShape(PerVertexShape* shape);
-		void launch();
-		void launchTree();
 		void updateTree();
 
 	private:
