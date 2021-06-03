@@ -21,7 +21,7 @@ namespace hdt
     constexpr int collisionBlockSize();
 
     // Block size for collision checking. Must be a power of 2 for the simple inter-warp reductions to work,
-    // and at least 128 for the merge buffer updates (because they are currently written to require 4 warps)
+    // and at least 64 for the merge buffer updates.
     template<>
     constexpr int collisionBlockSize<VertexInputArray>() { return 256; }
     template<>
@@ -178,7 +178,11 @@ namespace hdt
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelPerVertexUpdate(int n, VertexInputArray in, BoundingBoxArray out, const cuVector4* vertexData)
+    __global__ void kernelPerVertexUpdate(
+        int n,
+        VertexInputArray in,
+        BoundingBoxArray out,
+        const cuVector4* __restrict__ vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
@@ -194,7 +198,11 @@ namespace hdt
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelPerTriangleUpdate(int n, TriangleInputArray in, BoundingBoxArray out, const cuVector4* vertexData)
+    __global__ void kernelPerTriangleUpdate(
+        int n,
+        TriangleInputArray in,
+        BoundingBoxArray out,
+        const cuVector4* __restrict__ vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
@@ -216,7 +224,11 @@ namespace hdt
     }
 
     template< unsigned int BlockSize = cuReduceBlockSize() >
-    __global__ void kernelBoundingBoxReduce(int n, const std::pair<int, int>* __restrict__ nodeData, const BoundingBoxArray boundingBoxes, cuAabb* output)
+    __global__ void kernelBoundingBoxReduce(
+        int n,
+        const std::pair<int, int>* __restrict__ nodeData,
+        const BoundingBoxArray boundingBoxes,
+        cuAabb* __restrict__ output)
     {
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
@@ -272,7 +284,11 @@ namespace hdt
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
-    __global__ void kernelBodyUpdate(int n, const cuVertex* __restrict__ in, cuVector4* out, const cuBone* __restrict__ boneData)
+    __global__ void kernelBodyUpdate(
+        int n,
+        const cuVertex* __restrict__ in,
+        cuVector4* __restrict__ out,
+        const cuBone* __restrict__ boneData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
@@ -295,8 +311,8 @@ namespace hdt
     __device__ bool collidePair(
         const cuPerVertexInput& __restrict__ inputA,
         const cuPerVertexInput& __restrict__ inputB,
-        const cuVector4* vertexDataA,
-        const cuVector4* vertexDataB,
+        const cuVector4* __restrict__ vertexDataA,
+        const cuVector4* __restrict__ vertexDataB,
         cuCollisionResult& output)
     {
         const cuVector4 vA = vertexDataA[inputA.vertexIndex];
@@ -332,8 +348,8 @@ namespace hdt
     __device__ bool collidePair(
         const cuPerVertexInput& __restrict__ inputA,
         const cuPerTriangleInput& __restrict__ inputB,
-        const cuVector4* vertexDataA,
-        const cuVector4* vertexDataB,
+        const cuVector4* __restrict__ vertexDataA,
+        const cuVector4* __restrict__ vertexDataB,
         cuCollisionResult& output)
     {
         cuVector4 s = vertexDataA[inputA.vertexIndex];
@@ -536,14 +552,14 @@ namespace hdt
         const T inB,
         const BoundingBoxArray boundingBoxesA,
         const BoundingBoxArray boundingBoxesB,
-        const cuVertex* vertexSetupA,
-        const cuVertex* vertexSetupB,
-        const cuVector4* vertexDataA,
-        const cuVector4* vertexDataB,
-        const float* boneWeightsA,
-        const float* boneWeightsB,
-        const int* boneMapA,
-        const int* boneMapB,
+        const cuVertex* __restrict__ vertexSetupA,
+        const cuVertex* __restrict__ vertexSetupB,
+        const cuVector4* __restrict__ vertexDataA,
+        const cuVector4* __restrict__ vertexDataB,
+        const float* __restrict__ boneWeightsA,
+        const float* __restrict__ boneWeightsB,
+        const int* __restrict__ boneMapA,
+        const int* __restrict__ boneMapB,
         cuCollisionMerge* mergeBuffer,
         int mergeX,
         int mergeDynX,
@@ -711,17 +727,19 @@ namespace hdt
 
             __syncthreads();
 
-            // Update cumulative values in the merge buffer. Use the first four warps, each processing four
-            // or twelve entries, depending on the type of collision.
-            if (warpid < BoneCount<cuPerVertexInput>() && threadInWarp < BoneCount<T::type>())
+            // Update cumulative values in the merge buffer. Use the first two warps, each processing eight
+            // or twenty-four entries, depending on the type of collision.
+            int indexA = threadIdx.x >> 4;
+            int indexB = threadIdx.x & 0x0f;
+            if (indexA < BoneCount<cuPerVertexInput>() && indexB < BoneCount<T::type>())
             {
-                uint32_t indexA = getBone(vertexSetupA, inA[result->colliderA], warpid);
-                uint32_t indexB = getBone(vertexSetupB, inB[result->colliderB], threadInWarp);
+                uint32_t boneA = getBone(vertexSetupA, inA[result->colliderA], indexA);
+                uint32_t boneB = getBone(vertexSetupB, inB[result->colliderB], indexB);
 
-                float weightA = getBoneWeight(vertexSetupA, inA[result->colliderA], warpid);
-                float weightB = getBoneWeight(vertexSetupB, inB[result->colliderB], threadInWarp);
+                float weightA = getBoneWeight(vertexSetupA, inA[result->colliderA], indexA);
+                float weightB = getBoneWeight(vertexSetupB, inB[result->colliderB], indexB);
 
-                if (weightA <= boneWeightsA[indexA] || weightB <= boneWeightsB[indexB])
+                if (weightA <= boneWeightsA[boneA] || weightB <= boneWeightsB[boneB])
                 {
                     return;
                 }
@@ -732,10 +750,10 @@ namespace hdt
                 float w = flexible * result->depth;
                 float w2 = w * w;
 
-                int i = swap ? indexB : indexA;
-                int i_map = swap ? boneMapB[indexB] : boneMapA[indexA];
-                int j = swap ? indexA : indexB;
-                int j_map = swap ? boneMapA[indexA] : boneMapB[indexB];
+                int i = swap ? boneB : boneA;
+                int i_map = swap ? boneMapB[boneB] : boneMapA[boneA];
+                int j = swap ? boneA : boneB;
+                int j_map = swap ? boneMapA[boneA] : boneMapB[boneB];
 
                 cuCollisionMerge* c;
 

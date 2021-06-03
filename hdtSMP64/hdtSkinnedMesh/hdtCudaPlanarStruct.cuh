@@ -4,6 +4,7 @@
 #define __host__
 #define __device__
 #define __forceinline__ __forceinline
+#define __restrict__
 #endif
 
 namespace hdt
@@ -38,7 +39,7 @@ namespace hdt
 
     private:
 
-        StructT* const m_buffer;
+        StructT* __restrict__ const m_buffer;
     };
 
     template<int... Vals>
