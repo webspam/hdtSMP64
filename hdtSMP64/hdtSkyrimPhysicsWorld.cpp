@@ -14,7 +14,7 @@ namespace hdt
 		m_windSpeed.setValue(0, 0, 5 * scaleSkyrim);
 
 		getSolverInfo().m_friction = 0;
-		m_averageInterval = m_timeTick;
+		m_substepTick = m_timeTick;
 		m_accumulatedInterval = 0;
 		m_averageProcessingTime = 0;
 	}
@@ -65,18 +65,20 @@ namespace hdt
 		QueryPerformanceCounter(&ticks);
 		int64_t startTime = ticks.QuadPart;
 
-		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
-		auto tick = std::min(m_averageInterval, m_timeTick);
+		float error = interval - m_timeTick;
+		m_substepTick = 0.95 * m_substepTick + 0.25 * error;
+		m_substepTick = std::max(m_substepTick, m_minSubstep);
+		m_substepTick = std::min(m_substepTick, 1.0f);
 
 		m_accumulatedInterval += interval;
-		if (m_accumulatedInterval > tick * 0.25f)
+		if (m_accumulatedInterval > 0.25f * m_minSubstep)
 		{
 			interval = std::min<float>(m_accumulatedInterval, m_timeTick * 1.2);
 
 			readTransform(interval);
 			updateActiveState();
 			auto offset = applyTranslationOffset();
-			stepSimulation(interval, 5, tick);
+			stepSimulation(interval, 5, m_substepTick);
 			restoreTranslationOffset(offset);
 			m_accumulatedInterval = 0;
 			writeTransform();
