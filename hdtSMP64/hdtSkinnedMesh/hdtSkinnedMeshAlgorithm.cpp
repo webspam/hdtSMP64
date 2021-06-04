@@ -685,9 +685,15 @@ namespace hdt
 
 		cudaMerge->launchTransfer();
 
+		std::weak_ptr<CudaBody> weak0 = body0->m_cudaObject;
+		std::weak_ptr<CudaBody> weak1 = body1->m_cudaObject;
+
 		return [=]()
 		{
-			cudaMerge->apply(body0, body1, dispatcher);
+			if (weak0.lock() && weak1.lock())
+			{
+				cudaMerge->apply(body0, body1, dispatcher);
+			}
 		};
 	}
 

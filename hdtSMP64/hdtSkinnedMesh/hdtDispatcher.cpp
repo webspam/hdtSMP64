@@ -6,6 +6,12 @@
 
 #include <LinearMath/btPoolAllocator.h>
 
+// If defined, triangle-vertex and vertex-vertex collision results aren't applied until the next frame. This
+// allows GPU collision detection to run concurrently with the rest of the game engine, instead of leaving
+// the CPU idle waiting for the results. Triangle-triangle collisions are assumed to require the higher
+// accuracy, and are always applied in the current frame.
+#define CUDA_DELAYED_COLLISIONS
+
 namespace hdt
 {
 	void CollisionDispatcher::clearAllManifold()
@@ -148,6 +154,11 @@ namespace hdt
 				});
 			}
 
+			for (auto f : m_delayedFuncs)
+			{
+				f();
+			}
+
 			for (auto o : to_update)
 			{
 				o.first->updateBones();
@@ -191,27 +202,51 @@ namespace hdt
 		}
 
 		FrameTimer::instance()->logEvent(FrameTimer::e_Internal);
+		m_delayedFuncs.clear();
 
 		if (haveCuda)
 		{
 			CudaInterface::instance()->clearBufferPool();
 
 			// Launch collision checking
-			std::vector<std::function<void()>> collisionFuncs;
-			collisionFuncs.reserve(m_pairs.size());
+			m_delayedFuncs.reserve(m_pairs.size());
+			m_immediateFuncs.reserve(m_pairs.size());
+
 			for (int i = 0; i < m_pairs.size(); ++i)
 			{
 				auto& pair = m_pairs[i];
 				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
 				{
-					collisionFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
+					if (pair.first->m_shape->asPerTriangleShape() && pair.second->m_shape->asPerTriangleShape())
+					{
+						m_immediateFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
+					}
+				}
+			}
+			for (int i = 0; i < m_pairs.size(); ++i)
+			{
+				auto& pair = m_pairs[i];
+				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
+				{
+					if (!pair.first->m_shape->asPerTriangleShape() || !pair.second->m_shape->asPerTriangleShape())
+					{
+						m_delayedFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
+					}
 				}
 			}
 
-			for (auto f : collisionFuncs)
+			for (auto f : m_immediateFuncs)
 			{
 				f();
 			}
+			m_immediateFuncs.clear();
+#ifndef CUDA_DELAYED_COLLISIONS
+			for (auto f : m_delayedFuncs)
+			{
+				f();
+			}
+			m_delayedFuncs.clear();
+#endif
 		}
 		else
 		{
