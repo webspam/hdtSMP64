@@ -211,10 +211,22 @@ namespace hdt
 
 		public:
 
+			CudaBufferPool()
+			{}
+
+			~CudaBufferPool()
+			{
+				for (auto record : m_buffers)
+				{
+					cuFreeDevice(std::get<2>(record).first);
+					cuFreeHost(std::get<2>(record).second);
+				}
+			}
+
+			// FIXME: Not thread safe
 			static CudaBufferPool* instance()
 			{
-				static CudaBufferPool s_instance;
-				return &s_instance;
+				return &s_pools[cuGetDevice()];
 			}
 
 			std::pair<void*, void*> getBuffer(size_t size)
@@ -267,21 +279,13 @@ namespace hdt
 				return largeBlockSize * ((size - 1) / largeBlockSize + 1);
 			}
 
-			CudaBufferPool()
-			{}
-
-			~CudaBufferPool()
-			{
-				for (auto record : m_buffers)
-				{
-					cuFreeDevice(std::get<2>(record).first);
-					cuFreeHost(std::get<2>(record).second);
-				}
-			}
-
 			std::vector<Record> m_buffers;
 			std::mutex m_lock;
+
+			static std::map<int, CudaBufferPool> s_pools;
 		};
+
+		std::map<int, CudaBufferPool> CudaBufferPool::s_pools = std::map<int, CudaBufferPool>();
 
 		// CUDA buffer for short-lived per-frame objects. There is no way to deallocate these explicitly - they
 		// remain until the buffer pool is cleared manually at the end of the frame, and then all become unsafe.
@@ -332,7 +336,8 @@ namespace hdt
 	public:
 
 		Imp(SkinnedMeshBody* body)
-			: m_numVertices(body->m_vertices.size()),
+			: m_device(cuGetDevice()),
+			m_numVertices(body->m_vertices.size()),
 			m_numDynamicBones(0),
 			m_bones(body->m_skinnedBones.size()),
 			m_boneWeights(body->m_skinnedBones.size()),
@@ -368,6 +373,12 @@ namespace hdt
 			cuSynchronize(m_stream).check(__FUNCTION__);
 		}
 
+		int deviceId()
+		{
+			return m_device;
+		}
+
+		int m_device;
 		CudaStream m_stream;
 		CudaDeviceBuffer<cuVector4> m_vertexBuffer;
 		CudaBuffer<cuVertex, Vertex> m_vertexData;
@@ -386,6 +397,11 @@ namespace hdt
 	void CudaBody::synchronize()
 	{
 		m_imp->synchronize();
+	}
+
+	int CudaBody::deviceId()
+	{
+		return m_imp->deviceId();
 	}
 
 	class CudaColliderTree
@@ -466,7 +482,8 @@ namespace hdt
 	public:
 
 		Imp(PerTriangleShape* shape)
-			: m_numColliders(shape->m_colliders.size()),
+			: m_device(cuGetDevice()),
+			m_numColliders(shape->m_colliders.size()),
 			m_penetrationType(abs(shape->m_shapeProp.penetration) > FLT_EPSILON ? eInternal : eNone),
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
@@ -505,6 +522,12 @@ namespace hdt
 			m_tree.update();
 		}
 
+		int deviceId()
+		{
+			return m_device;
+		}
+
+		int m_device;
 		CudaBuffer<TriangleInputArray> m_input;
 		CudaDeviceBuffer<BoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
@@ -523,12 +546,18 @@ namespace hdt
 		m_imp->updateTree();
 	}
 
+	int CudaPerTriangleShape::deviceId()
+	{
+		return m_imp->deviceId();
+	}
+
 	class CudaPerVertexShape::Imp
 	{
 	public:
 
 		Imp(PerVertexShape* shape)
-			: m_numColliders(shape->m_colliders.size()),
+			: m_device(cuGetDevice()),
+			m_numColliders(shape->m_colliders.size()),
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size()),
@@ -547,6 +576,12 @@ namespace hdt
 			m_tree.update();
 		}
 
+		int deviceId()
+		{
+			return m_device;
+		}
+
+		int m_device;
 		CudaBuffer<VertexInputArray> m_input;
 		CudaDeviceBuffer<BoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
@@ -561,6 +596,11 @@ namespace hdt
 	void CudaPerVertexShape::updateTree()
 	{
 		m_imp->updateTree();
+	}
+
+	int CudaPerVertexShape::deviceId()
+	{
+		return m_imp->deviceId();
 	}
 
 	class CudaMergeBuffer::Imp
@@ -843,6 +883,7 @@ namespace hdt
 	}
 
 	bool CudaInterface::enableCuda = false;
+	int CudaInterface::currentDevice = 0;
 
 	CudaInterface* CudaInterface::instance()
 	{
@@ -863,6 +904,16 @@ namespace hdt
 	void CudaInterface::clearBufferPool()
 	{
 		CudaBufferPool::instance()->clear();
+	}
+
+	int CudaInterface::deviceCount()
+	{
+		return cuDeviceCount();
+	}
+
+	void CudaInterface::setCurrentDevice()
+	{
+		cuSetDevice(currentDevice);
 	}
 
 	void CudaInterface::launchInternalUpdate(

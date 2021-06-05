@@ -7,11 +7,15 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 
 + Added CUDA support for several parts of collision detection (still a work in progress). This includes
   everything that had OpenCL support in earlier releases, as well as the final collision check. CPU collision
-  is still fully supported, and should be used as a fallback if a CUDA-capable GPU is not available.
+  is still fully supported, and is used as a fallback if a CUDA-capable GPU is not available.
 + Added distance check in ActorManager to disable NPCs more than a certain distance from the player. This
   resolves the massive FPS drop in certain cell transitions (such as Blue Palace -> Solitude). Default
   maximum distance is 10000, which resolves that issue, but I recommend something around 2000 for better
   general performance in cities.
++ New method for dynamically updating timesteps. This is technically less stable in terms of physics
+  accuracy, but avoids a problem where one very slow frame (for example, where NPCs are added to the scene)
+  causes a feedback loop that drops the framerate. If you saw framerates drop to 12-13 in the Blue Palace or
+  at the Fire Festival, this should help.
 + Added can-collide-with-bone to mesh definitions, as a natural counterpart to no-collide-with-bone.
 + Added new "external" sharing option, for objects that should collide with other NPCs, but not this one.
   Good for defining the whole body as a collision mesh for interactions between characters.
@@ -22,7 +26,7 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 + Skeletons should remain active as long as they are in the same cell as (and close enough to) the player
   character. Resolves an issue where entering the Ancestor Glade often incorrectly marked skeletons as
   inactive and disabled physics.
-+ Added "smp list" console command to list tracked NPCs without so much detail - useful for checking which
++ Added `smp list` console command to list tracked NPCs without so much detail - useful for checking which
   NPCs are active in crowded areas. NPCs are now sorted according to active status, with active ones last.
 + New mechanism for remapping mesh names in the defaultBBPs.xml file, allowing much more concise ways of
   defining complex collision objects for lots of armors at once.
@@ -42,6 +46,11 @@ The absolute minimum required compute capability is 3.5, to support dynamic para
 is compiled for compute capability 5.0 for better performance with atomic operations. Therefore you will need
 at least a Maxwell card to use the stock plugin, or a late model Kepler card if you compile it yourself.
 
+If you have more than one CUDA-capable card, you can select the one used for physics calculations in the
+configuration file. The code is designed to allow it to be changed at runtime, but there is currently no
+console command to do this. By default it will use device 0, which is usually the most powerful card
+available.
+
 The following parts of the collision algortihm are currently GPU accelerated:
 
 * Vertex position calculations for skinned mesh bodies
@@ -58,7 +67,8 @@ The following parts are still CPU-based:
 * And, of course, the solver itself, which is part of the Bullet library, not the HDT-SMP plugin
 
 This is still experimental, and may not give good performance. The old CPU collision algorithm was heavily
-optimized, so matching its framerate is not easy.
+optimized, so matching its framerate is not easy. You will need a high end GPU and a low end CPU to see any
+real performance benefits.
 
 * On a 6850K processor (6 cores, 3.6GHz) with a 1080Ti GPU, framerate in crowded areas is a little worse
   than with the CPU-only algorithm. Most of the time, both algorithms easily reach the framerate cap at
@@ -67,19 +77,16 @@ optimized, so matching its framerate is not easy.
   GPU than CPU. Of course, this translates to a less impressive framerate difference, because collision
   checking is only one part of the HDT-SMP algorithm.
 
-If you have an i3 or i5 CPU (or the AMD equivalent) with a fast graphics card, the GPU algorithm may help. If
-you have an i7 or i9 CPU, or your graphics card already struggles with the base game, stick with the CPU
-version.
-
 ## Radeon support?
 
 Nope, sorry. CUDA and nVidia cards are pretty much the industry standard for scientific computing, so that's
 what I use. In any case, I can't support GPU architectures that I don't have. The plugin should work fine in
-CPU mode with any type of card.
+CPU mode with any type of card - I have tested it with Radeon 7850 and no nVidia drivers installed.
 
 The plugin will use the most powerful available CUDA-capable card, regardless of whether it's being used for
 anything else. In theory, it's possible to have a Radeon as the primary graphics card, and an nVidia card in
-the same machine for CUDA and physics. I haven't tested that configuration.
+the same machine for CUDA and physics. I've tested this with two GeForce cards (a 1080Ti and a 1030) in the
+same system, but not a Radeon and a GeForce.
 
 ## Note about NPC head parts
 
@@ -96,18 +103,20 @@ infamous dark face bug. Special restrictions apply to NPCs that do have facegen 
 
 ## Console commands
 
-The smp console command will print some basic information about the number of tracked and active objects. The
-plugin recognizes the following optional parameters:
+The `smp` console command will print some basic information about the number of tracked and active objects.
+The plugin recognizes the following optional parameters:
 
-* reset attempts to reload all meshes and reset the whole HDT-SMP system. However, it is a little buggy and
-  may fail to reload some meshes or constraints properly.
-* gpu toggles the CUDA collision algorithm, if there is at least one CUDA device available.
-* timing starts a timing sequence for the collision detection algorithm. The next 200 frames will alternate
-  between CPU and GPU collision. Once complete, mean and standard deviation of timings for the two collision
-  algorithms are displayed on the console.
-* dumptree dumps the entire node tree of the current targeted NPC to the log file.
-* detail shows extended details of all tracked actors, including active and inactive armour and head parts.
-* list shows a more concise list of tracked actors.
+* `smp reset` attempts to reload all meshes and reset the whole HDT-SMP system. However, it is a little buggy
+  and may fail to reload some meshes or constraints properly.
+* `smp gpu` toggles the CUDA collision algorithm, if there is at least one CUDA device available. If there is
+  no device available, it does nothing.
+* `smp timing` starts a timing sequence for the collision detection algorithm. The next 200 frames will
+  switch between CPU and GPU collision. Once complete, mean and standard deviation of timings for the two
+  collision algorithms are displayed on the console.
+* `smp dumptree` dumps the entire node tree of the current targeted NPC to the log file.
+* `smp detail` shows extended details of all tracked actors, including active and inactive armour and head
+  parts.
+* `smp list` shows a more concise list of tracked actors.
 
 ## Coming soon (maybe)
 
@@ -116,8 +125,6 @@ plugin recognizes the following optional parameters:
 
 ## Known issues
 
-+ In some locations, enabling GPU collision dramatically reduces framerate, even though the collision runtime
-  still seems to be OK. Apparently the game actually uses the GPU most of the time - who'd have thought?
 + Several options, including shape and collision definitions on bones, exist but don't seem to do anything.
 + Sphere-triangle collision check without penetration defined is obviously wrong, but fixing the test
   doesn't improve things. Needs further investigation.
@@ -130,7 +137,8 @@ plugin recognizes the following optional parameters:
   to fix.
 + Physics enabled hair colours are sometimes wrong. This appears to happen there are two NPCs nearby using
   the same hair model.
-+ Probably any open bug listed on Nexus tha t isn't resolved in changes, above. This list only contains
++ Physics may be less stable due to the new dynamic timestep calculation.jjjjjkj
++ Probably any open bug listed on Nexus that isn't resolved in changes, above. This list only contains
   issues I have personally observed.
 
 ## Build Instructions
@@ -239,7 +247,7 @@ and replace it with:
 EventDispatcher<TESMoveAttachDetachEvent>			unk840;					//  840 - sink offset 0C8
 ```
 
-In GameMenus.h, befor line 1105 (just before the GetSingleton declaration), add:
+In GameMenus.h, before line 1105 (just before the GetSingleton declaration), add:
 ```cpp
 bool IsGamePaused() { return numPauseGame > 0; }
 ```

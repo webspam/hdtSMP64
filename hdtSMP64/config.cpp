@@ -79,6 +79,12 @@ namespace hdt
 					ActorManager::instance()->m_maxDistance = reader.readFloat();
 				else if (reader.GetLocalName() == "enableCuda")
 					CudaInterface::enableCuda = reader.readBool();
+				else if (reader.GetLocalName() == "cudaDevice")
+				{
+					int device = reader.readInt();
+					if (device >= 0 && device < CudaInterface::instance()->deviceCount())
+						CudaInterface::currentDevice = device;
+				}
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());

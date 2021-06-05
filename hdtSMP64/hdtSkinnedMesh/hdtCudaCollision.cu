@@ -1026,6 +1026,18 @@ namespace hdt
         return count;
     }
 
+    void cuSetDevice(int id)
+    {
+        cudaSetDevice(id);
+    }
+
+    int cuGetDevice()
+    {
+        int id;
+        cudaGetDevice(&id);
+        return id;
+    }
+
     template cuResult cuRunCollision<eNone, VertexInputArray>(
         void*, int, bool, cuCollisionSetup*, VertexInputArray, VertexInputArray, BoundingBoxArray, BoundingBoxArray,
         cuVertex*, cuVertex*, cuVector4*, cuVector4*,

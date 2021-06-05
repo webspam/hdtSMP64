@@ -14,6 +14,7 @@ namespace hdt
 	public:
 		CudaBody(SkinnedMeshBody* body);
 		void synchronize();
+		int deviceId();
 
 	private:
 		class Imp;
@@ -30,6 +31,7 @@ namespace hdt
 
 		CudaPerTriangleShape(PerTriangleShape* shape);
 		void updateTree();
+		int deviceId();
 
 	private:
 		std::shared_ptr<Imp> m_imp;
@@ -45,6 +47,7 @@ namespace hdt
 
 		CudaPerVertexShape(PerVertexShape* shape);
 		void updateTree();
+		int deviceId();
 
 	private:
 		std::shared_ptr<Imp> m_imp;
@@ -99,6 +102,7 @@ namespace hdt
 
 	public:
 		static bool enableCuda;
+		static int currentDevice;
 
 		static CudaInterface* instance();
 
@@ -107,6 +111,10 @@ namespace hdt
 		void synchronize();
 
 		void clearBufferPool();
+
+		int deviceCount();
+
+		void setCurrentDevice();
 
 		static void launchInternalUpdate(
 			std::shared_ptr<CudaBody> body,

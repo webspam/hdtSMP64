@@ -10,7 +10,7 @@
 // allows GPU collision detection to run concurrently with the rest of the game engine, instead of leaving
 // the CPU idle waiting for the results. Triangle-triangle collisions are assumed to require the higher
 // accuracy, and are always applied in the current frame.
-#define CUDA_DELAYED_COLLISIONS
+//#define CUDA_DELAYED_COLLISIONS
 
 namespace hdt
 {
@@ -118,47 +118,53 @@ namespace hdt
 		if (haveCuda)
 		{
 			bool initialized = true;
+			int deviceId = CudaInterface::currentDevice;
 
 			// Build simple vectors of the things to update, and determine whether any new CUDA objects need
-			// to be created
+			// to be created - either because there isn't one already, or because it's on the wrong device
 			for (auto& o : to_update)
 			{
-				initialized &= static_cast<bool>(o.first->m_cudaObject);
+				initialized &= static_cast<bool>(o.first->m_cudaObject) && o.first->m_cudaObject->deviceId() == deviceId;
 				if (o.second.first)
 				{
-					initialized &= static_cast<bool>(o.second.first->m_cudaObject);
+					initialized &= static_cast<bool>(o.second.first->m_cudaObject) && o.second.first->m_cudaObject->deviceId() == deviceId;
 				}
 				if (o.second.second)
 				{
-					initialized &= static_cast<bool>(o.second.second->m_cudaObject);
+					initialized &= static_cast<bool>(o.second.second->m_cudaObject) && o.second.second->m_cudaObject->deviceId() == deviceId;
 				}
 			}
 
 			// Create any new CUDA objects if necessary
 			if (!initialized)
 			{
-				concurrency::parallel_for_each(to_update.begin(), to_update.end(), [](UpdateMap::value_type& o)
+				concurrency::parallel_for_each(to_update.begin(), to_update.end(), [deviceId](UpdateMap::value_type& o)
 				{
-					if (!o.first->m_cudaObject)
+					CudaInterface::instance()->setCurrentDevice();
+
+					if (!o.first->m_cudaObject || o.first->m_cudaObject->deviceId() != deviceId)
 					{
 						o.first->m_cudaObject.reset(new CudaBody(o.first));
 					}
-					if (o.second.first && !o.second.first->m_cudaObject)
+					if (o.second.first && (!o.second.first->m_cudaObject || o.second.first->m_cudaObject->deviceId() != deviceId))
 					{
 						o.second.first->m_cudaObject.reset(new CudaPerVertexShape(o.second.first));
 					}
-					if (o.second.second && !o.second.second->m_cudaObject)
+					if (o.second.second && (!o.second.second->m_cudaObject || o.second.second->m_cudaObject->deviceId() != deviceId))
 					{
 						o.second.second->m_cudaObject.reset(new CudaPerTriangleShape(o.second.second));
 					}
 				});
 			}
 
+			// FIXME: This is probably broken if the current CUDA device changes and any tasks haven't finished yet.
+			// But delayed collisions are disabled for now anyway.
 			for (auto f : m_delayedFuncs)
 			{
 				f();
 			}
 
+			CudaInterface::instance()->setCurrentDevice();
 			for (auto o : to_update)
 			{
 				o.first->updateBones();

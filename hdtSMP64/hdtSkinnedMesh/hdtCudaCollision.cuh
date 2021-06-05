@@ -280,4 +280,8 @@ namespace hdt
 	void cuInitialize();
 
 	int cuDeviceCount();
+
+	void cuSetDevice(int id);
+
+	int cuGetDevice();
 }
