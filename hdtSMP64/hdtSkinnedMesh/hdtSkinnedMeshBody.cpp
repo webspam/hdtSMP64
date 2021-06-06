@@ -113,7 +113,7 @@ __kernel void updateVertices(
 	__forceinline __m128 calcVertexState(__m128 skinPos, const Bone& bone, __m128 w)
 	{
 		auto p = bone.m_vertexToWorld * skinPos;
-		p = _mm_blend_ps(p.get128(), _mm_load_ps(bone.m_reserved), 0x8);
+		p = _mm_blend_ps(p.get128(), bone.m_vertexToWorld.m_col[3].get128(), 0x8);
 		return _mm_mul_ps(w, p.get128());
 	}
 
@@ -124,10 +124,10 @@ __kernel void updateVertices(
 			auto& v = m_skinnedBones[i];
 			auto boneT = v.ptr->m_currentTransform;
 			m_bones[i].m_vertexToWorld = btMatrix4x3T(boneT) * v.vertexToBone;
-			m_bones[i].m_maginMultipler = v.ptr->m_marginMultipler * boneT.getScale();
 
-			// CPU code uses m_maginMultipler (sic) above, because it's stupid and uses 4x3 matrices. For GPU
-			// we use proper homogeneous coordinates, and put it in the matrix where it belongs.
+			// Element [3][3] of the matrix is otherwise unused, so we put the margin multiplier there. On
+			// GPU we use homogeneous coordinates with w=1, so this gets applied properly as normal matrix
+			// multiplication. On CPU we have w=0, so have to do it explicitly.
 			m_bones[i].m_vertexToWorld.m_col[3][3] *= v.ptr->m_marginMultipler;
 		}
 	}

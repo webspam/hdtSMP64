@@ -12,6 +12,8 @@
 #define __forceinline__ __forceinline
 #endif
 
+#define CUDA_ERROR_CHECKING
+
 #include "hdtCudaPlanarStruct.cuh"
 
 namespace hdt
@@ -24,6 +26,7 @@ namespace hdt
 	public:
 
 #ifdef __NVCC__
+#ifdef CUDA_ERROR_CHECKING
 		cuResult(cudaError_t error = cudaGetLastError())
 			: m_ok(error == cudaSuccess)
 		{
@@ -32,6 +35,10 @@ namespace hdt
 				m_message = cudaGetErrorString(error);
 			}
 		}
+#else
+		cuResult(cudaError_t = cudaSuccess)
+			: m_ok(true) {}
+#endif
 #else
 		bool check(std::string context)
 		{
@@ -159,7 +166,6 @@ namespace hdt
 	struct cuBone
 	{
 		cuVector4 transform[4];
-		cuVector4 marginMultiplier; // Dummy, no longer used
 #ifdef __NVCC__
 		__device__ const float* __restrict__ vals() const { return &transform[0].x; }
 #endif
