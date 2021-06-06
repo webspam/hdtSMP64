@@ -847,23 +847,17 @@ namespace hdt
 
             if (nVertexColliders > 0)
             {
-                cudaStream_t s;
-                cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
                 int nVertexBlocks = (nVertexColliders - 1) / cuMapBlockSize() + 1;
-                kernelPerVertexUpdate <<<nVertexBlocks, cuMapBlockSize(), 0, s>>> (nVertexColliders, perVertexIn, perVertexOut, vertexData);
+                kernelPerVertexUpdate <<<nVertexBlocks, cuMapBlockSize(), 0>>> (nVertexColliders, perVertexIn, perVertexOut, vertexData);
                 int nReduceBlocks = ((nVertexNodes - 1) / warpsPerBlock) + 1;
-                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0, s>>> (nVertexNodes, vertexNodeData, perVertexOut, vertexNodeOutput);
-                cudaStreamDestroy(s);
+                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nVertexNodes, vertexNodeData, perVertexOut, vertexNodeOutput);
             }
             if (nTriangleColliders > 0)
             {
-                cudaStream_t s;
-                cudaStreamCreateWithFlags(&s, cudaStreamNonBlocking);
                 int nTriangleBlocks = (nTriangleColliders - 1) / cuMapBlockSize() + 1;
-                kernelPerTriangleUpdate <<<nTriangleBlocks, cuMapBlockSize(), 0, s>>> (nTriangleColliders, perTriangleIn, perTriangleOut, vertexData);
+                kernelPerTriangleUpdate <<<nTriangleBlocks, cuMapBlockSize(), 0>>> (nTriangleColliders, perTriangleIn, perTriangleOut, vertexData);
                 int nReduceBlocks = ((nTriangleNodes - 1) / warpsPerBlock) + 1;
-                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0, s>>> (nTriangleNodes, triangleNodeData, perTriangleOut, triangleNodeOutput);
-                cudaStreamDestroy(s);
+                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nTriangleNodes, triangleNodeData, perTriangleOut, triangleNodeOutput);
             }
         }
     }
