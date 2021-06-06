@@ -282,6 +282,10 @@ namespace hdt
         int index = (blockIdx.x * BlockSize + threadIdx.x) >> 5;
         int stride = (BlockSize * gridDim.x) >> 5;
 
+        // But we do 8 vertices sequentially, so we can write a full 32 values back at the end
+        index <<= 3;
+        stride <<= 3;
+
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
         int threadInHalfWarp = tid & 0x0f;
@@ -291,14 +295,25 @@ namespace hdt
 
         for (int i = index; i < n; i += stride)
         {
-            float v = boneData[in[i].bones[halfWarp]].vals()[threadInHalfWarp] * in[i].position.vals()[element] * in[i].weights[halfWarp];
-            v += boneData[in[i].bones[halfWarp + 2]].vals()[threadInHalfWarp] * in[i].position.vals()[element] * in[i].weights[halfWarp + 2];
-            v += __shfl_xor_sync(0xffffffff, v, 4);
-            v += __shfl_xor_sync(0xffffffff, v, 8);
-            v += __shfl_xor_sync(0xffffffff, v, 16);
-            if (threadInWarp < 4)
+            float v;
+            float result;
+            for (int j = 0; j < 8 && i + j < n; ++j)
             {
-                out[i].vals()[threadInWarp] = v;
+                v = boneData[in[i + j].bones[halfWarp]].vals()[threadInHalfWarp] * in[i + j].position.vals()[element] * in[i + j].weights[halfWarp];
+                v += boneData[in[i + j].bones[halfWarp + 2]].vals()[threadInHalfWarp] * in[i + j].position.vals()[element] * in[i + j].weights[halfWarp + 2];
+                v += __shfl_xor_sync(0xffffffff, v, 4);
+                v += __shfl_xor_sync(0xffffffff, v, 8);
+                v += __shfl_xor_sync(0xffffffff, v, 16);
+                if (eighthWarp == j)
+                {
+                    result = v;
+                }
+            }
+            if (i + eighthWarp < n)
+            {
+                // Note we exploit the fact that the output values are contiguous here to (hopefully) do a
+                // full 128-byte transaction.
+                out[i].vals()[threadInWarp] = result;
             }
         }
     }
@@ -824,9 +839,8 @@ namespace hdt
     {
         if (threadIdx.x == 0)
         {
-            // Note we need 32 threads per block. Since we don't do any compensation for that here, each
-            // thread will process 32 vertices.
-            int nBodyBlocks = (nVertices - 1) / cuMapBlockSize() + 1;
+            // Each warp of 32 threads processes 8 vertices sequentially, so we need 4 threads per vertex
+            int nBodyBlocks = (nVertices * 4 - 1) / cuMapBlockSize() + 1;
             kernelBodyUpdate <<<nBodyBlocks, cuMapBlockSize()>>> (nVertices, verticesIn, vertexData, boneData);
 
             constexpr int warpsPerBlock = cuReduceBlockSize() >> 5;
