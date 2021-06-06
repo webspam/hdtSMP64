@@ -86,6 +86,8 @@ namespace hdt
 		__device__ cuVector4(float ix, float iy, float iz, float iw);
 		__device__ cuVector4(const cuVector3& v);
 		__device__ explicit operator cuVector3() const;
+		__device__ float* __restrict__ vals() { return &x; }
+		__device__ const float* __restrict__ vals() const { return &x; }
 
 		__device__ cuVector4 operator+(const cuVector4& o) const;
 		__device__ cuVector4 operator-(const cuVector4& o) const;
@@ -157,7 +159,10 @@ namespace hdt
 	struct cuBone
 	{
 		cuVector4 transform[4];
-		cuVector4 marginMultiplier; // Note only w component actually used
+		cuVector4 marginMultiplier; // Dummy, no longer used
+#ifdef __NVCC__
+		__device__ const float* __restrict__ vals() const { return &transform[0].x; }
+#endif
 	};
 
 	struct cuVertex

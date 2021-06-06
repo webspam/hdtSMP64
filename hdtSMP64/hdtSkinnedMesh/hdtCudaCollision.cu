@@ -8,9 +8,8 @@
 
 namespace hdt
 {
-    // Block size for map type operations (vertex and bounding box calculations). Since there's no reduction
-    // in these, we just set this for maximum occupancy (currently 100% for bounding boxes, 75% for vertex
-    // calculation).
+    // Block size for map type operations (vertex and bounding box calculations). There's no inter-warp
+    // reduction in these, so the value isn't very important.
     __host__ __device__ constexpr int cuMapBlockSize() { return 128; }
 
     // Block size for bounding box reduction. Each warp here is independent - larger blocks just do multiple
@@ -272,17 +271,6 @@ namespace hdt
         }
     }
 
-    __device__ cuVector4 calcVertexState(const cuVector4& skinPos, const cuBone& bone, float w)
-    {
-        cuVector4 result;
-        result.x = bone.transform[0].x * skinPos.x + bone.transform[1].x * skinPos.y + bone.transform[2].x * skinPos.z + bone.transform[3].x;
-        result.y = bone.transform[0].y * skinPos.x + bone.transform[1].y * skinPos.y + bone.transform[2].y * skinPos.z + bone.transform[3].y;
-        result.z = bone.transform[0].z * skinPos.x + bone.transform[1].z * skinPos.y + bone.transform[2].z * skinPos.z + bone.transform[3].z;
-        result.w = bone.marginMultiplier.w;
-        result *= w;
-        return result;
-    }
-
     template <unsigned int BlockSize = cuMapBlockSize()>
     __global__ void kernelBodyUpdate(
         int n,
@@ -290,18 +278,28 @@ namespace hdt
         cuVector4* __restrict__ out,
         const cuBone* __restrict__ boneData)
     {
-        int index = blockIdx.x * BlockSize + threadIdx.x;
-        int stride = BlockSize * gridDim.x;
+        // We work with an entire warp per vertex here
+        int index = (blockIdx.x * BlockSize + threadIdx.x) >> 5;
+        int stride = (BlockSize * gridDim.x) >> 5;
+
+        int tid = threadIdx.x;
+        int threadInWarp = tid & 0x1f;
+        int threadInHalfWarp = tid & 0x0f;
+        int halfWarp = threadInWarp >> 4;
+        int eighthWarp = threadInWarp >> 2;
+        int element = eighthWarp & 0x03;
 
         for (int i = index; i < n; i += stride)
         {
-            cuVector4 pos = in[i].position;
-            cuVector4 v = calcVertexState(pos, boneData[in[i].bones[0]], in[i].weights[0]);
-            for (int j = 1; j < 4; ++j)
+            float v = boneData[in[i].bones[halfWarp]].vals()[threadInHalfWarp] * in[i].position.vals()[element] * in[i].weights[halfWarp];
+            v += boneData[in[i].bones[halfWarp + 2]].vals()[threadInHalfWarp] * in[i].position.vals()[element] * in[i].weights[halfWarp + 2];
+            v += __shfl_xor_sync(0xffffffff, v, 4);
+            v += __shfl_xor_sync(0xffffffff, v, 8);
+            v += __shfl_xor_sync(0xffffffff, v, 16);
+            if (threadInWarp < 4)
             {
-                v += calcVertexState(pos, boneData[in[i].bones[j]], in[i].weights[j]);
+                out[i].vals()[threadInWarp] = v;
             }
-            out[i] = v;
         }
     }
 
@@ -826,6 +824,8 @@ namespace hdt
     {
         if (threadIdx.x == 0)
         {
+            // Note we need 32 threads per block. Since we don't do any compensation for that here, each
+            // thread will process 32 vertices.
             int nBodyBlocks = (nVertices - 1) / cuMapBlockSize() + 1;
             kernelBodyUpdate <<<nBodyBlocks, cuMapBlockSize()>>> (nVertices, verticesIn, vertexData, boneData);
 

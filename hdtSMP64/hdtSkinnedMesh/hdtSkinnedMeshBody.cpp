@@ -125,6 +125,10 @@ __kernel void updateVertices(
 			auto boneT = v.ptr->m_currentTransform;
 			m_bones[i].m_vertexToWorld = btMatrix4x3T(boneT) * v.vertexToBone;
 			m_bones[i].m_maginMultipler = v.ptr->m_marginMultipler * boneT.getScale();
+
+			// CPU code uses m_maginMultipler (sic) above, because it's stupid and uses 4x3 matrices. For GPU
+			// we use proper homogeneous coordinates, and put it in the matrix where it belongs.
+			m_bones[i].m_vertexToWorld.m_col[3][3] *= v.ptr->m_marginMultipler;
 		}
 	}
 	void SkinnedMeshBody::internalUpdate()

@@ -345,7 +345,12 @@ namespace hdt
 			m_vertexData(body->m_vertices.size()),
 			m_vertexBuffer(body->m_vertices.size())
 		{
+			// Copy vertex data to the GPU, converting to homogeneous coordinates with w=1
 			std::copy(body->m_vertices.begin(), body->m_vertices.end(), m_vertexData.get());
+			for (int i = 0; i < m_numVertices; ++i)
+			{
+				m_vertexData[i].m_skinPos[3] = 1.0f;
+			}
 			m_vertexData.toDevice(m_stream);
 
 			m_invBoneMap.reserve(body->m_skinnedBones.size());
