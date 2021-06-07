@@ -757,8 +757,7 @@ namespace hdt
                     return;
                 }
 
-                // FIXME: Get this from collider data, if it even does anything useful
-                float flexible = 1.0;
+                float flexible = max(inA[result->colliderA].flexible, inB[result->colliderB].flexible);
 
                 float w = flexible * result->depth;
                 float w2 = w * w;

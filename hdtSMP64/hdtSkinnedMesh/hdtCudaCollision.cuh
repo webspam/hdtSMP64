@@ -131,6 +131,7 @@ namespace hdt
 	{
 		int vertexIndex;
 		float margin;
+		float flexible;
 	};
 
 	struct cuPerTriangleInput
@@ -138,6 +139,7 @@ namespace hdt
 		cuTriangleIndices vertexIndices;
 		float margin;
 		float penetration;
+		float flexible;
 	};
 
 	struct cuAabb3

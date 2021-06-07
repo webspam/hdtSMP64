@@ -500,12 +500,12 @@ namespace hdt
 				if (shape->m_shapeProp.penetration < 0)
 				{
 					m_input.get()[i] = {
-						{ static_cast<int>(shape->m_colliders[i].vertices[1]),
+						{	static_cast<int>(shape->m_colliders[i].vertices[1]),
 							static_cast<int>(shape->m_colliders[i].vertices[0]),
 							static_cast<int>(shape->m_colliders[i].vertices[2]) },
 						shape->m_shapeProp.margin,
-						shape->m_shapeProp.penetration
-					};
+						shape->m_shapeProp.penetration,
+						shape->m_colliders[i].flexible };
 				}
 				else
 				{
@@ -514,8 +514,8 @@ namespace hdt
 							static_cast<int>(shape->m_colliders[i].vertices[1]),
 							static_cast<int>(shape->m_colliders[i].vertices[2]) },
 						shape->m_shapeProp.margin,
-						-shape->m_shapeProp.penetration
-					};
+						-shape->m_shapeProp.penetration,
+						shape->m_colliders[i].flexible };
 				}
 			}
 			m_input.toDevice(m_body->m_stream);
@@ -539,7 +539,6 @@ namespace hdt
 		const cuPenetrationType m_penetrationType;
 		int m_numColliders;
 		CudaColliderTree m_tree;
-
 	};
 
 	CudaPerTriangleShape::CudaPerTriangleShape(PerTriangleShape* shape)
@@ -570,7 +569,10 @@ namespace hdt
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
-				m_input.get()[i] = { static_cast<int>(shape->m_colliders[i].vertex), shape->m_shapeProp.margin };
+				m_input.get()[i] = {
+					static_cast<int>(shape->m_colliders[i].vertex),
+					shape->m_shapeProp.margin,
+					shape->m_colliders[i].flexible };
 			}
 			m_input.toDevice(m_body->m_stream);
 			m_tree.m_nodeData.toDevice(m_body->m_stream);
