@@ -383,6 +383,16 @@ namespace hdt
 			return m_device;
 		}
 
+		operator cuBodyData()
+		{
+			return { m_vertexData.getD(), m_vertexBuffer.getD(), m_numVertices };
+		}
+
+		operator cuCollisionBodyData()
+		{
+			return { cuBodyData(), m_boneWeights.getD(), m_boneMap.getD() };
+		}
+
 		int m_device;
 		CudaStream m_stream;
 		CudaDeviceBuffer<cuVector4> m_vertexBuffer;
@@ -725,10 +735,17 @@ namespace hdt
 			}
 		}
 
+		operator cuMergeBuffer()
+		{
+			return { m_buffer.getD(), m_x, m_y, m_dynx };
+		}
+
+		CudaStream m_stream;
+
+	private:
 		int m_x;
 		int m_y;
 		int m_dynx;
-		CudaStream m_stream;
 		CudaPooledBuffer<cuCollisionMerge> m_buffer;
 	};
 
@@ -805,10 +822,7 @@ namespace hdt
 					m_shapeB->m_imp->m_body->m_boneWeights.getD(),
 					m_shapeA->m_imp->m_body->m_boneMap.getD(),
 					m_shapeB->m_imp->m_body->m_boneMap.getD(),
-					merge->m_imp->m_buffer.getD(),
-					merge->m_imp->m_x,
-					merge->m_imp->m_dynx,
-					merge->m_imp->m_y).check(__FUNCTION__);
+					*merge->m_imp).check(__FUNCTION__);
 			}
 		}
 
@@ -932,9 +946,7 @@ namespace hdt
 
 		cuInternalUpdate(
 			body->m_imp->m_stream,
-			body->m_imp->m_numVertices,
-			body->m_imp->m_vertexData.getD(),
-			body->m_imp->m_vertexBuffer.getD(),
+			*body->m_imp,
 			body->m_imp->m_bones.getD(),
 			vertexShape ? vertexShape->m_imp->m_numColliders : 0,
 			vertexShape ? vertexShape->m_imp->m_input.getD() : VertexInputArray(nullptr, 0),

@@ -273,9 +273,7 @@ namespace hdt
 
     template <unsigned int BlockSize = cuMapBlockSize()>
     __global__ void kernelBodyUpdate(
-        int n,
-        const cuVertex* __restrict__ in,
-        cuVector4* __restrict__ out,
+        cuBodyData data,
         const cuBone* __restrict__ boneData)
     {
         // We work with an entire warp per vertex here
@@ -293,14 +291,14 @@ namespace hdt
         int eighthWarp = threadInWarp >> 2;
         int element = eighthWarp & 0x03;
 
-        for (int i = index; i < n; i += stride)
+        for (int i = index; i < data.numVertices; i += stride)
         {
             float v;
             float result;
-            for (int j = 0; j < 8 && i + j < n; ++j)
+            for (int j = 0; j < 8 && i + j < data.numVertices; ++j)
             {
-                v = boneData[in[i + j].bones[halfWarp]].vals()[threadInHalfWarp] * in[i + j].position.vals()[element] * in[i + j].weights[halfWarp];
-                v += boneData[in[i + j].bones[halfWarp + 2]].vals()[threadInHalfWarp] * in[i + j].position.vals()[element] * in[i + j].weights[halfWarp + 2];
+                v = boneData[data.vertexData[i + j].bones[halfWarp]].vals()[threadInHalfWarp] * data.vertexData[i + j].position.vals()[element] * data.vertexData[i + j].weights[halfWarp];
+                v += boneData[data.vertexData[i + j].bones[halfWarp + 2]].vals()[threadInHalfWarp] * data.vertexData[i + j].position.vals()[element] * data.vertexData[i + j].weights[halfWarp + 2];
                 v += __shfl_xor_sync(0xffffffff, v, 4);
                 v += __shfl_xor_sync(0xffffffff, v, 8);
                 v += __shfl_xor_sync(0xffffffff, v, 16);
@@ -309,11 +307,11 @@ namespace hdt
                     result = v;
                 }
             }
-            if (i + eighthWarp < n)
+            if (i + eighthWarp < data.numVertices)
             {
                 // Note we exploit the fact that the output values are contiguous here to (hopefully) do a
                 // full 128-byte transaction.
-                out[i].vals()[threadInWarp] = result;
+                data.vertexBuffer[i].vals()[threadInWarp] = result;
             }
         }
     }
@@ -573,10 +571,7 @@ namespace hdt
         const float* __restrict__ boneWeightsB,
         const int* __restrict__ boneMapA,
         const int* __restrict__ boneMapB,
-        cuCollisionMerge* mergeBuffer,
-        int mergeX,
-        int mergeDynX,
-        int mergeY)
+        cuMergeBuffer mergeBuffer)
     {
         static_assert(vertexListSize() <= BlockSize, "Vertex list must be smaller than block size");
 
@@ -771,11 +766,11 @@ namespace hdt
 
                 if (i_map == -1 && j_map != -1)
                 {
-                    c = mergeBuffer + mergeDynX * mergeY + mergeX * j_map + i;
+                    c = mergeBuffer.buffer + mergeBuffer.dynx * mergeBuffer.y + mergeBuffer.x * j_map + i;
                 }
                 else if (i_map != -1)
                 {
-                    c = mergeBuffer + i_map * mergeY + j;
+                    c = mergeBuffer.buffer + i_map * mergeBuffer.y + j;
                 }
                 else
                 {
@@ -819,9 +814,7 @@ namespace hdt
     }
 
     __global__ void fullInternalUpdate(
-        int nVertices,
-        const cuVertex* __restrict__ verticesIn,
-        cuVector4* vertexData,
+        cuBodyData vertexData,
         const cuBone* __restrict__ boneData,
         int nVertexColliders,
         VertexInputArray perVertexIn,
@@ -839,22 +832,22 @@ namespace hdt
         if (threadIdx.x == 0)
         {
             // Each warp of 32 threads processes 8 vertices sequentially, so we need 4 threads per vertex
-            int nBodyBlocks = (nVertices * 4 - 1) / cuMapBlockSize() + 1;
-            kernelBodyUpdate <<<nBodyBlocks, cuMapBlockSize()>>> (nVertices, verticesIn, vertexData, boneData);
+            int nBodyBlocks = (vertexData.numVertices * 4 - 1) / cuMapBlockSize() + 1;
+            kernelBodyUpdate <<<nBodyBlocks, cuMapBlockSize()>>> (vertexData, boneData);
 
             constexpr int warpsPerBlock = cuReduceBlockSize() >> 5;
 
             if (nVertexColliders > 0)
             {
                 int nVertexBlocks = (nVertexColliders - 1) / cuMapBlockSize() + 1;
-                kernelPerVertexUpdate <<<nVertexBlocks, cuMapBlockSize(), 0>>> (nVertexColliders, perVertexIn, perVertexOut, vertexData);
+                kernelPerVertexUpdate <<<nVertexBlocks, cuMapBlockSize(), 0>>> (nVertexColliders, perVertexIn, perVertexOut, vertexData.vertexBuffer);
                 int nReduceBlocks = ((nVertexNodes - 1) / warpsPerBlock) + 1;
                 kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nVertexNodes, vertexNodeData, perVertexOut, vertexNodeOutput);
             }
             if (nTriangleColliders > 0)
             {
                 int nTriangleBlocks = (nTriangleColliders - 1) / cuMapBlockSize() + 1;
-                kernelPerTriangleUpdate <<<nTriangleBlocks, cuMapBlockSize(), 0>>> (nTriangleColliders, perTriangleIn, perTriangleOut, vertexData);
+                kernelPerTriangleUpdate <<<nTriangleBlocks, cuMapBlockSize(), 0>>> (nTriangleColliders, perTriangleIn, perTriangleOut, vertexData.vertexBuffer);
                 int nReduceBlocks = ((nTriangleNodes - 1) / warpsPerBlock) + 1;
                 kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nTriangleNodes, triangleNodeData, perTriangleOut, triangleNodeOutput);
             }
@@ -929,23 +922,18 @@ namespace hdt
         float* boneWeightsB,
         int* boneMapA,
         int* boneMapB,
-        cuCollisionMerge* mergeBuffer,
-        int mergeX,
-        int mergeDynX,
-        int mergeY)
+        cuMergeBuffer mergeBuffer)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), 0, *s >>> (
-            n, swap, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexSetupA, vertexSetupB, vertexDataA, vertexDataB, boneWeightsA, boneWeightsB, boneMapA, boneMapB, mergeBuffer, mergeX, mergeDynX, mergeY);
+            n, swap, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexSetupA, vertexSetupB, vertexDataA, vertexDataB, boneWeightsA, boneWeightsB, boneMapA, boneMapB, mergeBuffer);
         return cuResult();
     }
 
     cuResult cuInternalUpdate(
         void* stream,
-        int nVertices,
-        const cuVertex* verticesIn,
-        cuVector4* vertexData,
+        cuBodyData vertexData,
         const cuBone* boneData,
         int nVertexColliders,
         VertexInputArray perVertexIn,
@@ -963,8 +951,6 @@ namespace hdt
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
         fullInternalUpdate <<<1, 1, 0, *s >>> (
-            nVertices,
-            verticesIn,
             vertexData,
             boneData,
             nVertexColliders,
@@ -1048,13 +1034,13 @@ namespace hdt
     template cuResult cuRunCollision<eNone, VertexInputArray>(
         void*, int, bool, cuCollisionSetup*, VertexInputArray, VertexInputArray, BoundingBoxArray, BoundingBoxArray,
         cuVertex*, cuVertex*, cuVector4*, cuVector4*,
-        float*, float*, int*, int*, cuCollisionMerge*, int, int, int);
+        float*, float*, int*, int*, cuMergeBuffer);
     template cuResult cuRunCollision<eNone, TriangleInputArray>(
         void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
         cuVertex*, cuVertex*, cuVector4*, cuVector4*,
-        float*, float*, int*, int*, cuCollisionMerge*, int, int, int);
+        float*, float*, int*, int*, cuMergeBuffer);
     template cuResult cuRunCollision<eInternal, TriangleInputArray>(
         void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
         cuVertex*, cuVertex*, cuVector4*, cuVector4*,
-        float*, float*, int*, int*, cuCollisionMerge*, int, int, int);
+        float*, float*, int*, int*, cuMergeBuffer);
 }

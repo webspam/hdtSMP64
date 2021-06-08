@@ -220,6 +220,53 @@ namespace hdt
 	using VertexInputArray = ArrayType<cuPerVertexInput, int, float>;
 	using TriangleInputArray = ArrayType<cuPerTriangleInput, ArrayType<cuTriangleIndices, int, int, int>, float, float>;
 
+	// Data for calculating vertex positions and populating merge buffer
+	struct cuBodyData
+	{
+		const cuVertex* __restrict__ vertexData;
+		cuVector4* __restrict__ vertexBuffer;
+		int numVertices;
+	};
+
+	// Data for populating merge buffer
+	struct cuCollisionBodyData
+	{
+		cuBodyData vertices;
+		const float* __restrict__ boneWeights;
+		const int* __restrict__ boneMap;
+	};
+
+	// Data for per-collider calculations
+	template<typename T>
+	struct cuColliderData;
+
+	template<>
+	struct cuColliderData<CudaPerVertexShape>
+	{
+		VertexInputArray input;
+		BoundingBoxArray boundingBoxes;
+		int numColliders;
+		float margin;
+	};
+
+	template<>
+	struct cuColliderData<CudaPerTriangleShape>
+	{
+		TriangleInputArray input;
+		BoundingBoxArray boundingBoxes;
+		int numColliders;
+		float margin;
+		float penetration;
+	};
+
+	struct cuMergeBuffer
+	{
+		cuCollisionMerge* buffer;
+		int x;
+		int y;
+		int dynx;
+	};
+
 	cuResult cuCreateStream(void** ptr);
 
 	void cuDestroyStream(void* ptr);
@@ -256,16 +303,11 @@ namespace hdt
 		float* boneWeightsB,
 		int* boneMapA,
 		int* boneMapB,
-		cuCollisionMerge* mergeBuffer,
-		int mergeX,
-		int mergeDynX,
-		int mergeY);
+		cuMergeBuffer mergeBuffer);
 
 	cuResult cuInternalUpdate(
 		void* stream,
-		int nVertices,
-		const cuVertex* verticesIn,
-		cuVector4* vertexData,
+		cuBodyData vertexData,
 		const cuBone* boneData,
 		int nVertexColliders,
 		VertexInputArray perVertexIn,
