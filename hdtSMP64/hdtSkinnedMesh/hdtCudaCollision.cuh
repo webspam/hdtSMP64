@@ -231,7 +231,8 @@ namespace hdt
 	// Data for populating merge buffer
 	struct cuCollisionBodyData
 	{
-		cuBodyData vertices;
+		const cuVertex* __restrict__ vertexData;
+		cuVector4* __restrict__ vertexBuffer;
 		const float* __restrict__ boneWeights;
 		const int* __restrict__ boneMap;
 	};
@@ -295,14 +296,8 @@ namespace hdt
 		T inB,
 		BoundingBoxArray boundingBoxesA,
 		BoundingBoxArray boundingBoxesB,
-		cuVertex* vertexSetupA,
-		cuVertex* vertexSetupB,
-		cuVector4* vertexDataA,
-		cuVector4* vertexDataB,
-		float* boneWeightsA,
-		float* boneWeightsB,
-		int* boneMapA,
-		int* boneMapB,
+		cuCollisionBodyData bodyA,
+		cuCollisionBodyData bodyB,
 		cuMergeBuffer mergeBuffer);
 
 	cuResult cuInternalUpdate(

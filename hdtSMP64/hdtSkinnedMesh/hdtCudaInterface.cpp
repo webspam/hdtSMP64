@@ -390,7 +390,7 @@ namespace hdt
 
 		operator cuCollisionBodyData()
 		{
-			return { cuBodyData(), m_boneWeights.getD(), m_boneMap.getD() };
+			return { m_vertexData.getD(), m_vertexBuffer.getD(), m_boneWeights.getD(), m_boneMap.getD() };
 		}
 
 		int m_device;
@@ -814,14 +814,8 @@ namespace hdt
 					m_shapeB->m_imp->m_input.getD(),
 					m_shapeA->m_imp->m_output.getD(),
 					m_shapeB->m_imp->m_output.getD(),
-					m_shapeA->m_imp->m_body->m_vertexData.getD(),
-					m_shapeB->m_imp->m_body->m_vertexData.getD(),
-					m_shapeA->m_imp->m_body->m_vertexBuffer.getD(),
-					m_shapeB->m_imp->m_body->m_vertexBuffer.getD(),
-					m_shapeA->m_imp->m_body->m_boneWeights.getD(),
-					m_shapeB->m_imp->m_body->m_boneWeights.getD(),
-					m_shapeA->m_imp->m_body->m_boneMap.getD(),
-					m_shapeB->m_imp->m_body->m_boneMap.getD(),
+					*m_shapeA->m_imp->m_body,
+					*m_shapeB->m_imp->m_body,
 					*merge->m_imp).check(__FUNCTION__);
 			}
 		}

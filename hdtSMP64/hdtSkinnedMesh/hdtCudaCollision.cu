@@ -563,14 +563,8 @@ namespace hdt
         const T inB,
         const BoundingBoxArray boundingBoxesA,
         const BoundingBoxArray boundingBoxesB,
-        const cuVertex* __restrict__ vertexSetupA,
-        const cuVertex* __restrict__ vertexSetupB,
-        const cuVector4* __restrict__ vertexDataA,
-        const cuVector4* __restrict__ vertexDataB,
-        const float* __restrict__ boneWeightsA,
-        const float* __restrict__ boneWeightsB,
-        const int* __restrict__ boneMapA,
-        const int* __restrict__ boneMapB,
+        const cuCollisionBodyData bodyA,
+        const cuCollisionBodyData bodyB,
         cuMergeBuffer mergeBuffer)
     {
         static_assert(vertexListSize() <= BlockSize, "Vertex list must be smaller than block size");
@@ -686,7 +680,7 @@ namespace hdt
                 }
 #endif
 
-                if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], vertexDataA, vertexDataB, temp))
+                if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], bodyA.vertexBuffer, bodyB.vertexBuffer, temp))
                 {
                     temp.colliderA = iA;
                     temp.colliderB = iB;
@@ -741,13 +735,13 @@ namespace hdt
             int indexB = threadIdx.x & 0x0f;
             if (indexA < BoneCount<cuPerVertexInput>() && indexB < BoneCount<T::type>())
             {
-                uint32_t boneA = getBone(vertexSetupA, inA[result->colliderA], indexA);
-                uint32_t boneB = getBone(vertexSetupB, inB[result->colliderB], indexB);
+                uint32_t boneA = getBone(bodyA.vertexData, inA[result->colliderA], indexA);
+                uint32_t boneB = getBone(bodyB.vertexData, inB[result->colliderB], indexB);
 
-                float weightA = getBoneWeight(vertexSetupA, inA[result->colliderA], indexA);
-                float weightB = getBoneWeight(vertexSetupB, inB[result->colliderB], indexB);
+                float weightA = getBoneWeight(bodyA.vertexData, inA[result->colliderA], indexA);
+                float weightB = getBoneWeight(bodyB.vertexData, inB[result->colliderB], indexB);
 
-                if (weightA <= boneWeightsA[boneA] || weightB <= boneWeightsB[boneB])
+                if (weightA <= bodyA.boneWeights[boneA] || weightB <= bodyB.boneWeights[boneB])
                 {
                     return;
                 }
@@ -758,9 +752,9 @@ namespace hdt
                 float w2 = w * w;
 
                 int i = swap ? boneB : boneA;
-                int i_map = swap ? boneMapB[boneB] : boneMapA[boneA];
+                int i_map = swap ? bodyB.boneMap[boneB] : bodyA.boneMap[boneA];
                 int j = swap ? boneA : boneB;
-                int j_map = swap ? boneMapA[boneA] : boneMapB[boneB];
+                int j_map = swap ? bodyA.boneMap[boneA] : bodyB.boneMap[boneB];
 
                 cuCollisionMerge* c;
 
@@ -914,20 +908,14 @@ namespace hdt
         T inB,
         BoundingBoxArray boundingBoxesA,
         BoundingBoxArray boundingBoxesB,
-        cuVertex* vertexSetupA,
-        cuVertex* vertexSetupB,
-        cuVector4* vertexDataA,
-        cuVector4* vertexDataB,
-        float* boneWeightsA,
-        float* boneWeightsB,
-        int* boneMapA,
-        int* boneMapB,
+        cuCollisionBodyData bodyA,
+        cuCollisionBodyData bodyB,
         cuMergeBuffer mergeBuffer)
     {
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), 0, *s >>> (
-            n, swap, setup, inA, inB, boundingBoxesA, boundingBoxesB, vertexSetupA, vertexSetupB, vertexDataA, vertexDataB, boneWeightsA, boneWeightsB, boneMapA, boneMapB, mergeBuffer);
+            n, swap, setup, inA, inB, boundingBoxesA, boundingBoxesB, bodyA, bodyB, mergeBuffer);
         return cuResult();
     }
 
@@ -1033,14 +1021,11 @@ namespace hdt
 
     template cuResult cuRunCollision<eNone, VertexInputArray>(
         void*, int, bool, cuCollisionSetup*, VertexInputArray, VertexInputArray, BoundingBoxArray, BoundingBoxArray,
-        cuVertex*, cuVertex*, cuVector4*, cuVector4*,
-        float*, float*, int*, int*, cuMergeBuffer);
+        cuCollisionBodyData, cuCollisionBodyData, cuMergeBuffer);
     template cuResult cuRunCollision<eNone, TriangleInputArray>(
         void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
-        cuVertex*, cuVertex*, cuVector4*, cuVector4*,
-        float*, float*, int*, int*, cuMergeBuffer);
+        cuCollisionBodyData, cuCollisionBodyData, cuMergeBuffer);
     template cuResult cuRunCollision<eInternal, TriangleInputArray>(
         void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
-        cuVertex*, cuVertex*, cuVector4*, cuVector4*,
-        float*, float*, int*, int*, cuMergeBuffer);
+        cuCollisionBodyData, cuCollisionBodyData, cuMergeBuffer);
 }
