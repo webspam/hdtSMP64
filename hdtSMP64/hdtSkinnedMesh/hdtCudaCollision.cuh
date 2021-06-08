@@ -130,15 +130,12 @@ namespace hdt
 	struct cuPerVertexInput
 	{
 		int vertexIndex;
-		float margin;
 		float flexible;
 	};
 
 	struct cuPerTriangleInput
 	{
 		cuTriangleIndices vertexIndices;
-		float margin;
-		float penetration;
 		float flexible;
 	};
 
@@ -241,13 +238,24 @@ namespace hdt
 	template<typename T>
 	struct cuColliderData;
 
+	struct VertexMargin
+	{
+		float margin;
+	};
+
+	struct TriangleMargin
+	{
+		float margin;
+		float penetration;
+	};
+
 	template<>
 	struct cuColliderData<CudaPerVertexShape>
 	{
 		VertexInputArray input;
 		BoundingBoxArray boundingBoxes;
 		int numColliders;
-		float margin;
+		VertexMargin margin;
 	};
 
 	template<>
@@ -256,8 +264,7 @@ namespace hdt
 		TriangleInputArray input;
 		BoundingBoxArray boundingBoxes;
 		int numColliders;
-		float margin;
-		float penetration;
+		TriangleMargin margin;
 	};
 
 	struct cuMergeBuffer
@@ -292,10 +299,8 @@ namespace hdt
 		int n,
 		bool swap,
 		cuCollisionSetup* setup,
-		VertexInputArray inA,
-		T inB,
-		BoundingBoxArray boundingBoxesA,
-		BoundingBoxArray boundingBoxesB,
+		cuColliderData<CudaPerVertexShape> inA,
+		cuColliderData<T> inB,
 		cuCollisionBodyData bodyA,
 		cuCollisionBodyData bodyB,
 		cuMergeBuffer mergeBuffer);
@@ -304,15 +309,11 @@ namespace hdt
 		void* stream,
 		cuBodyData vertexData,
 		const cuBone* boneData,
-		int nVertexColliders,
-		VertexInputArray perVertexIn,
-		BoundingBoxArray perVertexOut,
+		cuColliderData<CudaPerVertexShape> perVertexData,
 		int nVertexNodes,
 		const std::pair<int, int>* vertexNodeData,
 		cuAabb* vertexNodeOutput,
-		int nTriangleColliders,
-		TriangleInputArray perTriangleIn,
-		BoundingBoxArray perTriangleOut,
+		cuColliderData<CudaPerTriangleShape> perTriangleData,
 		int nTriangleNodes,
 		const std::pair<int, int>* triangleNodeData,
 		cuAabb* triangleNodeOutput);

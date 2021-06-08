@@ -22,9 +22,9 @@ namespace hdt
     // Block size for collision checking. Must be a power of 2 for the simple inter-warp reductions to work,
     // and at least 64 for the merge buffer updates.
     template<>
-    constexpr int collisionBlockSize<VertexInputArray>() { return 256; }
+    constexpr int collisionBlockSize<CudaPerVertexShape>() { return 256; }
     template<>
-    constexpr int collisionBlockSize<TriangleInputArray>() { return 256; }
+    constexpr int collisionBlockSize<CudaPerTriangleShape>() { return 256; }
 
     // Maximum number of vertices per patch
     __host__ __device__
@@ -178,47 +178,45 @@ namespace hdt
 
     template <unsigned int BlockSize = cuMapBlockSize()>
     __global__ void kernelPerVertexUpdate(
-        int n,
-        VertexInputArray in,
-        BoundingBoxArray out,
+        cuColliderData<CudaPerVertexShape> colliders,
         const cuVector4* __restrict__ vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
 
-        for (int i = index; i < n; i += stride)
+        for (int i = index; i < colliders.numColliders; i += stride)
         {
-            const cuPerVertexInput data = in[i];
+            const cuPerVertexInput data = colliders.input[i];
             const cuVector4 v = vertexData[data.vertexIndex];
             cuAabb3 aabb(v);
-            aabb.addMargin(v.w * data.margin);
-            out[i] = aabb;
+            aabb.addMargin(v.w * colliders.margin.margin);
+            colliders.boundingBoxes[i] = aabb;
         }
     }
 
     template <unsigned int BlockSize = cuMapBlockSize()>
     __global__ void kernelPerTriangleUpdate(
-        int n,
-        TriangleInputArray in,
-        BoundingBoxArray out,
+        cuColliderData<CudaPerTriangleShape> colliders,
         const cuVector4* __restrict__ vertexData)
     {
         int index = blockIdx.x * BlockSize + threadIdx.x;
         int stride = BlockSize * gridDim.x;
 
-        for (int i = index; i < n; i += stride)
+        float penetration = abs(colliders.margin.penetration);
+        float margin = colliders.margin.margin / 3;
+
+        for (int i = index; i < colliders.numColliders; i += stride)
         {
-            const cuPerTriangleInput data = in[i];
+            const cuPerTriangleInput data = colliders.input[i];
             const cuVector4 v0 = vertexData[data.vertexIndices.a];
             const cuVector4 v1 = vertexData[data.vertexIndices.b];
             const cuVector4 v2 = vertexData[data.vertexIndices.c];
 
-            float penetration = abs(data.penetration);
-            float margin = max((v0.w + v1.w + v2.w) * data.margin / 3, penetration);
+            float m = max((v0.w + v1.w + v2.w) * margin, penetration);
 
             cuAabb3 aabb(v0, v1, v2);
-            aabb.addMargin(margin);
-            out[i] = aabb;
+            aabb.addMargin(m);
+            colliders.boundingBoxes[i] = aabb;
         }
     }
 
@@ -324,13 +322,15 @@ namespace hdt
         const cuPerVertexInput& __restrict__ inputB,
         const cuVector4* __restrict__ vertexDataA,
         const cuVector4* __restrict__ vertexDataB,
+        const VertexMargin marginA,
+        const VertexMargin marginB,
         cuCollisionResult& output)
     {
         const cuVector4 vA = vertexDataA[inputA.vertexIndex];
         const cuVector4 vB = vertexDataB[inputB.vertexIndex];
 
-        float rA = vA.w * inputA.margin;
-        float rB = vB.w * inputB.margin;
+        float rA = vA.w * marginA.margin;
+        float rB = vB.w * marginB.margin;
         float bound2 = (rA + rB) * (rA + rB);
         cuVector4 diff = vA - vB;
         float dist2 = diff.magnitude2();
@@ -361,16 +361,18 @@ namespace hdt
         const cuPerTriangleInput& __restrict__ inputB,
         const cuVector4* __restrict__ vertexDataA,
         const cuVector4* __restrict__ vertexDataB,
+        const VertexMargin marginA,
+        const TriangleMargin marginB,
         cuCollisionResult& output)
     {
         cuVector4 s = vertexDataA[inputA.vertexIndex];
-        float r = s.w * inputA.margin;
+        float r = s.w * marginA.margin;
         cuVector4 p0 = vertexDataB[inputB.vertexIndices.a];
         cuVector4 p1 = vertexDataB[inputB.vertexIndices.b];
         cuVector4 p2 = vertexDataB[inputB.vertexIndices.c];
         float margin = (p0.w + p1.w + p2.w) / 3.0;
-        float penetration = inputB.penetration * margin;
-        margin *= inputB.margin;
+        float penetration = marginB.penetration * margin;
+        margin *= marginB.margin;
 
         // Compute unit normal and twice area of triangle
         cuVector4 ab = p1 - p0;
@@ -520,9 +522,9 @@ namespace hdt
     template<typename T>
     __device__ constexpr int BoneCount();
     template<>
-    __device__ constexpr int BoneCount<cuPerVertexInput>() { return 4; }
+    __device__ constexpr int BoneCount<CudaPerVertexShape>() { return 4; }
     template<>
-    __device__ constexpr int BoneCount<cuPerTriangleInput>() { return 12; }
+    __device__ constexpr int BoneCount<CudaPerTriangleShape>() { return 12; }
 
     __device__ uint32_t getBone(const cuVertex* vertexSetup, const cuPerVertexInput& collider, int i)
     {
@@ -559,10 +561,8 @@ namespace hdt
         int n,
         bool swap,
         const cuCollisionSetup* __restrict__ setup,
-        const VertexInputArray inA,
-        const T inB,
-        const BoundingBoxArray boundingBoxesA,
-        const BoundingBoxArray boundingBoxesB,
+        const cuColliderData<CudaPerVertexShape> inA,
+        const cuColliderData<T> inB,
         const cuCollisionBodyData bodyA,
         const cuCollisionBodyData bodyB,
         cuMergeBuffer mergeBuffer)
@@ -603,7 +603,7 @@ namespace hdt
                         offsetA,
                         nA,
                         tid,
-                        boundingBoxesA,
+                        inA.boundingBoxes,
                         setup[block].boundingBoxB,
                         intShared,
                         vertexListA);
@@ -620,7 +620,7 @@ namespace hdt
                     offsetB,
                     nB,
                     tid,
-                    boundingBoxesB,
+                    inB.boundingBoxes,
                     setup[block].boundingBoxA,
                     intShared,
                     vertexListB);
@@ -638,7 +638,7 @@ namespace hdt
                         offsetA,
                         nA,
                         tid,
-                        boundingBoxesA,
+                        inA.boundingBoxes,
                         setup[block].boundingBoxB,
                         intShared,
                         vertexListA);
@@ -680,7 +680,11 @@ namespace hdt
                 }
 #endif
 
-                if (i < nPairs && collidePair<penType>(inA[iA], inB[iB], bodyA.vertexBuffer, bodyB.vertexBuffer, temp))
+                if (i < nPairs && collidePair<penType>(
+                    inA.input[iA], inB.input[iB],
+                    bodyA.vertexBuffer, bodyB.vertexBuffer,
+                    inA.margin, inB.margin,
+                    temp))
                 {
                     temp.colliderA = iA;
                     temp.colliderB = iB;
@@ -733,20 +737,20 @@ namespace hdt
             // or twenty-four entries, depending on the type of collision.
             int indexA = threadIdx.x >> 4;
             int indexB = threadIdx.x & 0x0f;
-            if (indexA < BoneCount<cuPerVertexInput>() && indexB < BoneCount<T::type>())
+            if (indexA < BoneCount<CudaPerVertexShape>() && indexB < BoneCount<T>())
             {
-                uint32_t boneA = getBone(bodyA.vertexData, inA[result->colliderA], indexA);
-                uint32_t boneB = getBone(bodyB.vertexData, inB[result->colliderB], indexB);
+                uint32_t boneA = getBone(bodyA.vertexData, inA.input[result->colliderA], indexA);
+                uint32_t boneB = getBone(bodyB.vertexData, inB.input[result->colliderB], indexB);
 
-                float weightA = getBoneWeight(bodyA.vertexData, inA[result->colliderA], indexA);
-                float weightB = getBoneWeight(bodyB.vertexData, inB[result->colliderB], indexB);
+                float weightA = getBoneWeight(bodyA.vertexData, inA.input[result->colliderA], indexA);
+                float weightB = getBoneWeight(bodyB.vertexData, inB.input[result->colliderB], indexB);
 
                 if (weightA <= bodyA.boneWeights[boneA] || weightB <= bodyB.boneWeights[boneB])
                 {
                     return;
                 }
 
-                float flexible = max(inA[result->colliderA].flexible, inB[result->colliderB].flexible);
+                float flexible = max(inA.input[result->colliderA].flexible, inB.input[result->colliderB].flexible);
 
                 float w = flexible * result->depth;
                 float w2 = w * w;
@@ -810,15 +814,11 @@ namespace hdt
     __global__ void fullInternalUpdate(
         cuBodyData vertexData,
         const cuBone* __restrict__ boneData,
-        int nVertexColliders,
-        VertexInputArray perVertexIn,
-        BoundingBoxArray perVertexOut,
+        cuColliderData<CudaPerVertexShape> perVertexData,
         int nVertexNodes,
         const std::pair<int, int>* __restrict__ vertexNodeData,
         cuAabb* vertexNodeOutput,
-        int nTriangleColliders,
-        TriangleInputArray perTriangleIn,
-        BoundingBoxArray perTriangleOut,
+        cuColliderData<CudaPerTriangleShape> perTriangleData,
         int nTriangleNodes,
         const std::pair<int, int>* __restrict__ triangleNodeData,
         cuAabb* triangleNodeOutput )
@@ -831,19 +831,19 @@ namespace hdt
 
             constexpr int warpsPerBlock = cuReduceBlockSize() >> 5;
 
-            if (nVertexColliders > 0)
+            if (perVertexData.numColliders > 0)
             {
-                int nVertexBlocks = (nVertexColliders - 1) / cuMapBlockSize() + 1;
-                kernelPerVertexUpdate <<<nVertexBlocks, cuMapBlockSize(), 0>>> (nVertexColliders, perVertexIn, perVertexOut, vertexData.vertexBuffer);
+                int nVertexBlocks = (perVertexData.numColliders - 1) / cuMapBlockSize() + 1;
+                kernelPerVertexUpdate <<<nVertexBlocks, cuMapBlockSize(), 0>>> (perVertexData, vertexData.vertexBuffer);
                 int nReduceBlocks = ((nVertexNodes - 1) / warpsPerBlock) + 1;
-                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nVertexNodes, vertexNodeData, perVertexOut, vertexNodeOutput);
+                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nVertexNodes, vertexNodeData, perVertexData.boundingBoxes, vertexNodeOutput);
             }
-            if (nTriangleColliders > 0)
+            if (perTriangleData.numColliders > 0)
             {
-                int nTriangleBlocks = (nTriangleColliders - 1) / cuMapBlockSize() + 1;
-                kernelPerTriangleUpdate <<<nTriangleBlocks, cuMapBlockSize(), 0>>> (nTriangleColliders, perTriangleIn, perTriangleOut, vertexData.vertexBuffer);
+                int nTriangleBlocks = (perTriangleData.numColliders - 1) / cuMapBlockSize() + 1;
+                kernelPerTriangleUpdate <<<nTriangleBlocks, cuMapBlockSize(), 0>>> (perTriangleData, vertexData.vertexBuffer);
                 int nReduceBlocks = ((nTriangleNodes - 1) / warpsPerBlock) + 1;
-                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nTriangleNodes, triangleNodeData, perTriangleOut, triangleNodeOutput);
+                kernelBoundingBoxReduce <<<nReduceBlocks, cuReduceBlockSize(), 0>>> (nTriangleNodes, triangleNodeData, perTriangleData.boundingBoxes, triangleNodeOutput);
             }
         }
     }
@@ -904,10 +904,8 @@ namespace hdt
         int n,
         bool swap,
         cuCollisionSetup* setup,
-        VertexInputArray inA,
-        T inB,
-        BoundingBoxArray boundingBoxesA,
-        BoundingBoxArray boundingBoxesB,
+        cuColliderData<CudaPerVertexShape> inA,
+        cuColliderData<T> inB,
         cuCollisionBodyData bodyA,
         cuCollisionBodyData bodyB,
         cuMergeBuffer mergeBuffer)
@@ -915,7 +913,7 @@ namespace hdt
         cudaStream_t* s = reinterpret_cast<cudaStream_t*>(stream);
 
         kernelCollision<penType> <<<n, collisionBlockSize<T>(), 0, *s >>> (
-            n, swap, setup, inA, inB, boundingBoxesA, boundingBoxesB, bodyA, bodyB, mergeBuffer);
+            n, swap, setup, inA, inB, bodyA, bodyB, mergeBuffer);
         return cuResult();
     }
 
@@ -923,15 +921,11 @@ namespace hdt
         void* stream,
         cuBodyData vertexData,
         const cuBone* boneData,
-        int nVertexColliders,
-        VertexInputArray perVertexIn,
-        BoundingBoxArray perVertexOut,
+        cuColliderData<CudaPerVertexShape> perVertexData,
         int nVertexNodes,
         const std::pair<int, int>* vertexNodeData,
         cuAabb* vertexNodeOutput,
-        int nTriangleColliders,
-        TriangleInputArray perTriangleIn,
-        BoundingBoxArray perTriangleOut,
+        cuColliderData<CudaPerTriangleShape> perTriangleData,
         int nTriangleNodes,
         const std::pair<int, int>* triangleNodeData,
         cuAabb* triangleNodeOutput)
@@ -941,15 +935,11 @@ namespace hdt
         fullInternalUpdate <<<1, 1, 0, *s >>> (
             vertexData,
             boneData,
-            nVertexColliders,
-            perVertexIn,
-            perVertexOut,
+            perVertexData,
             nVertexNodes,
             vertexNodeData,
             vertexNodeOutput,
-            nTriangleColliders,
-            perTriangleIn,
-            perTriangleOut,
+            perTriangleData,
             nTriangleNodes,
             triangleNodeData,
             triangleNodeOutput);
@@ -1019,13 +1009,13 @@ namespace hdt
         return id;
     }
 
-    template cuResult cuRunCollision<eNone, VertexInputArray>(
-        void*, int, bool, cuCollisionSetup*, VertexInputArray, VertexInputArray, BoundingBoxArray, BoundingBoxArray,
+    template cuResult cuRunCollision<eNone, CudaPerVertexShape>(
+        void*, int, bool, cuCollisionSetup*, cuColliderData<CudaPerVertexShape>, cuColliderData<CudaPerVertexShape>,
         cuCollisionBodyData, cuCollisionBodyData, cuMergeBuffer);
-    template cuResult cuRunCollision<eNone, TriangleInputArray>(
-        void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
+    template cuResult cuRunCollision<eNone, CudaPerTriangleShape>(
+        void*, int, bool, cuCollisionSetup*, cuColliderData<CudaPerVertexShape>, cuColliderData<CudaPerTriangleShape>,
         cuCollisionBodyData, cuCollisionBodyData, cuMergeBuffer);
-    template cuResult cuRunCollision<eInternal, TriangleInputArray>(
-        void*, int, bool, cuCollisionSetup*, VertexInputArray, TriangleInputArray, BoundingBoxArray, BoundingBoxArray,
+    template cuResult cuRunCollision<eInternal, CudaPerTriangleShape>(
+        void*, int, bool, cuCollisionSetup*, cuColliderData<CudaPerVertexShape>, cuColliderData<CudaPerTriangleShape>,
         cuCollisionBodyData, cuCollisionBodyData, cuMergeBuffer);
 }

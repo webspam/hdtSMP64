@@ -503,18 +503,18 @@ namespace hdt
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size()),
-			m_tree(&shape->m_tree, m_body->m_stream)
+			m_tree(&shape->m_tree, m_body->m_stream),
+			m_margin(shape->m_shapeProp.margin),
+			m_penetration(shape->m_shapeProp.penetration)
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
-				if (shape->m_shapeProp.penetration < 0)
+				if (m_penetration < 0)
 				{
 					m_input.get()[i] = {
 						{	static_cast<int>(shape->m_colliders[i].vertices[1]),
 							static_cast<int>(shape->m_colliders[i].vertices[0]),
 							static_cast<int>(shape->m_colliders[i].vertices[2]) },
-						shape->m_shapeProp.margin,
-						shape->m_shapeProp.penetration,
 						shape->m_colliders[i].flexible };
 				}
 				else
@@ -523,8 +523,6 @@ namespace hdt
 						{ static_cast<int>(shape->m_colliders[i].vertices[0]),
 							static_cast<int>(shape->m_colliders[i].vertices[1]),
 							static_cast<int>(shape->m_colliders[i].vertices[2]) },
-						shape->m_shapeProp.margin,
-						-shape->m_shapeProp.penetration,
 						shape->m_colliders[i].flexible };
 				}
 			}
@@ -542,6 +540,11 @@ namespace hdt
 			return m_device;
 		}
 
+		operator cuColliderData<CudaPerTriangleShape>()
+		{
+			return { m_input.getD(), m_output.getD(), m_numColliders, { m_margin, -abs(m_penetration) } };
+		}
+
 		int m_device;
 		CudaBuffer<TriangleInputArray> m_input;
 		CudaDeviceBuffer<BoundingBoxArray> m_output;
@@ -549,6 +552,8 @@ namespace hdt
 		const cuPenetrationType m_penetrationType;
 		int m_numColliders;
 		CudaColliderTree m_tree;
+		float m_margin;
+		float m_penetration;
 	};
 
 	CudaPerTriangleShape::CudaPerTriangleShape(PerTriangleShape* shape)
@@ -575,13 +580,13 @@ namespace hdt
 			m_body(shape->m_owner->m_cudaObject->m_imp),
 			m_input(shape->m_colliders.size()),
 			m_output(shape->m_colliders.size()),
-			m_tree(&shape->m_tree, m_body->m_stream)
+			m_tree(&shape->m_tree, m_body->m_stream),
+			m_margin(shape->m_shapeProp.margin)
 		{
 			for (int i = 0; i < m_numColliders; ++i)
 			{
 				m_input.get()[i] = {
 					static_cast<int>(shape->m_colliders[i].vertex),
-					shape->m_shapeProp.margin,
 					shape->m_colliders[i].flexible };
 			}
 			m_input.toDevice(m_body->m_stream);
@@ -598,12 +603,18 @@ namespace hdt
 			return m_device;
 		}
 
+		operator cuColliderData<CudaPerVertexShape>()
+		{
+			return { m_input.getD(), m_output.getD(), m_numColliders, { m_margin } };
+		}
+
 		int m_device;
 		CudaBuffer<VertexInputArray> m_input;
 		CudaDeviceBuffer<BoundingBoxArray> m_output;
 		std::shared_ptr<CudaBody::Imp> m_body;
 		int m_numColliders;
 		CudaColliderTree m_tree;
+		float m_margin;
 	};
 
 	CudaPerVertexShape::CudaPerVertexShape(PerVertexShape* shape)
@@ -810,10 +821,8 @@ namespace hdt
 					m_nextPair,
 					swap,
 					m_setupBuffer.getD(),
-					m_shapeA->m_imp->m_input.getD(),
-					m_shapeB->m_imp->m_input.getD(),
-					m_shapeA->m_imp->m_output.getD(),
-					m_shapeB->m_imp->m_output.getD(),
+					*m_shapeA->m_imp,
+					*m_shapeB->m_imp,
 					*m_shapeA->m_imp->m_body,
 					*m_shapeB->m_imp->m_body,
 					*merge->m_imp).check(__FUNCTION__);
@@ -841,27 +850,27 @@ namespace hdt
 		template<>
 		struct InputType<CudaPerTriangleShape> { using type = TriangleInputArray; };
 
-		auto collisionFunc() -> decltype(cuRunCollision<eNone, typename InputType<T>::type>)*;
+		auto collisionFunc() -> decltype(cuRunCollision<eNone, T>)*;
 	};
 
 	template<>
 	auto CudaCollisionPair<CudaPerVertexShape>::Imp::collisionFunc()
-		-> decltype(cuRunCollision<eNone, VertexInputArray>)*
+		-> decltype(cuRunCollision<eNone, CudaPerVertexShape>)*
 	{
-		return cuRunCollision<eNone, VertexInputArray>;
+		return cuRunCollision<eNone, CudaPerVertexShape>;
 	}
 
 	template<>
 	auto CudaCollisionPair<CudaPerTriangleShape>::Imp::collisionFunc()
-		-> decltype(cuRunCollision<eNone, TriangleInputArray>)*
+		-> decltype(cuRunCollision<eNone, CudaPerTriangleShape>)*
 	{
 		switch (m_shapeB->m_imp->m_penetrationType)
 		{
 		case eNone:
-			return cuRunCollision<eNone, TriangleInputArray>;
+			return cuRunCollision<eNone, CudaPerTriangleShape>;
 		case eInternal:
 		default:
-			return cuRunCollision<eInternal, TriangleInputArray>;
+			return cuRunCollision<eInternal, CudaPerTriangleShape>;
 		}
 	}
 
@@ -936,24 +945,32 @@ namespace hdt
 		std::shared_ptr<CudaPerVertexShape> vertexShape,
 		std::shared_ptr<CudaPerTriangleShape> triangleShape)
 	{
+		static const cuColliderData<CudaPerVertexShape> s_emptyVertexData = {
+			VertexInputArray(nullptr, 0),
+			BoundingBoxArray(nullptr, 0),
+			0,
+			{ 0 } };
+		static const cuColliderData<CudaPerTriangleShape> s_emptyTriangleData = {
+			TriangleInputArray(nullptr, 0),
+			BoundingBoxArray(nullptr, 0),
+			0,
+			{ 0, 0 } };
+
 		body->m_imp->m_bones.toDevice(body->m_imp->m_stream);
 
 		cuInternalUpdate(
 			body->m_imp->m_stream,
 			*body->m_imp,
 			body->m_imp->m_bones.getD(),
-			vertexShape ? vertexShape->m_imp->m_numColliders : 0,
-			vertexShape ? vertexShape->m_imp->m_input.getD() : VertexInputArray(nullptr, 0),
-			vertexShape ? vertexShape->m_imp->m_output.getD() : BoundingBoxArray(nullptr, 0),
+			vertexShape ? static_cast<cuColliderData<CudaPerVertexShape>>(*vertexShape->m_imp) : s_emptyVertexData,
 			vertexShape ? vertexShape->m_imp->m_tree.m_numNodes : 0,
 			vertexShape ? vertexShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
 			vertexShape ? vertexShape->m_imp->m_tree.m_nodeAabbs.getD() : nullptr,
-			triangleShape ? triangleShape->m_imp->m_numColliders : 0,
-			triangleShape ? triangleShape->m_imp->m_input.getD() : TriangleInputArray(nullptr, 0),
-			triangleShape ? triangleShape->m_imp->m_output.getD() : BoundingBoxArray(nullptr, 0),
+			triangleShape ? static_cast<cuColliderData<CudaPerTriangleShape>>(*triangleShape->m_imp) : s_emptyTriangleData,
 			triangleShape ? triangleShape->m_imp->m_tree.m_numNodes : 0,
 			triangleShape ? triangleShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
 			triangleShape ? triangleShape->m_imp->m_tree.m_nodeAabbs.getD() : nullptr).check(__FUNCTION__);
+
 		if (vertexShape)
 		{
 			vertexShape->m_imp->m_tree.m_nodeAabbs.toHost(body->m_imp->m_stream);
