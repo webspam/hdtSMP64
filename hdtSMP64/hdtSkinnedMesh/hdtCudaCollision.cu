@@ -147,15 +147,14 @@ namespace hdt
     {
         int index = (blockIdx.x * BlockSize + threadIdx.x) >> 2;
         int stride = (BlockSize * gridDim.x) >> 2;
-
-        int startIndex = (index >> 3) << 3;
+        int startIndex = index & ~7;
 
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
         int quarterWarp = threadInWarp >> 3;
         int eighthWarp = threadInWarp >> 2;
         int threadInEighthWarp = tid & 0x03;
-        int sourceThread = ((threadInWarp >> 3) << 2) | threadInEighthWarp;
+        int sourceThread = ((threadInWarp >> 1) & ~0x03) | threadInEighthWarp;
 
         for (int i = startIndex; i < colliders.numColliders; i += stride)
         {
@@ -170,15 +169,15 @@ namespace hdt
             float vmin = v - m;
             float vmax = v + m;
 
-            float v0 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmin : vmax, sourceThread | ((tid & 4) << 2));
-            float v1 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmax : vmin, sourceThread | ((~tid & 4) << 2));
+            float v0 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmax : vmin, sourceThread | ((tid & 4) << 2));
+            float v1 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmin : vmax, sourceThread | ((~tid & 4) << 2));
             if (i + quarterWarp < colliders.numColliders)
             {
-                colliders.boundingBoxes[i].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v0 : v1;
-            }
-            if (i + quarterWarp + 4 < colliders.numColliders)
-            {
-                colliders.boundingBoxes[i + 4].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v1 : v0;
+                colliders.boundingBoxes[i].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v1 : v0;
+                if (i + quarterWarp + 4 < colliders.numColliders)
+                {
+                    colliders.boundingBoxes[i + 4].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v0 : v1;
+                }
             }
         }
     }
@@ -190,15 +189,14 @@ namespace hdt
     {
         int index = (blockIdx.x * BlockSize + threadIdx.x) >> 2;
         int stride = (BlockSize * gridDim.x) >> 2;
-
-        int startIndex = (index >> 3) << 3;
+        int startIndex = index & ~7;
 
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
         int quarterWarp = threadInWarp >> 3;
         int eighthWarp = threadInWarp >> 2;
         int threadInEighthWarp = tid & 0x03;
-        int sourceThread = ((threadInWarp >> 3) << 2) | threadInEighthWarp;
+        int sourceThread = ((threadInWarp >> 1) & ~0x03) | threadInEighthWarp;
 
         float penetration = abs(colliders.margin.penetration);
         float margin = colliders.margin.margin / 3;
@@ -222,20 +220,20 @@ namespace hdt
                 sum += v;
             }
 
-            float m = max(margin * __shfl_sync(0xffffffff, v, threadInWarp | 0x03), penetration);
+            float m = max(margin * __shfl_sync(0xffffffff, sum, threadInWarp | 0x03), penetration);
 
             vmin -= m;
             vmax += m;
 
-            float v0 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmin : vmax, sourceThread | ((tid & 4) << 2));
-            float v1 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmax : vmin, sourceThread | ((~tid & 4) << 2));
+            float v0 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmax : vmin, sourceThread | ((tid & 4) << 2));
+            float v1 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmin : vmax, sourceThread | ((~tid & 4) << 2));
             if (i + quarterWarp < colliders.numColliders)
             {
-                colliders.boundingBoxes[i].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v0 : v1;
-            }
-            if (i + quarterWarp + 4 < colliders.numColliders)
-            {
-                colliders.boundingBoxes[i + 4].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v1 : v0;
+                colliders.boundingBoxes[i].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v1 : v0;
+                if (i + quarterWarp + 4 < colliders.numColliders)
+                {
+                    colliders.boundingBoxes[i + 4].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v0 : v1;
+                }
             }
         }
     }
