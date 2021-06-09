@@ -139,25 +139,12 @@ namespace hdt
 		float flexible;
 	};
 
-	struct cuAabb3
-	{
-#ifdef __NVCC__
-		__device__ cuAabb3();
-		__device__ cuAabb3(const cuVector3& mins, const cuVector3& maxs);
-		__device__ explicit cuAabb3(const cuVector4& v);
-
-		template<typename... Args>
-		__device__ explicit cuAabb3(const cuVector4& v, const Args&... args);
-
-		__device__ void addMargin(const float margin);
-#endif
-
-		cuVector3 aabbMin;
-		cuVector3 aabbMax;
-	};
-
 	struct cuAabb
 	{
+#ifdef __NVCC__
+		__device__ cuAabb();
+#endif
+
 		cuVector4 aabbMin;
 		cuVector4 aabbMax;
 	};
@@ -213,7 +200,7 @@ namespace hdt
 	};
 
 	using VectorArray = ArrayType<cuVector3, float, float, float>;
-	using BoundingBoxArray = ArrayType<cuAabb3, VectorArray, VectorArray>;
+	using BoundingBoxArray = ArrayType<cuAabb, VectorArray, VectorArray>;
 	using VertexInputArray = ArrayType<cuPerVertexInput, int, float>;
 	using TriangleInputArray = ArrayType<cuPerTriangleInput, ArrayType<cuTriangleIndices, int, int, int>, float, float>;
 
@@ -252,7 +239,7 @@ namespace hdt
 	template<>
 	struct cuColliderData<CudaPerVertexShape>
 	{
-		VertexInputArray input;
+		const VertexInputArray input;
 		BoundingBoxArray boundingBoxes;
 		int numColliders;
 		VertexMargin margin;
@@ -261,7 +248,7 @@ namespace hdt
 	template<>
 	struct cuColliderData<CudaPerTriangleShape>
 	{
-		TriangleInputArray input;
+		const TriangleInputArray input;
 		BoundingBoxArray boundingBoxes;
 		int numColliders;
 		TriangleMargin margin;

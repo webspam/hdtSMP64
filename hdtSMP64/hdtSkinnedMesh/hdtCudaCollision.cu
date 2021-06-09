@@ -115,58 +115,22 @@ namespace hdt
         : x(ix), y(iy), z(iz)
     {}
 
-    __device__ __forceinline__ cuVector3 perElementMin(const cuVector3& v1, const cuVector4& v2)
+    __device__ __forceinline__ cuVector4 perElementMin(const cuVector4& v1, const cuVector4& v2)
     {
-        return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z) };
+        return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z), min(v1.w, v2.w) };
     }
 
-    __device__ __forceinline__ cuVector3 perElementMax(const cuVector3& v1, const cuVector4& v2)
+    __device__ __forceinline__ cuVector4 perElementMax(const cuVector4& v1, const cuVector4& v2)
     {
-        return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z) };
+        return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z), max(v1.w, v2.w) };
     }
 
-    __device__ __forceinline__ cuVector3 perElementMin(const cuVector3& v1, const cuVector3& v2)
-    {
-        return { min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z) };
-    }
-
-    __device__ __forceinline__ cuVector3 perElementMax(const cuVector3& v1, const cuVector3& v2)
-    {
-        return { max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z) };
-    }
-
-    __device__ cuAabb3::cuAabb3()
+    __device__ cuAabb::cuAabb()
         : aabbMin({ FLT_MAX, FLT_MAX, FLT_MAX }), aabbMax({ -FLT_MAX, -FLT_MAX, -FLT_MAX })
     {}
 
-    __device__ cuAabb3::cuAabb3(const cuVector3& mins, const cuVector3& maxs)
-        : aabbMin(mins), aabbMax(maxs)
-    {}
-
-    __device__ cuAabb3::cuAabb3(const cuVector4& v)
-        : aabbMin(v), aabbMax(v)
-    {}
-
-    template<typename... Args>
-    __device__ __forceinline__ cuAabb3::cuAabb3(const cuVector4& v, const Args&... args)
-        : cuAabb3(args...)
-    {
-        aabbMin = perElementMin(aabbMin, v);
-        aabbMax = perElementMax(aabbMax, v);
-    }
-
-    __device__ void cuAabb3::addMargin(const float margin)
-    {
-        aabbMin.x -= margin;
-        aabbMin.y -= margin;
-        aabbMin.z -= margin;
-        aabbMax.x += margin;
-        aabbMax.y += margin;
-        aabbMax.z += margin;
-    }
-
     __device__
-        bool boundingBoxCollision(const cuAabb3& b1, const cuAabb& b2)
+        bool boundingBoxCollision(const cuAabb& b1, const cuAabb b2)
     {
         return !(b1.aabbMin.x > b2.aabbMax.x ||
             b1.aabbMin.y > b2.aabbMax.y ||
@@ -181,16 +145,41 @@ namespace hdt
         cuColliderData<CudaPerVertexShape> colliders,
         const cuVector4* __restrict__ vertexData)
     {
-        int index = blockIdx.x * BlockSize + threadIdx.x;
-        int stride = BlockSize * gridDim.x;
+        int index = (blockIdx.x * BlockSize + threadIdx.x) >> 2;
+        int stride = (BlockSize * gridDim.x) >> 2;
 
-        for (int i = index; i < colliders.numColliders; i += stride)
+        int startIndex = (index >> 3) << 3;
+
+        int tid = threadIdx.x;
+        int threadInWarp = tid & 0x1f;
+        int quarterWarp = threadInWarp >> 3;
+        int eighthWarp = threadInWarp >> 2;
+        int threadInEighthWarp = tid & 0x03;
+        int sourceThread = ((threadInWarp >> 3) << 2) | threadInEighthWarp;
+
+        for (int i = startIndex; i < colliders.numColliders; i += stride)
         {
-            const cuPerVertexInput data = colliders.input[i];
-            const cuVector4 v = vertexData[data.vertexIndex];
-            cuAabb3 aabb(v);
-            aabb.addMargin(v.w * colliders.margin.margin);
-            colliders.boundingBoxes[i] = aabb;
+            float v;
+            if (i + eighthWarp < colliders.numColliders)
+            {
+                const cuPerVertexInput data = colliders.input[i + eighthWarp];
+                v = vertexData[data.vertexIndex].vals()[threadInEighthWarp];
+            }
+
+            float m = colliders.margin.margin * __shfl_sync(0xffffffff, v, threadInWarp | 0x03);
+            float vmin = v - m;
+            float vmax = v + m;
+
+            float v0 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmin : vmax, sourceThread | ((tid & 4) << 2));
+            float v1 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmax : vmin, sourceThread | ((~tid & 4) << 2));
+            if (i + quarterWarp < colliders.numColliders)
+            {
+                colliders.boundingBoxes[i].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v0 : v1;
+            }
+            if (i + quarterWarp + 4 < colliders.numColliders)
+            {
+                colliders.boundingBoxes[i + 4].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v1 : v0;
+            }
         }
     }
 
@@ -199,24 +188,55 @@ namespace hdt
         cuColliderData<CudaPerTriangleShape> colliders,
         const cuVector4* __restrict__ vertexData)
     {
-        int index = blockIdx.x * BlockSize + threadIdx.x;
-        int stride = BlockSize * gridDim.x;
+        int index = (blockIdx.x * BlockSize + threadIdx.x) >> 2;
+        int stride = (BlockSize * gridDim.x) >> 2;
+
+        int startIndex = (index >> 3) << 3;
+
+        int tid = threadIdx.x;
+        int threadInWarp = tid & 0x1f;
+        int quarterWarp = threadInWarp >> 3;
+        int eighthWarp = threadInWarp >> 2;
+        int threadInEighthWarp = tid & 0x03;
+        int sourceThread = ((threadInWarp >> 3) << 2) | threadInEighthWarp;
 
         float penetration = abs(colliders.margin.penetration);
         float margin = colliders.margin.margin / 3;
 
-        for (int i = index; i < colliders.numColliders; i += stride)
+        for (int i = startIndex; i < colliders.numColliders; i += stride)
         {
-            const cuPerTriangleInput data = colliders.input[i];
-            const cuVector4 v0 = vertexData[data.vertexIndices.a];
-            const cuVector4 v1 = vertexData[data.vertexIndices.b];
-            const cuVector4 v2 = vertexData[data.vertexIndices.c];
+            float v;
+            float vmin, vmax, sum;
+            if (i + eighthWarp < colliders.numColliders)
+            {
+                const cuPerTriangleInput data = colliders.input[i + eighthWarp];
+                v = vertexData[data.vertexIndices.a].vals()[threadInEighthWarp];
+                vmin = vmax = sum = v;
+                v = vertexData[data.vertexIndices.b].vals()[threadInEighthWarp];
+                vmin = min(v, vmin);
+                vmax = max(v, vmax);
+                sum += v;
+                v = vertexData[data.vertexIndices.c].vals()[threadInEighthWarp];
+                vmin = min(v, vmin);
+                vmax = max(v, vmax);
+                sum += v;
+            }
 
-            float m = max((v0.w + v1.w + v2.w) * margin, penetration);
+            float m = max(margin * __shfl_sync(0xffffffff, v, threadInWarp | 0x03), penetration);
 
-            cuAabb3 aabb(v0, v1, v2);
-            aabb.addMargin(m);
-            colliders.boundingBoxes[i] = aabb;
+            vmin -= m;
+            vmax += m;
+
+            float v0 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmin : vmax, sourceThread | ((tid & 4) << 2));
+            float v1 = __shfl_sync(0xffffffff, (tid & 0x10) ? vmax : vmin, sourceThread | ((~tid & 4) << 2));
+            if (i + quarterWarp < colliders.numColliders)
+            {
+                colliders.boundingBoxes[i].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v0 : v1;
+            }
+            if (i + quarterWarp + 4 < colliders.numColliders)
+            {
+                colliders.boundingBoxes[i + 4].aabbMin.vals()[threadInWarp] = (threadInWarp & 4) ? v1 : v0;
+            }
         }
     }
 
@@ -239,12 +259,12 @@ namespace hdt
             int aabbCount = nodeData[block].second;
 
             // Load the first block of bounding boxes
-            cuAabb3 temp = (threadInWarp < aabbCount) ? boundingBoxes[firstBox + threadInWarp] : cuAabb3();
+            cuAabb temp = (threadInWarp < aabbCount) ? boundingBoxes[firstBox + threadInWarp] : cuAabb();
 
             // Take union with each successive block
             for (int i = threadInWarp + 32; i < aabbCount; i += 32)
             {
-                cuAabb3 box = boundingBoxes[firstBox + i];
+                cuAabb box = boundingBoxes[firstBox + i];
                 temp.aabbMin = perElementMin(temp.aabbMin, box.aabbMin);
                 temp.aabbMax = perElementMax(temp.aabbMax, box.aabbMax);
             }
@@ -831,6 +851,8 @@ namespace hdt
 
             constexpr int warpsPerBlock = cuReduceBlockSize() >> 5;
 
+            // Collider calculations also use 4 threads per vertex, but we don't increase the number of
+            // blocks so the initial setup doesn't have to be repeated for every collider.
             if (perVertexData.numColliders > 0)
             {
                 int nVertexBlocks = (perVertexData.numColliders - 1) / cuMapBlockSize() + 1;
