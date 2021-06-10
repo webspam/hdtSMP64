@@ -12,9 +12,9 @@ namespace hdt
     // reduction in these, so the value isn't very important.
     __host__ __device__ constexpr int cuMapBlockSize() { return 128; }
 
-    // Block size for bounding box reduction. Each warp here is independent - larger blocks just do multiple
-    // chunks at once. Should be at least 64 for maximum occupancy.
-    __host__ __device__ constexpr int cuReduceBlockSize() { return 64; }
+    // Block size for bounding box reduction. This needs 8 threads per box, so the default 256 will work in
+    // chunks of 32 boxes.
+    __host__ __device__ constexpr int cuReduceBlockSize() { return 256; }
 
     template<typename T>
     constexpr int collisionBlockSize();
@@ -251,51 +251,55 @@ namespace hdt
         }
     }
 
-    template< unsigned int BlockSize = cuReduceBlockSize() >
+    template <unsigned int BlockSize = cuReduceBlockSize()>
     __global__ void kernelBoundingBoxReduce(
         int n,
         const std::pair<int, int>* __restrict__ nodeData,
         const BoundingBoxArray boundingBoxes,
         cuAabb* __restrict__ output)
     {
+        __shared__ float shared[BlockSize >> 1];
+
         int tid = threadIdx.x;
         int threadInWarp = tid & 0x1f;
-        int warpid = tid >> 5;
-        constexpr int nwarps = BlockSize >> 5;
-        int stride = gridDim.x * nwarps;
-
-        for (int block = blockIdx.x * nwarps + warpid; block < n; block += stride)
+        
+        for (int block = blockIdx.x; block < n; block += gridDim.x)
         {
             int firstBox = nodeData[block].first;
-            int aabbCount = nodeData[block].second;
+            int aabbCount = nodeData[block].second << 3;
 
-            // Load the first block of bounding boxes
-            cuAabb temp = (threadInWarp < aabbCount) ? boundingBoxes[firstBox + threadInWarp] : cuAabb();
-
-            // Take union with each successive block
-            for (int i = threadInWarp + 32; i < aabbCount; i += 32)
+            float v = (threadInWarp < aabbCount) ? reinterpret_cast<const float*>(&boundingBoxes[firstBox])[threadInWarp] : (threadInWarp & 4) ? -FLT_MAX : FLT_MAX;
+            for (int i = threadInWarp + BlockSize; i < aabbCount; i += BlockSize)
             {
-                cuAabb box = boundingBoxes[firstBox + i];
-                temp.aabbMin = perElementMin(temp.aabbMin, box.aabbMin);
-                temp.aabbMax = perElementMax(temp.aabbMax, box.aabbMax);
+                float temp = reinterpret_cast<const float*>(&boundingBoxes[firstBox])[i];
+                v = (threadInWarp & 4) ? max(temp, v) : min(temp, v);
             }
-
-            // Intra-warp reduce
-            for (int j = 16; j > 0; j >>= 1)
+            for (int i = BlockSize; i > 32;)
             {
-                temp.aabbMin.x = min(temp.aabbMin.x, __shfl_xor_sync(0xffffffff, temp.aabbMin.x, j));
-                temp.aabbMin.y = min(temp.aabbMin.y, __shfl_xor_sync(0xffffffff, temp.aabbMin.y, j));
-                temp.aabbMin.z = min(temp.aabbMin.z, __shfl_xor_sync(0xffffffff, temp.aabbMin.z, j));
-                temp.aabbMax.x = max(temp.aabbMax.x, __shfl_xor_sync(0xffffffff, temp.aabbMax.x, j));
-                temp.aabbMax.y = max(temp.aabbMax.y, __shfl_xor_sync(0xffffffff, temp.aabbMax.y, j));
-                temp.aabbMax.z = max(temp.aabbMax.z, __shfl_xor_sync(0xffffffff, temp.aabbMax.z, j));
-            }
+                int j = i >> 1;
 
-            // Store result
+                if (tid < i && tid >= j)
+                {
+                    shared[tid - j] = v;
+                }
+                __syncthreads();
+                if (tid < j)
+                {
+                    float temp = shared[tid];
+                    v = (threadInWarp & 4) ? max(temp, v) : min(temp, v);
+                }
+                i = j;
+            }
+            float temp = __shfl_xor_sync(0xffffffff, v, 16);
+            v = (threadInWarp & 4) ? max(temp, v) : min(temp, v);
+            temp = __shfl_xor_sync(0xffffffff, v, 8);
+            v = (threadInWarp & 4) ? max(temp, v) : min(temp, v);
+
             if (threadInWarp < 8)
             {
-                reinterpret_cast<float*>(&output[block])[threadInWarp] = reinterpret_cast<float*>(&temp)[threadInWarp];
+                reinterpret_cast<float*>(&output[block])[threadInWarp] = v;
             }
+
         }
     }
 
