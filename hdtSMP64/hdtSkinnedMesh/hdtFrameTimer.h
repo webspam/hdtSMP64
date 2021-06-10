@@ -12,13 +12,15 @@ namespace hdt
 		{
 			e_Start,
 			e_Internal,
+			e_Launched,
 			e_End
 		};
 
 		enum Measurements
 		{
 			e_InternalUpdate,
-			e_Collision,
+			e_CollisionLaunch,
+			e_CollisionProcess,
 			e_Total
 		};
 

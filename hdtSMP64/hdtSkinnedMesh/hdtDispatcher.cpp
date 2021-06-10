@@ -241,6 +241,8 @@ namespace hdt
 				}
 			}
 
+			FrameTimer::instance()->logEvent(FrameTimer::e_Launched);
+
 			for (auto f : m_immediateFuncs)
 			{
 				f();
@@ -265,6 +267,7 @@ namespace hdt
 					SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
 				}
 			});
+			FrameTimer::instance()->logEvent(FrameTimer::e_Launched);
 		}
 
 		m_pairs.clear();

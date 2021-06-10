@@ -156,16 +156,20 @@ namespace hdt
         int threadInEighthWarp = tid & 0x03;
         int sourceThread = ((threadInWarp >> 1) & ~0x03) | threadInEighthWarp;
 
+        float margin = colliders.margin.margin;
+
         for (int i = startIndex; i < colliders.numColliders; i += stride)
         {
             float v;
             if (i + eighthWarp < colliders.numColliders)
             {
-                const cuPerVertexInput data = colliders.input[i + eighthWarp];
-                v = vertexData[data.vertexIndex].vals()[threadInEighthWarp];
+                // Vertex index access is across 64 bytes, and we'll almost certainly want to read the next
+                // 64, so cache it.
+                const cuPerVertexInput& data = colliders.input[i + eighthWarp];
+                v = vertexData[__ldg(&data.vertexIndex)].vals()[threadInEighthWarp];
             }
 
-            float m = colliders.margin.margin * __shfl_sync(0xffffffff, v, threadInWarp | 0x03);
+            float m = margin * __shfl_sync(0xffffffff, v, threadInWarp | 0x03);
             float vmin = v - m;
             float vmax = v + m;
 
@@ -203,18 +207,27 @@ namespace hdt
 
         for (int i = startIndex; i < colliders.numColliders; i += stride)
         {
+            int index;
             float v;
             float vmin, vmax, sum;
             if (i + eighthWarp < colliders.numColliders)
             {
-                const cuPerTriangleInput data = colliders.input[i + eighthWarp];
-                v = vertexData[data.vertexIndices.a].vals()[threadInEighthWarp];
+                index = reinterpret_cast<const int*>(&colliders.input[i])[threadInWarp];
+            }
+            int ia = __shfl_sync(0xffffffff, index, threadInWarp & ~3);
+            int ib = __shfl_sync(0xffffffff, index, (threadInWarp & ~3) | 1);
+            int ic = __shfl_sync(0xffffffff, index, (threadInWarp & ~3) | 2);
+            if (i + eighthWarp < colliders.numColliders)
+            {
+                // Triangle index access coalesces fairly well (it's all in the same 128-byte block) but we
+                // currently do 3 accesses to it, so caching will help.
+                v = vertexData[ia].vals()[threadInEighthWarp];
                 vmin = vmax = sum = v;
-                v = vertexData[data.vertexIndices.b].vals()[threadInEighthWarp];
+                v = vertexData[ib].vals()[threadInEighthWarp];
                 vmin = min(v, vmin);
                 vmax = max(v, vmax);
                 sum += v;
-                v = vertexData[data.vertexIndices.c].vals()[threadInEighthWarp];
+                v = vertexData[ic].vals()[threadInEighthWarp];
                 vmin = min(v, vmin);
                 vmax = max(v, vmax);
                 sum += v;

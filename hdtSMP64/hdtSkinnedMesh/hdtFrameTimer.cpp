@@ -40,15 +40,18 @@ namespace hdt
 			QueryPerformanceFrequency(&ticks);
 			float ticks_per_us = static_cast<float>(ticks.QuadPart) / 1e6;
 			float internalTime = (m_timings[e_Internal] - m_timings[e_Start]) / ticks_per_us;
-			float collisionTime = (m_timings[e_End] - m_timings[e_Internal]) / ticks_per_us;
+			float collisionLaunchTime = (m_timings[e_Launched] - m_timings[e_Internal]) / ticks_per_us;
+			float collisionProcessTime = (m_timings[e_End] - m_timings[e_Launched]) / ticks_per_us;
 			float totalTime = (m_timings[e_End] - m_timings[e_Start]) / ticks_per_us;
 
 			if (cudaFrame())
 			{
 				m_sumsGPU[e_InternalUpdate] += internalTime;
 				m_sumsSquaredGPU[e_InternalUpdate] += internalTime * internalTime;
-				m_sumsGPU[e_Collision] += collisionTime;
-				m_sumsSquaredGPU[e_Collision] += collisionTime * collisionTime;
+				m_sumsGPU[e_CollisionLaunch] += collisionLaunchTime;
+				m_sumsSquaredGPU[e_CollisionLaunch] += collisionLaunchTime * collisionLaunchTime;
+				m_sumsGPU[e_CollisionProcess] += collisionProcessTime;
+				m_sumsSquaredGPU[e_CollisionProcess] += collisionProcessTime * collisionProcessTime;
 				m_sumsGPU[e_Total] += totalTime;
 				m_sumsSquaredGPU[e_Total] += totalTime * totalTime;
 			}
@@ -56,8 +59,10 @@ namespace hdt
 			{
 				m_sumsCPU[e_InternalUpdate] += internalTime;
 				m_sumsSquaredCPU[e_InternalUpdate] += internalTime * internalTime;
-				m_sumsCPU[e_Collision] += collisionTime;
-				m_sumsSquaredCPU[e_Collision] += collisionTime * collisionTime;
+				m_sumsCPU[e_CollisionLaunch] += collisionLaunchTime;
+				m_sumsSquaredCPU[e_CollisionLaunch] += collisionLaunchTime * collisionLaunchTime;
+				m_sumsCPU[e_CollisionProcess] += collisionProcessTime;
+				m_sumsSquaredCPU[e_CollisionProcess] += collisionProcessTime * collisionProcessTime;
 				m_sumsCPU[e_Total] += totalTime;
 				m_sumsSquaredCPU[e_Total] += totalTime * totalTime;
 			}
@@ -70,10 +75,14 @@ namespace hdt
 				Console_Print("    Internal update mean %f us, std %f us",
 					mean,
 					sqrt(m_sumsSquaredCPU[e_InternalUpdate] / m_count - mean * mean));
-				mean = m_sumsCPU[e_Collision] / m_count;
-				Console_Print("    Collision check mean %f us, std %f us",
+				mean = m_sumsCPU[e_CollisionLaunch] / m_count;
+				Console_Print("    Collision launch mean %f us, std %f us",
 					mean,
-					sqrt(m_sumsSquaredCPU[e_Collision] / m_count - mean * mean));
+					sqrt(m_sumsSquaredCPU[e_CollisionLaunch] / m_count - mean * mean));
+				mean = m_sumsCPU[e_CollisionProcess] / m_count;
+				Console_Print("    Collision process mean %f us, std %f us",
+					mean,
+					sqrt(m_sumsSquaredCPU[e_CollisionProcess] / m_count - mean * mean));
 				mean = m_sumsCPU[e_Total] / m_count;
 				Console_Print("    Total mean %f us, std %f us",
 					mean,
@@ -88,10 +97,14 @@ namespace hdt
 				Console_Print("    Internal update mean %f us, std %f us",
 					mean,
 					sqrt(m_sumsSquaredGPU[e_InternalUpdate] / m_count - mean * mean));
-				mean = m_sumsGPU[e_Collision] / m_count;
-				Console_Print("    Collision check mean %f us, std %f us",
+				mean = m_sumsGPU[e_CollisionLaunch] / m_count;
+				Console_Print("    Collision launch mean %f us, std %f us",
 					mean,
-					sqrt(m_sumsSquaredGPU[e_Collision] / m_count - mean * mean));
+					sqrt(m_sumsSquaredGPU[e_CollisionLaunch] / m_count - mean * mean));
+				mean = m_sumsGPU[e_CollisionProcess] / m_count;
+				Console_Print("    Collision process mean %f us, std %f us",
+					mean,
+					sqrt(m_sumsSquaredGPU[e_CollisionProcess] / m_count - mean * mean));
 				mean = m_sumsGPU[e_Total] / m_count;
 				Console_Print("    Total mean %f us, std %f us",
 					mean,
