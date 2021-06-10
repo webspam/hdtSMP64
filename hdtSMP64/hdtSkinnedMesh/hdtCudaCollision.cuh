@@ -322,4 +322,6 @@ namespace hdt
 	void cuSetDevice(int id);
 
 	int cuGetDevice();
+
+	void* cuDevicePointer(void* ptr);
 }

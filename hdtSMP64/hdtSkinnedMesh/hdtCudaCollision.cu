@@ -283,19 +283,18 @@ namespace hdt
             // Intra-warp reduce
             for (int j = 16; j > 0; j >>= 1)
             {
-                temp.aabbMin.x = min(temp.aabbMin.x, __shfl_down_sync(0xffffffff, temp.aabbMin.x, j));
-                temp.aabbMin.y = min(temp.aabbMin.y, __shfl_down_sync(0xffffffff, temp.aabbMin.y, j));
-                temp.aabbMin.z = min(temp.aabbMin.z, __shfl_down_sync(0xffffffff, temp.aabbMin.z, j));
-                temp.aabbMax.x = max(temp.aabbMax.x, __shfl_down_sync(0xffffffff, temp.aabbMax.x, j));
-                temp.aabbMax.y = max(temp.aabbMax.y, __shfl_down_sync(0xffffffff, temp.aabbMax.y, j));
-                temp.aabbMax.z = max(temp.aabbMax.z, __shfl_down_sync(0xffffffff, temp.aabbMax.z, j));
+                temp.aabbMin.x = min(temp.aabbMin.x, __shfl_xor_sync(0xffffffff, temp.aabbMin.x, j));
+                temp.aabbMin.y = min(temp.aabbMin.y, __shfl_xor_sync(0xffffffff, temp.aabbMin.y, j));
+                temp.aabbMin.z = min(temp.aabbMin.z, __shfl_xor_sync(0xffffffff, temp.aabbMin.z, j));
+                temp.aabbMax.x = max(temp.aabbMax.x, __shfl_xor_sync(0xffffffff, temp.aabbMax.x, j));
+                temp.aabbMax.y = max(temp.aabbMax.y, __shfl_xor_sync(0xffffffff, temp.aabbMax.y, j));
+                temp.aabbMax.z = max(temp.aabbMax.z, __shfl_xor_sync(0xffffffff, temp.aabbMax.z, j));
             }
 
             // Store result
-            if (threadInWarp == 0)
+            if (threadInWarp < 8)
             {
-                output[block].aabbMin = temp.aabbMin;
-                output[block].aabbMax = temp.aabbMax;
+                reinterpret_cast<float*>(&output[block])[threadInWarp] = reinterpret_cast<float*>(&temp)[threadInWarp];
             }
         }
     }
@@ -1040,6 +1039,13 @@ namespace hdt
         int id;
         cudaGetDevice(&id);
         return id;
+    }
+
+    void* cuDevicePointer(void* ptr)
+    {
+        void* p;
+        cudaHostGetDevicePointer(&p, ptr, 0);
+        return p;
     }
 
     template cuResult cuRunCollision<eNone, CudaPerVertexShape>(

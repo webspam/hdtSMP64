@@ -80,6 +80,7 @@ namespace hdt
 				static_assert(sizeof(CudaT) == sizeof(HostT), "Device and host types different sizes");
 				cuGetDeviceBuffer(&reinterpret_cast<void*>(m_deviceData), m_size).check(__FUNCTION__);
 				cuGetHostBuffer(&reinterpret_cast<void*>(m_hostData), m_size).check(__FUNCTION__);
+				m_zeroCopyData = reinterpret_cast<CudaT*>(cuDevicePointer(m_hostData));
 			}
 
 			~CudaBuffer()
@@ -103,11 +104,14 @@ namespace hdt
 
 			CudaT* getD() { return m_deviceData; }
 
+			CudaT* getZ() { return m_zeroCopyData; }
+
 		private:
 
 			int m_size;
 			CudaT* m_deviceData;
 			HostT* m_hostData;
+			CudaT* m_zeroCopyData;
 		};
 
 		template <typename DeviceT, typename... DeviceArgs, typename HostT, typename... HostArgs>
@@ -139,6 +143,11 @@ namespace hdt
 			ArrayType<DeviceT, DeviceArgs...> getD()
 			{
 				return { m_buffer.getD(), m_allocatedSize };
+			}
+
+			ArrayType<DeviceT, DeviceArgs...> getZ()
+			{
+				return { m_buffer.getZ(), m_allocatedSize };
 			}
 
 		private:
@@ -301,6 +310,7 @@ namespace hdt
 				auto buffers = CudaBufferPool::instance()->getBuffer(m_size);
 				m_deviceData = reinterpret_cast<CudaT*>(buffers.first);
 				m_hostData = reinterpret_cast<HostT*>(buffers.second);
+				m_zeroCopyData = reinterpret_cast<CudaT*>(cuDevicePointer(m_hostData));
 			}
 
 			void toDevice(CudaStream& stream)
@@ -323,11 +333,14 @@ namespace hdt
 
 			CudaT* getD() { return m_deviceData; }
 
+			CudaT* getZ() { return m_zeroCopyData; }
+
 		private:
 
 			size_t m_size;
 			CudaT* m_deviceData;
 			HostT* m_hostData;
+			CudaT* m_zeroCopyData;
 		};
 	}
 
@@ -814,13 +827,11 @@ namespace hdt
 		{
 			if (m_nextPair > 0)
 			{
-				m_setupBuffer.toDevice(merge->m_imp->m_stream);
-
 				collisionFunc()(
 					merge->m_imp->m_stream,
 					m_nextPair,
 					swap,
-					m_setupBuffer.getD(),
+					m_setupBuffer.getZ(),
 					*m_shapeA->m_imp,
 					*m_shapeB->m_imp,
 					*m_shapeA->m_imp->m_body,
@@ -965,20 +976,11 @@ namespace hdt
 			vertexShape ? static_cast<cuColliderData<CudaPerVertexShape>>(*vertexShape->m_imp) : s_emptyVertexData,
 			vertexShape ? vertexShape->m_imp->m_tree.m_numNodes : 0,
 			vertexShape ? vertexShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
-			vertexShape ? vertexShape->m_imp->m_tree.m_nodeAabbs.getD() : nullptr,
+			vertexShape ? vertexShape->m_imp->m_tree.m_nodeAabbs.getZ() : nullptr,
 			triangleShape ? static_cast<cuColliderData<CudaPerTriangleShape>>(*triangleShape->m_imp) : s_emptyTriangleData,
 			triangleShape ? triangleShape->m_imp->m_tree.m_numNodes : 0,
 			triangleShape ? triangleShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
-			triangleShape ? triangleShape->m_imp->m_tree.m_nodeAabbs.getD() : nullptr).check(__FUNCTION__);
-
-		if (vertexShape)
-		{
-			vertexShape->m_imp->m_tree.m_nodeAabbs.toHost(body->m_imp->m_stream);
-		}
-		if (triangleShape)
-		{
-			triangleShape->m_imp->m_tree.m_nodeAabbs.toHost(body->m_imp->m_stream);
-		}
+			triangleShape ? triangleShape->m_imp->m_tree.m_nodeAabbs.getZ() : nullptr).check(__FUNCTION__);
 	}
 
 	CudaInterface::CudaInterface()
