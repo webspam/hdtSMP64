@@ -446,9 +446,14 @@ namespace hdt
 			m_nodeData(m_numNodes),
 			m_nodeAabbs(m_numNodes)
 		{
-			std::vector<NodePair> nodeData;
-			buildNodeData(*tree, m_nodeData.get());
+			unsigned int biggestNode = 0;
+			buildNodeData(*tree, m_nodeData.get(), biggestNode);
 			m_nodeData.toDevice(stream);
+			
+			_DMESSAGE("Tree with %d nodes, largest %d, total %d colliders",
+				m_numNodes,
+				biggestNode,
+				m_nodeData[m_numNodes-1].first + m_nodeData[m_numNodes-1].second);
 		}
 
 		void update()
@@ -472,15 +477,16 @@ namespace hdt
 			return count;
 		}
 
-		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData)
+		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData, unsigned int& biggestNode)
 		{
 			if (tree.numCollider)
 			{
 				*nodeData++ = { tree.aabb - m_tree->aabb, tree.numCollider };
+				biggestNode = std::max(biggestNode, tree.numCollider);
 			}
 			for (auto& child : tree.children)
 			{
-				nodeData = buildNodeData(child, nodeData);
+				nodeData = buildNodeData(child, nodeData, biggestNode);
 			}
 			return nodeData;
 		}

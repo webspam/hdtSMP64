@@ -295,11 +295,10 @@ namespace hdt
             temp = __shfl_xor_sync(0xffffffff, v, 8);
             v = (threadInWarp & 4) ? max(temp, v) : min(temp, v);
 
-            if (threadInWarp < 8)
+            if (tid < 8)
             {
                 reinterpret_cast<float*>(&output[block])[threadInWarp] = v;
             }
-
         }
     }
 
