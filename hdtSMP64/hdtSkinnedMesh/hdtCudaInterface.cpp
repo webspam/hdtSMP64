@@ -444,32 +444,22 @@ namespace hdt
 			: m_tree(tree),
 			m_numColliders(colliderCount(*tree)),
 			m_numNodes(nodeCount(*tree)),
-			m_nodeData(m_numNodes),
 			m_colliderData(m_numColliders),
-			m_chunkSize(1024),
+			m_chunkSize(128),
 			m_nodeAabbs(m_numNodes + m_numColliders / m_chunkSize)
 		{
-			unsigned int biggestNode = 0;
-			buildNodeData(*tree, m_nodeData.get(), biggestNode);
-			buildColliderData(*tree);
-			m_nodeData.toDevice(stream);
+			int index = buildColliderData(*tree);
 			m_colliderData.toDevice(stream);
-			
-			_DMESSAGE("Tree with %d nodes, largest %d, total %d colliders",
-				m_numNodes,
-				biggestNode,
-				m_nodeData[m_numNodes-1].first + m_nodeData[m_numNodes-1].second);
 		}
 
 		void update()
 		{
-			updateBoundingBoxes(*m_tree, m_nodeAabbs);
+			updateBoundingBoxesNew(*m_tree, m_nodeAabbs);
 		}
 
 		int m_numColliders;
 		int m_chunkSize;
 		int m_numNodes;
-		CudaBuffer<NodePair> m_nodeData;
 		CudaBuffer<int> m_colliderData;
 		CudaBuffer<cuAabb, Aabb> m_nodeAabbs;
 
@@ -504,18 +494,28 @@ namespace hdt
 
 				while (size > 0)
 				{
-					int end = std::min(start + size, m_chunkSize);
-					int sizeInChunk = end - start;
+					int end = std::min((start & (m_chunkSize - 1)) + size, m_chunkSize);
+					int sizeInChunk = end - (start & (m_chunkSize - 1));
+
+					int passes = 0;
+					for (int s = sizeInChunk; s; s >>= 1, ++passes);
+					int mask = (1 << passes) - 1;
+					int topBit = 1 << (passes - 1);
 
 					for (int i = 0; i < sizeInChunk; ++i)
 					{
-						// FIXME: We should be able to be much smarter about the low byte of v
-						int v = std::max(sizeInChunk - i - 1, 255);
+						mask &= ~i;
+						if (i + topBit >= sizeInChunk)
+						{
+							mask &= ~topBit;
+						}
+						int v = mask;
 						if (i == 0)
 						{
 							v |= 0x100;
 							v |= (nodeIndex++) << 16;
 						}
+						m_colliderData[start + i] = v;
 					}
 
 					size -= sizeInChunk;
@@ -527,20 +527,6 @@ namespace hdt
 				nodeIndex = buildColliderData(child, nodeIndex);
 			}
 			return nodeIndex;
-		}
-
-		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData, unsigned int& biggestNode)
-		{
-			if (tree.numCollider)
-			{
-				*nodeData++ = { tree.aabb - m_tree->aabb, tree.numCollider };
-				biggestNode = std::max(biggestNode, tree.numCollider);
-			}
-			for (auto& child : tree.children)
-			{
-				nodeData = buildNodeData(child, nodeData, biggestNode);
-			}
-			return nodeData;
 		}
 
 		Aabb* updateBoundingBoxes(ColliderTree& tree, Aabb* boundingBoxes)
@@ -573,19 +559,19 @@ namespace hdt
 
 				while (size > 0)
 				{
-					int end = std::min(start + size, m_chunkSize);
-					int sizeInChunk = end - start;
+					int end = std::min((start & (m_chunkSize - 1)) + size, m_chunkSize);
+					int sizeInChunk = end - (start & (m_chunkSize - 1));
 
-					tree.aabbMe.merge(*boundingBoxes++);
+					if (sizeInChunk > 0)
+					{
+						tree.aabbMe.merge(*boundingBoxes++);
+					}
 
 					size -= sizeInChunk;
 					start += sizeInChunk;
 				}
+			}
 
-			}
-			else
-			{
-			}
 			tree.aabbAll = tree.aabbMe;
 			for (auto& child : tree.children)
 			{
@@ -631,7 +617,6 @@ namespace hdt
 				}
 			}
 			m_input.toDevice(m_body->m_stream);
-			m_tree.m_nodeData.toDevice(m_body->m_stream);
 		}
 
 		void updateTree()
@@ -694,7 +679,6 @@ namespace hdt
 					shape->m_colliders[i].flexible };
 			}
 			m_input.toDevice(m_body->m_stream);
-			m_tree.m_nodeData.toDevice(m_body->m_stream);
 		}
 
 		void updateTree()
@@ -1065,12 +1049,12 @@ namespace hdt
 			*body->m_imp,
 			body->m_imp->m_bones.getD(),
 			vertexShape ? static_cast<cuColliderData<CudaPerVertexShape>>(*vertexShape->m_imp) : s_emptyVertexData,
-			vertexShape ? vertexShape->m_imp->m_tree.m_numNodes : 0,
-			vertexShape ? vertexShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
+			vertexShape ? vertexShape->m_imp->m_tree.m_numColliders : 0,
+			vertexShape ? vertexShape->m_imp->m_tree.m_colliderData.getD() : nullptr,
 			vertexShape ? vertexShape->m_imp->m_tree.m_nodeAabbs.getZ() : nullptr,
 			triangleShape ? static_cast<cuColliderData<CudaPerTriangleShape>>(*triangleShape->m_imp) : s_emptyTriangleData,
-			triangleShape ? triangleShape->m_imp->m_tree.m_numNodes : 0,
-			triangleShape ? triangleShape->m_imp->m_tree.m_nodeData.getD() : nullptr,
+			triangleShape ? triangleShape->m_imp->m_tree.m_numColliders : 0,
+			triangleShape ? triangleShape->m_imp->m_tree.m_colliderData.getD() : nullptr,
 			triangleShape ? triangleShape->m_imp->m_tree.m_nodeAabbs.getZ() : nullptr).check(__FUNCTION__);
 	}
 
