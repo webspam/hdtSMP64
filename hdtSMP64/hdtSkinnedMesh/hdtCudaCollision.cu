@@ -302,6 +302,85 @@ namespace hdt
         }
     }
 
+    template <unsigned int BlockSize = cuReduceBlockSize()>
+    __global__ void kernelBoundingBoxReduceNew(
+        int n,
+        int chunkSize,
+        const int* __restrict__ treeData,
+        const BoundingBoxArray boundingBoxes,
+        cuAabb* __restrict__ output)
+    {
+        __shared__ float shared[BlockSize << 1];
+        int chunksPerBlock = chunkSize / BlockSize;
+
+        int index = blockIdx.x * blockDim.x * chunksPerBlock + threadIdx.x;
+        int stride = blockDim.x * gridDim.x * chunksPerBlock;
+        int tid = threadIdx.x;
+
+        const float* boxData = reinterpret_cast<const float*>(&boundingBoxes[0]);
+
+        for (int start = index; start < n; start += stride)
+        {
+            // Start with invalid box in shared memory for the next chunk
+            shared[tid + BlockSize] = (tid & 4) ? -FLT_MAX : FLT_MAX;
+
+            // Loop over chunks in reverse order
+            for (int c = chunksPerBlock - 1; c >= 0; --c)
+            {
+                int i = start + c * BlockSize;
+
+                // Get data for this chunk, if it's not past the end of the array, otherwise invalid box
+                float v = (tid & 4) ? -FLT_MAX : FLT_MAX;
+                int data = 0;
+                if (i < (n << 3))
+                {
+                    v = boxData[i];
+                    data = treeData[i >> 3];
+                }
+                shared[tid] = v;
+
+                // Number of words left in this reduction (excluding the current 8)
+                int d = (data & 0xff) << 3;
+
+                // Inter-warp reduce in shared memory
+                for (int j = BlockSize; j > 32; j >>= 1)
+                {
+                    __syncthreads();
+                    if (j <= d)
+                    {
+                        // Note that the apparent race condition here doesn't actually affect anything in
+                        // practice. We may end up including some values more than once in the reduction, but
+                        // since the reduction operator is min or max, it doesn't affect the final result.
+                        // FIXME: If we make d a bitfield instead of just a number, we should be able to
+                        // remove the race condition entirely without having to do messy double buffering.
+                        float temp = shared[tid + j];
+                        v = (tid & 4) ? max(temp, v) : min(temp, v);
+                        shared[tid] = v;
+                    }
+                }
+
+                // Final 2 steps of reduction within the warp
+                float temp = __shfl_xor_sync(0xffffffff, v, 16);
+                if (16 <= d)
+                {
+                    v = (tid & 4) ? max(temp, v) : min(temp, v);
+                }
+                temp = __shfl_xor_sync(0xffffffff, v, 8);
+                if (8 <= d)
+                {
+                    v = (tid & 4) ? max(temp, v) : min(temp, v);
+                }
+
+                // Store the result if required
+                if (data & 0x100)
+                {
+                    int offset = (data >> 13) | (tid & 7);
+                    reinterpret_cast<float*>(output)[offset] = v;
+                }
+            }
+        }
+    }
+
     template <unsigned int BlockSize = cuMapBlockSize()>
     __global__ void kernelBodyUpdate(
         cuBodyData data,
