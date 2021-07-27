@@ -43,63 +43,6 @@
     <ClCompile Include="NetImmerseUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameTypes.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\NiTypes.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameRTTI.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameForms.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameAPI.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\NiObjects.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\NiNodes.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\PapyrusArgs.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\PapyrusVM.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\PapyrusNativeFunctions.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\PapyrusInterfaces.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameUtilities.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameData.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64_common\Relocation.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameReferences.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameBSExtraData.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameExtraData.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameFormComponents.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\HashUtil.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\IErrors.cpp">
       <Filter>skse</Filter>
     </ClCompile>
@@ -112,19 +55,76 @@
     <ClCompile Include="..\..\common\IDataStream.cpp">
       <Filter>skse</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameStreams.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\NiRTTI.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\NiGeometry.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\skse64\skse64\GameEvents.cpp">
-      <Filter>skse</Filter>
-    </ClCompile>
     <ClCompile Include="StringImpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameBSExtraData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameEvents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameExtraData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameFormComponents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameForms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameReferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameRTTI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameStreams.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\GameUtilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\HashUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\NiGeometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\NiNodes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\NiObjects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\NiRTTI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\NiTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\PapyrusArgs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\PapyrusInterfaces.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\PapyrusNativeFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64\PapyrusVM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\skse64_common\Relocation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
