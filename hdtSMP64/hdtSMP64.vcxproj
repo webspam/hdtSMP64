@@ -86,6 +86,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <AdditionalIncludeDirectories>C:\Users\Alan\source\repos\sksevr_2_00_12\src;C:\Users\Alan\source\repos\Detours\include;C:\Users\Alan\source\repos\bullet3\src</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
