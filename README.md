@@ -1,6 +1,6 @@
-# hdtSMP for Skyrim VR (not working yet)
+# hdtSMP for Skyrim VR
 
-Fork of [https://github.com/Karonar1/hdtSMP64] by Karonar1, of fork of [version](https://github.com/aers/hdtSMP64) by aers, from
+Fork of [karonar's fixes](https://github.com/Karonar1/hdtSMP64) by Karonar1, of fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
 ## Changes 
@@ -156,7 +156,7 @@ And at line 174 (inside the `enum` definition), add:
 kNone =		0,
 ```
 
-In GameEvents.h, at line 667, delete:
+In GameEvents.h, at line 605, delete:
 ```cpp
 EventDispatcher<void>								unk840;					//  840 - sink offset 0C8
 ```
@@ -166,12 +166,18 @@ and replace it with:
 EventDispatcher<TESMoveAttachDetachEvent>			unk840;					//  840 - sink offset 0C8
 ```
 
-In GameMenus.h, befor line 1105 (just before the GetSingleton declaration), add:
+In GameMenus.h, before line 1057 (just before the `static MenuManager * GetSingleton` declaration), add:
 ```cpp
 bool IsGamePaused() { return numPauseGame > 0; }
 ```
 
 Now you should be able to select the Release or Release_noAVX configuration and build the plugin.
+
+## Build Instructions
+
+1. Copy [config file](/configs/configs.xml) to `SkyrimVR\Data\SKSE\Plugins\hdtSkinnedMeshConfigs` directory.
+2. Copy built `hdtSMP64.dll` from `sksevr_2_00_12\src\sksevr\x64\Release` to `SkyrimVR\Data\SKSE\Plugins\` (backup old .dll)
+   1. Optionally copy `hdtSMP64.pdb` if you need to debug. 
 
 ## Credits
 
@@ -180,5 +186,7 @@ hydrogensaysHDT - Creating this plugin
 aers - fixes and improvements
 
 ousnius - some fixes, and "consulting"
+
+karonar1 - bug fixes (the real work), I'm just building it
 
 
