@@ -48,5 +48,9 @@ x64
 # folders from skse source
 skse64
 skse64_common
+skse64_loader
+skse64_steam_loader
+skse64_loader_common
 xbyak
 tracy
+sksevr.sln

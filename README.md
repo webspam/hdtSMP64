@@ -1,6 +1,6 @@
-# hdtSMP with CUDA for Skyrim Special Edition
+# hdtSMP with CUDA for Skyrim VR
 
-Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
+Fork of [https://github.com/Karonar1/hdtSMP64] by Karonar1, of fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
 ## Changes 
@@ -153,7 +153,7 @@ You will need:
 + CMake
 + CUDA 10.2
 
-Open a VS2019 command prompt ("x64 Native Tools Command Prompt for VS2019"). Download and build Detours and
+Open a VS2019 command prompt ("**x64 Native Tools Command Prompt for VS2019**"). Download and build Detours and
 Bullet:
 
 ```
@@ -177,25 +177,25 @@ supports it.
 Open D:\Dev-noAVX\bullet3\BULLET_PHYSICS.sln in Visual Studio, select the Release configuration, then 
 Build -> Build solution.
 
-Download skse64_2_00_19.7z and unpack into Dev-noAVX (source code is included in the official distribution),
+Download https://skse.silverlock.org/beta/sksevr_2_00_12.7z and unpack into Dev-noAVX (source code is included in the official distribution),
 then get the HDT-SMP source:
 
 ```
-cd D:\Dev-noAVX\skse64_2_00_19\src\skse64
+cd D:\Dev-noAVX\sksevr_2_00_12\src\sksevr
 git init
-git remote add origin https://github/com/Karonar1/hdtSMP64.git
+git remote add origin https://github.com/alandtse/hdtSMP64.git
 git fetch
 git checkout master
 ```
 
-Open D:\Dev-noAVX\skse64_2_00_19\src\skse64\hdtSMP64.sln in Visual Studio. If you are asked to retarget
+Open D:\Dev-noAVX\sksevr_2_00_12\src\sksevr\hdtSMP64.sln in Visual Studio. If you are asked to retarget
 projects, just accept the defaults and click OK.
 
 Open properties for the hdtSMP64 project. Select "All Configurations" at the top, and the C/C++ page. Add the
 following to Additional Include Directories (just delete anything that was there before):
 + D:\Dev-noAVX\Detours\include
 + D:\Dev-noAVX\bullet3\src
-+ D:\Dev-noAVX\skse64_2_00_19\src
++ D:\Dev-noAVX\sksevr_2_00_12\src
 
 On the Linker -> General page, add the following to Additional Library Directories:
 + D:\Dev-noAVX\bullet3\lib\Release

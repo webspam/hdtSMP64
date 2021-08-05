@@ -69,7 +69,7 @@ namespace hdt
 
 	void ActorManager::onEvent(const ArmorAttachEvent& e)
 	{
-		if (!findNode(e.skeleton, "NPC"))
+		if (e.skeleton == nullptr || !findNode(e.skeleton, "NPC"))
 		{
 			return;
 		}
