@@ -442,18 +442,13 @@ namespace hdt
 
 		CudaColliderTree(ColliderTree* tree, CudaStream& stream)
 			: m_tree(tree),
-			m_numColliders(colliderCount(*tree)),
 			m_numNodes(nodeCount(*tree)),
 			m_nodeData(m_numNodes),
-			m_colliderData(m_numColliders),
-			m_chunkSize(1024),
-			m_nodeAabbs(m_numNodes + m_numColliders / m_chunkSize)
+			m_nodeAabbs(m_numNodes)
 		{
 			unsigned int biggestNode = 0;
 			buildNodeData(*tree, m_nodeData.get(), biggestNode);
-			buildColliderData(*tree);
 			m_nodeData.toDevice(stream);
-			m_colliderData.toDevice(stream);
 			
 			_DMESSAGE("Tree with %d nodes, largest %d, total %d colliders",
 				m_numNodes,
@@ -466,11 +461,8 @@ namespace hdt
 			updateBoundingBoxes(*m_tree, m_nodeAabbs);
 		}
 
-		int m_numColliders;
-		int m_chunkSize;
 		int m_numNodes;
 		CudaBuffer<NodePair> m_nodeData;
-		CudaBuffer<int> m_colliderData;
 		CudaBuffer<cuAabb, Aabb> m_nodeAabbs;
 
 	private:
@@ -483,50 +475,6 @@ namespace hdt
 				count += nodeCount(child);
 			}
 			return count;
-		}
-
-		static int colliderCount(ColliderTree& tree)
-		{
-			int count = tree.numCollider;
-			for (auto& child : tree.children)
-			{
-				count += colliderCount(child);
-			}
-			return count;
-		}
-
-		int buildColliderData(ColliderTree& tree, int nodeIndex = 0)
-		{
-			if (tree.numCollider)
-			{
-				int start = tree.aabb - m_tree->aabb;
-				int size = tree.numCollider;
-
-				while (size > 0)
-				{
-					int end = std::min(start + size, m_chunkSize);
-					int sizeInChunk = end - start;
-
-					for (int i = 0; i < sizeInChunk; ++i)
-					{
-						// FIXME: We should be able to be much smarter about the low byte of v
-						int v = std::max(sizeInChunk - i - 1, 255);
-						if (i == 0)
-						{
-							v |= 0x100;
-							v |= (nodeIndex++) << 16;
-						}
-					}
-
-					size -= sizeInChunk;
-					start += sizeInChunk;
-				}
-			}
-			for (auto& child : tree.children)
-			{
-				nodeIndex = buildColliderData(child, nodeIndex);
-			}
-			return nodeIndex;
 		}
 
 		NodePair* buildNodeData(ColliderTree& tree, NodePair* nodeData, unsigned int& biggestNode)
@@ -557,39 +505,6 @@ namespace hdt
 			for (auto& child : tree.children)
 			{
 				boundingBoxes = updateBoundingBoxes(child, boundingBoxes);
-				tree.aabbAll.merge(child.aabbAll);
-			}
-			return boundingBoxes;
-		}
-
-		Aabb* updateBoundingBoxesNew(ColliderTree& tree, Aabb* boundingBoxes)
-		{
-			tree.aabbMe.invalidate();
-
-			if (tree.numCollider)
-			{
-				int start = tree.aabb - m_tree->aabb;
-				int size = tree.numCollider;
-
-				while (size > 0)
-				{
-					int end = std::min(start + size, m_chunkSize);
-					int sizeInChunk = end - start;
-
-					tree.aabbMe.merge(*boundingBoxes++);
-
-					size -= sizeInChunk;
-					start += sizeInChunk;
-				}
-
-			}
-			else
-			{
-			}
-			tree.aabbAll = tree.aabbMe;
-			for (auto& child : tree.children)
-			{
-				boundingBoxes = updateBoundingBoxesNew(child, boundingBoxes);
 				tree.aabbAll.merge(child.aabbAll);
 			}
 			return boundingBoxes;
