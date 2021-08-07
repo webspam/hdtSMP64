@@ -297,12 +297,12 @@ namespace hdt
 		cuBodyData vertexData,
 		const cuBone* boneData,
 		cuColliderData<CudaPerVertexShape> perVertexData,
-		int nVertexColliders,
-		const int* vertexColliderData,
+		int nVertexNodes,
+		const std::pair<int, int>* vertexNodeData,
 		cuAabb* vertexNodeOutput,
 		cuColliderData<CudaPerTriangleShape> perTriangleData,
-		int nTriangleColliders,
-		const int* triangleColliderData,
+		int nTriangleNodes,
+		const std::pair<int, int>* triangleNodeData,
 		cuAabb* triangleNodeOutput);
 
 	cuResult cuSynchronize(void* stream = nullptr);
