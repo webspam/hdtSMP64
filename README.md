@@ -5,6 +5,9 @@ Fork of [https://github.com/Karonar1/hdtSMP64] by Karonar1, of fork of [version]
 
 ## Changes 
 
++ Added maximum angle in ActorManager. A max angle can be used to specify physics on NPCs within a field of view.
+  0 degrees represents straight in front. Default is 45 which is treated as + or - 45 degrees so 90 total degrees. 
+  180 would be all around.
 + Added CUDA support for several parts of collision detection (still a work in progress). This includes
   everything that had OpenCL support in earlier releases, as well as the final collision check. CPU collision
   is still fully supported, and is used as a fallback if a CUDA-capable GPU is not available.

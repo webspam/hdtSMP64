@@ -15,10 +15,10 @@ namespace hdt
 {
 	class ActorManager
 		: public IEventListener<ArmorAttachEvent>
-		  , public IEventListener<SkinSingleHeadGeometryEvent>
-		  , public IEventListener<SkinAllHeadGeometryEvent>
-		  , public IEventListener<FrameEvent>
-		  , public IEventListener<ShutdownEvent>
+		, public IEventListener<SkinSingleHeadGeometryEvent>
+		, public IEventListener<SkinAllHeadGeometryEvent>
+		, public IEventListener<FrameEvent>
+		, public IEventListener<ShutdownEvent>
 	{
 		using IDType = UInt32;
 
@@ -106,14 +106,14 @@ namespace hdt
 			bool isPlayerCharacter() const;
 			std::optional<NiPoint3> position() const;
 
-			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell);
+			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle);
 			void reloadMeshes();
 
 			void scanHead();
 			void processGeometry(BSFaceGenNiNode* head, BSGeometry* geometry);
 
 			static void doSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
-			                            std::unordered_map<IDStr, IDStr>& map);
+				std::unordered_map<IDStr, IDStr>& map);
 			static void doSkeletonClean(NiNode* dst, IString* prefix);
 			static NiNode* cloneNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static void renameTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
@@ -122,6 +122,7 @@ namespace hdt
 
 		private:
 			bool isActiveInScene() const;
+			bool isDrawn() const;
 
 			bool isActive = false;
 			std::vector<Armor> armors;
@@ -156,5 +157,6 @@ namespace hdt
 
 		bool m_skinNPCFaceParts = true;
 		float m_maxDistance = 1e4f;
+		float m_maxAngle = 45.0;
 	};
 }

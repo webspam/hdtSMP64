@@ -77,6 +77,8 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
 				else if (reader.GetLocalName() == "maximumDistance")
 					ActorManager::instance()->m_maxDistance = reader.readFloat();
+				else if (reader.GetLocalName() == "maximumAngle")
+					ActorManager::instance()->m_maxAngle = reader.readFloat();
 				else if (reader.GetLocalName() == "enableCuda")
 					CudaInterface::enableCuda = reader.readBool();
 				else if (reader.GetLocalName() == "cudaDevice")
@@ -106,8 +108,8 @@ namespace hdt
 			case XMLReader::Inspected::StartTag:
 				if (reader.GetLocalName() == "solver")
 					solver(reader);
-					//else if (reader.GetLocalName() == "wind")
-					//	wind(reader);
+				//else if (reader.GetLocalName() == "wind")
+				//	wind(reader);
 				else if (reader.GetLocalName() == "smp")
 					smp(reader);
 				else
