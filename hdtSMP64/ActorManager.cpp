@@ -549,6 +549,12 @@ namespace hdt
 
 		if (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell)
 		{
+			auto name = "";
+			if (skeleton->m_owner && skeleton->m_owner->baseForm) {
+				auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
+				if (bname)
+					name = bname->GetName();
+			}
 			if (isPlayerCharacter())
 			{
 				isActive = true;
@@ -572,10 +578,6 @@ namespace hdt
 						if (heading > 180) heading -= 360;
 						if (distance2 <= maxDistance * maxDistance && abs(heading) < maxAngle)
 						{
-							auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
-							auto name = "";
-							if (bname)
-								name = bname->GetName();
 							_DMESSAGE("%s (%f, %f) theta %f heading %f",
 								name, offset.x, offset.y, theta, heading);
 							isActive = true;
