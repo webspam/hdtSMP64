@@ -57,12 +57,16 @@ namespace hdt
 		void restoreTranslationOffset(const btVector3&);
 
 		btContactSolverInfo& getSolverInfo() { return btDiscreteDynamicsWorld::getSolverInfo(); }
-
+		
 		float m_timeTick = 1 / 60.f;
+		float m_minSubstep = 1 / 300.f;
+		float m_substepTick;
 		bool m_clampRotations = true;
 		bool m_unclampedResets = true;
 		float m_unclampedResetAngle = 120.0f;
 		uint8_t m_resetPc;
+
+		float m_averageProcessingTime;
 
 	private:
 
@@ -73,7 +77,6 @@ namespace hdt
 
 		std::atomic_bool m_suspended;
 		std::atomic_bool m_loading;
-		float m_averageInterval;
 		float m_accumulatedInterval;
 	};
 }

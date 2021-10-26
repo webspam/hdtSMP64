@@ -125,8 +125,6 @@ namespace hdt
 
 	bool checkSphereTriangle(const btVector3& s, float r, const CheckTriangle& tri, CollisionResult& res)
 	{
-		//if (normal.fuzzyZero()) return false;
-		//normal.normalize();
 		btVector3 p1ToCentre = s - tri.p0;
 		float distanceFromPlane = p1ToCentre.dot(tri.normal);
 		float radiusWithMargin = r + tri.margin;
@@ -144,7 +142,7 @@ namespace hdt
 				distanceFromPlane = -distanceFromPlane;
 				normal = -normal;
 			}
-			isInsideContactPlane = distanceFromPlane > -radiusWithMargin;
+			isInsideContactPlane = distanceFromPlane < radiusWithMargin;
 		}
 
 		// Check for contact / intersection
@@ -158,27 +156,6 @@ namespace hdt
 				hasContact = true;
 				contactPoint = s - normal * distanceFromPlane;
 			}
-			//else if (prenetration < FLT_EPSILON)
-			//{
-			//	// Could be inside one of the contact capsules
-			//	float contactCapsuleRadiusSqr = radiusWithMargin*radiusWithMargin;
-			//	btVector3 p[] = { tri.p0, tri.p1, tri.p2, tri.p0 };
-			//	for (int i = 0; i < 3; i++)
-			//	{
-			//		if (segmentSqrDistance(p[i], p[i + 1], s, contactPoint) < contactCapsuleRadiusSqr)
-			//		{
-			//			// Yep, we're inside a capsule
-			//			auto diff = s - contactPoint;
-			//			if (diff.length2() > FLT_EPSILON)
-			//			{
-			//				hasContact = true;
-			//				distanceFromPlane = diff.length();
-			//				normal = diff.normalized();
-			//				break;
-			//			}
-			//		}
-			//	}
-			//}
 		}
 
 		if (hasContact)

@@ -99,7 +99,7 @@ namespace hdt
 
 		applyGravity();
 
-		while (timeStep >= fixedTimeStep * 1.25f)
+		while (timeStep >= fixedTimeStep * 1.5f)
 		{
 			internalSingleStepSimulation(fixedTimeStep);
 			timeStep -= fixedTimeStep;

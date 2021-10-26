@@ -110,6 +110,7 @@ namespace hdt
 
 		auto& playerCharacter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& s) { return s.isPlayerCharacter(); });
 		auto playerPosition = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->position();
+		auto playerRotation = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->skeleton->m_owner->rot;
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
 		for (auto& i : m_skeletons)
@@ -121,7 +122,7 @@ namespace hdt
 			}
 			else
 			{
-				i.updateAttachedState(playerPosition, m_maxDistance, playerCell);
+				i.updateAttachedState(playerPosition, m_maxDistance, playerCell, playerRotation, m_maxAngle);
 			}
 		}
 
@@ -159,10 +160,10 @@ namespace hdt
 		skeleton.processGeometry(e.headNode, e.geometry);
 
 		auto headPartIter = std::find_if(skeleton.head.headParts.begin(), skeleton.head.headParts.end(),
-		                                 [e](const Head::HeadPart& p)
-		                                 {
-			                                 return p.headPart == e.geometry;
-		                                 });
+			[e](const Head::HeadPart& p)
+			{
+				return p.headPart == e.geometry;
+			});
 
 		if (headPartIter != skeleton.head.headParts.end())
 		{
@@ -265,9 +266,9 @@ namespace hdt
 	ActorManager::Skeleton& ActorManager::getSkeletonData(NiNode* skeleton)
 	{
 		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
-		{
-			return i.skeleton == skeleton;
-		});
+			{
+				return i.skeleton == skeleton;
+			});
 		if (iter != m_skeletons.end())
 		{
 			return *iter;
@@ -275,10 +276,10 @@ namespace hdt
 		if (!isFirstPersonSkeleton(skeleton))
 		{
 			auto ownerIter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
-			{
-				return !isFirstPersonSkeleton(i.skeleton) && i.skeletonOwner && skeleton->m_owner && i.skeletonOwner ==
-					skeleton->m_owner;
-			});
+				{
+					return !isFirstPersonSkeleton(i.skeleton) && i.skeletonOwner && skeleton->m_owner && i.skeletonOwner ==
+						skeleton->m_owner;
+				});
 			if (ownerIter != m_skeletons.end())
 			{
 				_DMESSAGE("new skeleton found for formid %08x", skeleton->m_owner->formID);
@@ -291,7 +292,7 @@ namespace hdt
 	}
 
 	void ActorManager::Skeleton::doSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
-	                                             std::unordered_map<IDStr, IDStr>& map)
+		std::unordered_map<IDStr, IDStr>& map)
 	{
 		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
 		{
@@ -485,7 +486,7 @@ namespace hdt
 		}
 
 		head.headParts.erase(std::remove_if(head.headParts.begin(), head.headParts.end(),
-		                                    [](Head::HeadPart& i) { return !i.headPart; }), head.headParts.end());
+			[](Head::HeadPart& i) { return !i.headPart; }), head.headParts.end());
 	}
 
 	void ActorManager::Skeleton::clear()
@@ -498,6 +499,18 @@ namespace hdt
 		armors.clear();
 	}
 
+	bool ActorManager::Skeleton::isDrawn() const
+	{
+		auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
+		auto name = "";
+		if (bname)
+			name = bname->GetName();
+		_MESSAGE("%s isDrawn %d: %d",
+			name, npc && (npc->m_flags & 0x4000000) == 0, npc->m_flags);
+
+		return npc && (npc->m_flags & 0x4000000) == 0;
+	}
+
 	bool ActorManager::Skeleton::isActiveInScene() const
 	{
 		// TODO: do this better
@@ -508,7 +521,7 @@ namespace hdt
 
 	bool ActorManager::Skeleton::isPlayerCharacter() const
 	{
-		return skeletonOwner == *g_thePlayer.GetPtr();
+		return skeletonOwner == *g_thePlayer.GetPtr() || (skeleton->m_owner ? skeleton->m_owner->formID : 0x0) == 0x14;
 	}
 
 	std::optional<NiPoint3> ActorManager::Skeleton::position() const
@@ -524,7 +537,7 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell)
+	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle)
 	{
 		// Skeletons that aren't active in any scene are always detached, unless they are in the
 		// same cell as the player character (workaround for issue in Ancestor Glade).
@@ -551,8 +564,20 @@ namespace hdt
 					{
 						auto offset = pos.value() - playerPosition.value();
 						float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
-						if (distance2 <= maxDistance * maxDistance)
+						//calculate view angle
+						static const float PI = acos(-1.f);
+						float theta = std::atan2(offset.x, offset.y);
+						float heading = 180 / PI * (theta - playerRotation->z);
+						if (heading < -180) heading += 360;
+						if (heading > 180) heading -= 360;
+						if (distance2 <= maxDistance * maxDistance && abs(heading) < maxAngle)
 						{
+							auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
+							auto name = "";
+							if (bname)
+								name = bname->GetName();
+							_DMESSAGE("%s (%f, %f) theta %f heading %f",
+								name, offset.x, offset.y, theta, heading);
 							isActive = true;
 							state = e_ActiveNearPlayer;
 						}
@@ -618,17 +643,17 @@ namespace hdt
 			if (physicsDupes.count(headPart.physicsFile.first))
 			{
 				_DMESSAGE("previous head part generated physics system for file %s, skipping",
-				          headPart.physicsFile.first.c_str());
+					headPart.physicsFile.first.c_str());
 				continue;
 			}
 
 			std::unordered_map<IDStr, IDStr> renameMap = this->head.renameMap;
 
 			_DMESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name,
-			          headPart.physicsFile.first.c_str());
+				headPart.physicsFile.first.c_str());
 			physicsDupes.insert(headPart.physicsFile.first);
 			auto system = SkyrimSystemCreator().createSystem(npc, this->head.headNode, headPart.physicsFile,
-			                                            std::move(renameMap));
+				std::move(renameMap));
 
 			if (system)
 			{
@@ -672,10 +697,10 @@ namespace hdt
 		this->head.prefix = headPrefix(this->head.id);
 
 		auto it = std::find_if(this->head.headParts.begin(), this->head.headParts.end(),
-		                       [geometry](const Head::HeadPart& p)
-		                       {
-			                       return p.headPart == geometry;
-		                       });
+			[geometry](const Head::HeadPart& p)
+			{
+				return p.headPart == geometry;
+			});
 
 		if (it != this->head.headParts.end())
 		{
@@ -689,7 +714,7 @@ namespace hdt
 		head.headParts.back().clearPhysics();
 
 		// Skinning
-		_DMESSAGE("skinning geometry to skeleton");		
+		_DMESSAGE("skinning geometry to skeleton");
 
 		if (!geometry->m_spSkinInstance || !geometry->m_spSkinInstance->m_spSkinData)
 		{
@@ -701,7 +726,7 @@ namespace hdt
 
 		BSGeometry* origGeom = nullptr;
 		NiGeometry* origNiGeom = nullptr;
-		
+
 		if (fmd && fmd->m_model && fmd->m_model->unk10 && fmd->m_model->unk10->unk08)
 		{
 			_DMESSAGE("orig part node found via fmd");
@@ -720,9 +745,9 @@ namespace hdt
 						break;
 					}
 				}
-			}			
+			}
 		}
-		else 
+		else
 		{
 			_DMESSAGE("no fmd available, loading original facegeom");
 			if (!head.npcFaceGeomNode)
@@ -757,7 +782,7 @@ namespace hdt
 									if (rootFadeNode)
 									{
 										_DMESSAGE("npc root fadenode found");
-										head.npcFaceGeomNode = rootFadeNode;							
+										head.npcFaceGeomNode = rootFadeNode;
 									}
 									else
 									{
@@ -790,11 +815,11 @@ namespace hdt
 
 		bool hasMerged = false;
 		bool hasRenames = false;
-		
+
 		for (int boneIdx = 0; boneIdx < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; boneIdx++)
 		{
 			BSFixedString boneName("");
-			
+
 			// skin the way the game does via FMD
 			if (boneIdx <= 7)
 			{
@@ -822,7 +847,7 @@ namespace hdt
 				boneName = renameIt->second->cstr();
 				hasRenames = true;
 			}
-			
+
 			auto boneNode = findNode(this->npc, boneName);
 
 			if (!boneNode && !hasMerged)
@@ -855,7 +880,7 @@ namespace hdt
 					doSkeletonMerge(npc, this->head.npcFaceGeomNode, head.prefix, head.renameMap);
 				}
 				hasMerged = true;
-				
+
 				auto postMergeRenameIt = this->head.renameMap.find(boneName.c_str());
 
 				if (postMergeRenameIt != this->head.renameMap.end())
@@ -864,8 +889,8 @@ namespace hdt
 					boneName = postMergeRenameIt->second->cstr();
 					hasRenames = true;
 				}
-				
-				boneNode = findNode(this->npc, boneName);		
+
+				boneNode = findNode(this->npc, boneName);
 			}
 
 			if (!boneNode)
@@ -882,7 +907,7 @@ namespace hdt
 
 		if (hasRenames)
 		{
-			for (auto &entry : head.renameMap)
+			for (auto& entry : head.renameMap)
 			{
 				if ((this->head.headParts.back().origPartRootNode && findObject(this->head.headParts.back().origPartRootNode, entry.first->cstr())) ||
 					(this->head.npcFaceGeomNode && findObject(this->head.npcFaceGeomNode, entry.first->cstr())))
@@ -900,7 +925,7 @@ namespace hdt
 						_DMESSAGE("first use of bone, count 1");
 					}
 					head.headParts.back().renamedBonesInUse.insert(entry.first);
-				}				
+				}
 			}
 		}
 

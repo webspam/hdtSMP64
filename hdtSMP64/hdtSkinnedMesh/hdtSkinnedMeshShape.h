@@ -8,6 +8,8 @@ namespace hdt
 {
 	class PerVertexShape;
 	class PerTriangleShape;
+	class CudaPerVertexShape;
+	class CudaPerTriangleShape;
 
 	class SkinnedMeshShape : public RefObject
 	{
@@ -29,17 +31,11 @@ namespace hdt
 		virtual void markUsedVertices(bool* flags) = 0;
 		virtual void remapVertices(UINT* map) = 0;
 
-		//inline int getNumColliders(){ return m_colliders.size(); };
 		virtual float getColliderBoneWeight(const Collider* c, int boneIdx) = 0;
 		virtual int getColliderBoneIndex(const Collider* c, int boneIdx) = 0;
-		virtual btVector3 baryCoord(const Collider* c, const btVector3& p) = 0;
-		virtual float baryWeight(const btVector3& w, int boneIdx) = 0;
-
-		//inline float getColliderBoneWeightByIdx(int cidx, int boneIdx){ return getColliderBoneWeight(&m_colliders[cidx], boneIdx); }
-		//inline int getColliderBoneIndexByIdx(int cidx, int boneIdx){ return getColliderBoneIndex(&m_colliders[cidx], boneIdx); }
 
 		SkinnedMeshBody* m_owner;
-		vectorA16<Aabb> m_aabb;
+		std::shared_ptr<Aabb[]> m_aabb;
 		vectorA16<Collider> m_colliders;
 		ColliderTree m_tree;
 		float m_windEffect = 0.f;
@@ -55,6 +51,8 @@ namespace hdt
 	class PerVertexShape : public SkinnedMeshShape
 	{
 	public:
+		using CudaType = CudaPerVertexShape;
+
 		PerVertexShape(SkinnedMeshBody* body);
 		virtual ~PerVertexShape();
 
@@ -73,8 +71,6 @@ namespace hdt
 			return m_owner->m_vertices[c->vertex].getBoneIdx(boneIdx);
 		}
 
-		btVector3 baryCoord(const Collider* c, const btVector3& p) override { return btVector3(1, 1, 1); }
-		float baryWeight(const btVector3& w, int boneIdx) override { return 1; }
 		void finishBuild() override;
 		void markUsedVertices(bool* flags) override;
 		void remapVertices(UINT* map) override;
@@ -86,6 +82,8 @@ namespace hdt
 			float margin = 1.0f;
 		} m_shapeProp;
 
+		std::shared_ptr<CudaPerVertexShape> m_cudaObject;
+
 #ifdef ENABLE_CL
 		static hdtCLKernel		m_kernel;
 		virtual void internalUpdateCL();
@@ -96,6 +94,8 @@ namespace hdt
 	class PerTriangleShape : public SkinnedMeshShape
 	{
 	public:
+		using CudaType = CudaPerTriangleShape;
+
 		PerTriangleShape(SkinnedMeshBody* body);
 		virtual ~PerTriangleShape();
 
@@ -115,13 +115,6 @@ namespace hdt
 			return m_owner->m_vertices[c->vertices[boneIdx / 4]].getBoneIdx(boneIdx % 4);
 		}
 
-		btVector3 baryCoord(const Collider* c, const btVector3& p) override
-		{
-			return BaryCoord(m_owner->m_vpos[c->vertices[0]].pos(), m_owner->m_vpos[c->vertices[1]].pos(),
-			                 m_owner->m_vpos[c->vertices[2]].pos(), p);
-		}
-
-		float baryWeight(const btVector3& w, int boneIdx) override { return w[boneIdx / 4]; }
 		void finishBuild() override;
 		void markUsedVertices(bool* flags) override;
 		void remapVertices(UINT* map) override;
@@ -135,6 +128,8 @@ namespace hdt
 		} m_shapeProp;
 
 		Ref<PerVertexShape> m_verticesCollision;
+
+		std::shared_ptr<CudaPerTriangleShape> m_cudaObject;
 
 #ifdef ENABLE_CL
 		static hdtCLKernel		m_kernel;

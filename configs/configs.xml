@@ -1,25 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <configs>
-	<smp>
-		<logLevel>3</logLevel>
-		<!-- enableNPCFaceParts: enable physics for NPC face parts -->
-		<enableNPCFaceParts>true</enableNPCFaceParts>
-		<!-- clampRotations: when turning a large angle, clamp rotation speed, so your character rotates slowly instead of instantly -->
-		<clampRotations>true</clampRotations>
-		<!-- unclampedResets: when unclamped, if you do a large turn (full 180 for example) SMP will attempt to apply physics
+  <smp>
+    <logLevel>3</logLevel>
+    <!-- enableNPCFaceParts: enable physics for NPC face parts -->
+    <enableNPCFaceParts>true</enableNPCFaceParts>
+    <!-- clampRotations: when turning a large angle, clamp rotation speed, so your character rotates slowly instead of instantly -->
+    <clampRotations>true</clampRotations>
+    <!-- unclampedResets: when unclamped, if you do a large turn (full 180 for example) SMP will attempt to apply physics
 		                      for that enormous turn. setting this to true will instead trigger a physics reset on the actor
 				      if the turn is large enough. you can try setting this false and deciding if you're OK with the 
 				      results -->
-		<unclampedResets>true</unclampedResets>
-		<!-- unclampedResetAngle: angle to reset at. you'll probably want to tweak this until you're happy. -->
-		<unclampedResetAngle>130.0</unclampedResetAngle>
-	</smp>
-	<solver>
-		<numIterations>16</numIterations>
-		<groupIterations>16</groupIterations>
-		<groupEnableMLCP>false</groupEnableMLCP>
-		<erp>0.2</erp>
-		<min-fps>60</min-fps>
-	</solver>
+    <unclampedResets>true</unclampedResets>
+    <!-- unclampedResetAngle: angle to reset at. you'll probably want to tweak this until you're happy. -->
+    <unclampedResetAngle>130.0</unclampedResetAngle>
+    <!-- maxDistance: maximum distance to apply physics to an actor. A few cell transitions (notably Blue Palace -> Solitude streets)
+						leave NPCs loaded and technically active, but extremely distant, and this makes collision checking extremely
+						slow. The default value of 10000 should disable those NPCs, while having no effect on NPCs in view range.
+						Set lower values for more performance - around 2000 is good. -->
+    <maximumDistance>10000.0</maximumDistance>
+    <!-- maximumAngle: maximum angle to apply physics to an actor. 0 degrees is straight ahead. Values over 180 would disable this check
+						Set lower values for more performance - default is 45 degrees. -->
+    <maximumAngle>45.0</maximumAngle>
+    <!-- enableCuda: experimental GPU collision algorithm, disabled by default. Try this if you have a slow CPU and fast GPU -->
+    <enableCuda>false</enableCuda>
+  </smp>
+  <solver>
+    <numIterations>16</numIterations>
+    <groupIterations>16</groupIterations>
+    <groupEnableMLCP>false</groupEnableMLCP>
+    <erp>0.2</erp>
+    <min-fps>60</min-fps>
+  </solver>
 </configs>
