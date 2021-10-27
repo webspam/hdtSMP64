@@ -96,6 +96,7 @@ namespace hdt
 			Head head;
 			SkeletonState state;
 
+			std::string name();
 			void addArmor(NiNode* armorModel);
 			void attachArmor(NiNode* armorModel, NiAVObject* attachedNode);
 
