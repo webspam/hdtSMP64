@@ -142,6 +142,7 @@ namespace hdt
 			auto target_time = SkyrimPhysicsWorld::get()->m_timeTick * 250;
 			_MESSAGE("active %d maxTrackedSkeletons %d numIterations %d groupIterations %d processTime %f target_time %f m_substepTick %f", activeSkeletons, maxTrackedSkeletons, SkyrimPhysicsWorld::get()->getSolverInfo().m_numIterations, ConstraintGroup::MaxIterations, processing_time, target_time, SkyrimPhysicsWorld::get()->m_substepTick * 1000);
 			updateCount = 1;
+		}
 	}
 
 	void ActorManager::onEvent(const ShutdownEvent&)
