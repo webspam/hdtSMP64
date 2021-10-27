@@ -43,6 +43,9 @@ namespace hdt
 		};
 
 	private:
+		int maxTrackedSkeletons = 10;
+		int activeSkeletons = 0;
+		int updateCount = 0;
 		struct Skeleton;
 
 		struct PhysicsItem
@@ -108,7 +111,8 @@ namespace hdt
 			bool hasPhysics = false;
 			std::optional<NiPoint3> position() const;
 
-			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle);
+			bool updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle);
+			bool deactivate();
 			void reloadMeshes();
 
 			void scanHead();

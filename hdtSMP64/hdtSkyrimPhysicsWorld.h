@@ -58,6 +58,7 @@ namespace hdt
 
 		btContactSolverInfo& getSolverInfo() { return btDiscreteDynamicsWorld::getSolverInfo(); }
 		
+		int min_fps = 60;
 		float m_timeTick = 1 / 60.f;
 		float m_minSubstep = 1 / 300.f;
 		float m_substepTick;

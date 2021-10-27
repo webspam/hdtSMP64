@@ -113,6 +113,7 @@ namespace hdt
 		auto playerRotation = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->skeleton->m_owner->rot;
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
+		auto activeSkeletons = 0;
 		for (auto& i : m_skeletons)
 		{
 			if (i.skeleton->m_uiRefCount == 1)
@@ -122,7 +123,8 @@ namespace hdt
 			}
 			else if (i.hasPhysics)
 			{
-				i.updateAttachedState(playerPosition, m_maxDistance, playerCell, playerRotation, m_maxAngle);
+				if (i.updateAttachedState(playerPosition, m_maxDistance, playerCell, playerRotation, m_maxAngle))
+					activeSkeletons++;
 			}
 		}
 
@@ -135,6 +137,11 @@ namespace hdt
 			i.cleanArmor();
 			i.cleanHead();
 		}
+		if (!SkyrimPhysicsWorld::get()->isSuspended() && updateCount++ % SkyrimPhysicsWorld::get()->min_fps == 0) {
+			auto processing_time = SkyrimPhysicsWorld::get()->m_averageProcessingTime;
+			auto target_time = SkyrimPhysicsWorld::get()->m_timeTick * 250;
+			_MESSAGE("active %d maxTrackedSkeletons %d numIterations %d groupIterations %d processTime %f target_time %f m_substepTick %f", activeSkeletons, maxTrackedSkeletons, SkyrimPhysicsWorld::get()->getSolverInfo().m_numIterations, ConstraintGroup::MaxIterations, processing_time, target_time, SkyrimPhysicsWorld::get()->m_substepTick * 1000);
+			updateCount = 1;
 	}
 
 	void ActorManager::onEvent(const ShutdownEvent&)
@@ -556,7 +563,7 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle)
+	bool ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle)
 	{
 		// Skeletons that aren't active in any scene are always detached, unless they are in the
 		// same cell as the player character (workaround for issue in Ancestor Glade).
@@ -604,7 +611,7 @@ namespace hdt
 
 		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.updateActive(isActive); });
 		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.updateActive(isActive); });
-
+		return isActive;
 
 	}
 
