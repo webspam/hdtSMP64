@@ -555,7 +555,8 @@ namespace hdt
 		// same cell as the player character (workaround for issue in Ancestor Glade).
 		// Player character is always attached.
 		// Otherwise, attach only if both the player character and this skeleton have a position,
-		// and the distance between them is below the threshold value.
+		// and the distance between them is below the threshold value and the viewing angle is within
+		// the maxAngle.
 		isActive = false;
 		state = e_InactiveNotInScene;
 
