@@ -105,6 +105,7 @@ namespace hdt
 			void clear();
 
 			bool isPlayerCharacter() const;
+			bool hasPhysics = false;
 			std::optional<NiPoint3> position() const;
 
 			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle);
@@ -123,7 +124,9 @@ namespace hdt
 
 		private:
 			bool isActiveInScene() const;
-			bool isDrawn() const;
+			bool checkPhysics();
+			int headMeshes = 0;
+			int armorMeshes = 0;
 
 			bool isActive = false;
 			std::vector<Armor> armors;

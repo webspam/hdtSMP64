@@ -120,7 +120,7 @@ namespace hdt
 				i.clear();
 				i.skeleton = nullptr;
 			}
-			else
+			else if (i.hasPhysics)
 			{
 				i.updateAttachedState(playerPosition, m_maxDistance, playerCell, playerRotation, m_maxAngle);
 			}
@@ -421,6 +421,8 @@ namespace hdt
 			if (system)
 			{
 				armor.setPhysics(system, isActive);
+				hasPhysics = true;
+				armorMeshes += armor.meshes().size();
 			}
 		}
 	}
@@ -511,22 +513,27 @@ namespace hdt
 		armors.clear();
 	}
 
-	bool ActorManager::Skeleton::isDrawn() const
+	bool ActorManager::Skeleton::checkPhysics()
 	{
-		auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
-		auto name = "";
-		if (bname)
-			name = bname->GetName();
-		_MESSAGE("%s isDrawn %d: %d",
-			name, npc && (npc->m_flags & 0x4000000) == 0, npc->m_flags);
+		hasPhysics = false;
+		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) {
+			if (armor.state() != ActorManager::e_NoPhysics)
+				hasPhysics = true;
+			});
+		if (!hasPhysics)
+			std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) {
+			if (headPart.state() != ActorManager::e_NoPhysics)
+				hasPhysics = true;
+				});
+		_DMESSAGE("%s hasPhysics %d", name(), hasPhysics);
 
-		return npc && (npc->m_flags & 0x4000000) == 0;
+		return hasPhysics;
 	}
 
 	bool ActorManager::Skeleton::isActiveInScene() const
 	{
 		// TODO: do this better
-		// when entering/exiting an interior NPCs are detached from the scene but not unloaded, so we need to check two levels up 
+		// when entering/exiting an interior NPCs are detached from the scene but not unloaded, so we need to check two levels up
 		// this properly removes exterior cell armors from the physics world when entering an interior, and vice versa
 		return skeleton->m_parent && skeleton->m_parent->m_parent && skeleton->m_parent->m_parent->m_parent;
 	}
@@ -603,6 +610,8 @@ namespace hdt
 
 	void ActorManager::Skeleton::reloadMeshes()
 	{
+		armorMeshes = 0;
+		headMeshes = 0;
 		for (auto& i : armors)
 		{
 			i.clearPhysics();
@@ -616,6 +625,8 @@ namespace hdt
 				if (system)
 				{
 					i.setPhysics(system, isActive);
+					hasPhysics = true;
+					armorMeshes += i.meshes().size();
 				}
 			}
 		}
@@ -668,6 +679,8 @@ namespace hdt
 			{
 				_DMESSAGE("success");
 				headPart.setPhysics(system, isActive);
+				hasPhysics = true;
+				headMeshes += headPart.meshes().size();
 			}
 		}
 	}
