@@ -590,7 +590,7 @@ namespace hdt
 						float heading = 180 / PI * (theta - playerRotation->z);
 						if (heading < -180) heading += 360;
 						if (heading > 180) heading -= 360;
-						if (distance2 <= maxDistance * maxDistance && abs(heading) < maxAngle)
+						if (abs(heading) < maxAngle && distance2 <= maxDistance * maxDistance)
 						{
 							_DMESSAGE("%s (%f, %f) theta %f heading %f armormeshes %d headmeshes %d",
 								name(), offset.x, offset.y, theta, heading, armorMeshes, headMeshes);
