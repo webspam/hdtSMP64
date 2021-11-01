@@ -229,7 +229,7 @@ namespace hdt
 
 	void ActorManager::PhysicsItem::clearPhysics()
 	{
-		if (state() == e_Active)
+		if (state() == ItemState::e_Active)
 		{
 			m_physics->m_world->removeSkinnedMeshSystem(m_physics);
 		}
@@ -238,7 +238,7 @@ namespace hdt
 
 	ActorManager::ItemState ActorManager::PhysicsItem::state() const
 	{
-		return m_physics ? (m_physics->m_world ? e_Active : e_Inactive) : e_NoPhysics;
+		return m_physics ? (m_physics->m_world ? ItemState::e_Active : ItemState::e_Inactive) : ItemState::e_NoPhysics;
 	}
 
 	const std::vector<Ref<SkinnedMeshBody>>& ActorManager::PhysicsItem::meshes() const
@@ -248,11 +248,11 @@ namespace hdt
 
 	void ActorManager::PhysicsItem::updateActive(bool active)
 	{
-		if (active && state() == e_Inactive)
+		if (active && state() == ItemState::e_Inactive)
 		{
 			SkyrimPhysicsWorld::get()->addSkinnedMeshSystem(m_physics);
 		}
-		else if (!active && state() == e_Active)
+		else if (!active && state() == ItemState::e_Active)
 		{
 			m_physics->m_world->removeSkinnedMeshSystem(m_physics);
 		}
@@ -517,12 +517,12 @@ namespace hdt
 	{
 		hasPhysics = false;
 		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) {
-			if (armor.state() != ActorManager::e_NoPhysics)
+			if (armor.state() != ItemState::e_NoPhysics)
 				hasPhysics = true;
 			});
 		if (!hasPhysics)
 			std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) {
-			if (headPart.state() != ActorManager::e_NoPhysics)
+			if (headPart.state() != ItemState::e_NoPhysics)
 				hasPhysics = true;
 				});
 		_MESSAGE("%s isDrawn %d: %d", name(), hasPhysics);
@@ -565,18 +565,18 @@ namespace hdt
 		// Otherwise, attach only if both the player character and this skeleton have a position,
 		// and the distance between them is below the threshold value.
 		isActive = false;
-		state = e_InactiveNotInScene;
+		state = SkeletonState::e_InactiveNotInScene;
 
 		if (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell)
 		{
 			if (isPlayerCharacter())
 			{
 				isActive = true;
-				state = e_ActiveIsPlayer;
+				state = SkeletonState::e_ActiveIsPlayer;
 			}
 			else
 			{
-				state = e_InactiveTooFar;
+				state = SkeletonState::e_InactiveTooFar;
 				if (playerPosition.has_value())
 				{
 					auto pos = position();
@@ -597,7 +597,7 @@ namespace hdt
 							{
 								_DMESSAGE("%s (%f, %f) theta %f heading %f", name(), offset.x, offset.y, theta, heading);
 								isActive = true;
-								state = e_ActiveNearPlayer;
+								state = SkeletonState::e_ActiveNearPlayer;
 							}
 						}
 					}
