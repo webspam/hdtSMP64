@@ -14,7 +14,7 @@ namespace hdt
 		Ref() : m_ptr(nullptr) {}
 		Ref(T* r) : m_ptr(r) { if (m_ptr) ref::retain(m_ptr); }
 		Ref(const Ref& r) : m_ptr(r.m_ptr) { if (m_ptr) ref::retain(m_ptr); }
-		Ref(Ref&& r) : m_ptr(r.m_ptr) { r.m_ptr = nullptr; }
+		Ref(Ref&& r) noexcept : m_ptr(r.m_ptr) { r.m_ptr = nullptr; }
 		~Ref() { if (m_ptr) ref::release(m_ptr); }
 
 		inline Ref& operator =(const Ref& r)
