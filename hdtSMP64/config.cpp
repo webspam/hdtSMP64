@@ -76,6 +76,8 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
 				else if (reader.GetLocalName() == "maximumDistance")
 					ActorManager::instance()->m_maxDistance = reader.readFloat();
+				else if (reader.GetLocalName() == "maximumAngle")
+					ActorManager::instance()->m_maxAngle = reader.readFloat();
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());

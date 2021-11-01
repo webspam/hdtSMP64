@@ -5,6 +5,9 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 
 ## Changes 
 
++ Added maximum angle in ActorManager. A max angle can be used to specify physics on NPCs within a field of view.
+  0 degrees represents straight in front. Default is 45 which is treated as + or - 45 degrees so 90 total degrees. 
+  180 would be all around.
 + Added distance check in ActorManager to disable NPCs more than a certain distance from the player. This
   resolves the massive FPS drop in certain cell transitions (such as Blue Palace -> Solitude). Default
   maximum distance is 10000, which resolves that issue, but I recommend something around 2000 for better

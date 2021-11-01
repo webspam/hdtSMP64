@@ -19,6 +19,9 @@
 						slow. The default value of 10000 should disable those NPCs, while having no effect on NPCs in view range.
 						Set lower values for more performance - around 2000 is good. -->
 		<maximumDistance>10000.0</maximumDistance>
+		<!-- maximumAngle: maximum angle to apply physics to an actor. 0 degrees is straight ahead. Values over 180 would disable this check
+						Set lower values for more performance - default is 45 degrees. -->
+		<maximumAngle>45.0</maximumAngle>
 	</smp>
 	<solver>
 		<numIterations>16</numIterations>

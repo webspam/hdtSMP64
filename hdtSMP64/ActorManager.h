@@ -106,7 +106,7 @@ namespace hdt
 			bool isPlayerCharacter() const;
 			std::optional<NiPoint3> position() const;
 
-			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell);
+			void updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle);
 			void reloadMeshes();
 
 			void scanHead();
@@ -122,6 +122,7 @@ namespace hdt
 
 		private:
 			bool isActiveInScene() const;
+			bool isDrawn() const;
 
 			bool isActive = false;
 			std::vector<Armor> armors;
@@ -156,5 +157,6 @@ namespace hdt
 
 		bool m_skinNPCFaceParts = true;
 		float m_maxDistance = 1e4f;
+		float m_maxAngle = 45.0;
 	};
 }

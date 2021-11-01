@@ -110,6 +110,7 @@ namespace hdt
 
 		auto& playerCharacter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& s) { return s.isPlayerCharacter(); });
 		auto playerPosition = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->position();
+		auto playerRotation = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->skeleton->m_owner->rot;
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
 		for (auto& i : m_skeletons)
@@ -121,7 +122,7 @@ namespace hdt
 			}
 			else
 			{
-				i.updateAttachedState(playerPosition, m_maxDistance, playerCell);
+				i.updateAttachedState(playerPosition, m_maxDistance, playerCell, playerRotation, m_maxAngle);
 			}
 		}
 
@@ -498,6 +499,19 @@ namespace hdt
 		armors.clear();
 	}
 
+	bool ActorManager::Skeleton::isDrawn() const
+	{
+		auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
+		auto name = "";
+		if (bname)
+			name = bname->GetName();
+		_MESSAGE("%s isDrawn %d: %d",
+			name, npc && (npc->m_flags & 0x4000000) == 0, npc->m_flags);
+
+		return npc && (npc->m_flags & 0x4000000) == 0;
+	}
+
+
 	bool ActorManager::Skeleton::isActiveInScene() const
 	{
 		// TODO: do this better
@@ -508,7 +522,7 @@ namespace hdt
 
 	bool ActorManager::Skeleton::isPlayerCharacter() const
 	{
-		return skeletonOwner == *g_thePlayer.GetPtr();
+		return skeletonOwner == *g_thePlayer.GetPtr() || (skeleton->m_owner ? skeleton->m_owner->formID : 0x0) == 0x14;
 	}
 
 	std::optional<NiPoint3> ActorManager::Skeleton::position() const
@@ -524,7 +538,7 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell)
+	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle)
 	{
 		// Skeletons that aren't active in any scene are always detached, unless they are in the
 		// same cell as the player character (workaround for issue in Ancestor Glade).
@@ -551,8 +565,20 @@ namespace hdt
 					{
 						auto offset = pos.value() - playerPosition.value();
 						float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
-						if (distance2 <= maxDistance * maxDistance)
+						//calculate view angle
+						static const float PI = acos(-1.f);
+						float theta = std::atan2(offset.x, offset.y);
+						float heading = 180 / PI * (theta - playerRotation->z);
+						if (heading < -180) heading += 360;
+						if (heading > 180) heading -= 360;
+						if (distance2 <= maxDistance * maxDistance && abs(heading) < maxAngle)
 						{
+							auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
+							auto name = "";
+							if (bname)
+								name = bname->GetName();
+							_DMESSAGE("%s (%f, %f) theta %f heading %f",
+								name, offset.x, offset.y, theta, heading);
 							isActive = true;
 							state = e_ActiveNearPlayer;
 						}
@@ -882,7 +908,7 @@ namespace hdt
 
 		if (hasRenames)
 		{
-			for (auto &entry : head.renameMap)
+			for (auto& entry : head.renameMap)
 			{
 				if ((this->head.headParts.back().origPartRootNode && findObject(this->head.headParts.back().origPartRootNode, entry.first->cstr())) ||
 					(this->head.npcFaceGeomNode && findObject(this->head.npcFaceGeomNode, entry.first->cstr())))
