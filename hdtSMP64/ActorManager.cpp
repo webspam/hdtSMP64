@@ -584,18 +584,21 @@ namespace hdt
 					{
 						auto offset = pos.value() - playerPosition.value();
 						float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
-						//calculate view angle
-						static const float PI = acos(-1.f);
-						float theta = std::atan2(offset.x, offset.y);
-						float heading = 180 / PI * (theta - playerRotation->z);
-						if (heading < -180) heading += 360;
-						if (heading > 180) heading -= 360;
-						if (distance2 <= maxDistance * maxDistance && abs(heading) < maxAngle)
+
+						if (distance2 <= maxDistance * maxDistance)
 						{
-							_DMESSAGE("%s (%f, %f) theta %f heading %f",
-								name(), offset.x, offset.y, theta, heading);
-							isActive = true;
-							state = e_ActiveNearPlayer;
+							//calculate view angle
+							float theta = std::atan2(offset.x, offset.y);
+							static const float PI = acos(-1.f);
+							float heading = 180 / PI * (theta - playerRotation->z);
+							if (heading < -180) heading += 360;
+							else if (heading > 180) heading -= 360;
+							if (abs(heading) < maxAngle)
+							{
+								_DMESSAGE("%s (%f, %f) theta %f heading %f", name(), offset.x, offset.y, theta, heading);
+								isActive = true;
+								state = e_ActiveNearPlayer;
+							}
 						}
 					}
 				}
