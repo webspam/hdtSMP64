@@ -115,7 +115,7 @@
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>C:\Games\Faster HDT-SMP\skse64_2_00_20\src\skse64\Bullet;$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -169,6 +169,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ActorManager.h" />
+    <ClInclude Include="btBulletCollisionCommon.h" />
+    <ClInclude Include="btBulletDynamicsCommon.h" />
     <ClInclude Include="BulletCollision\BroadphaseCollision\btAxisSweep3.h" />
     <ClInclude Include="BulletCollision\BroadphaseCollision\btAxisSweep3Internal.h" />
     <ClInclude Include="BulletCollision\BroadphaseCollision\btBroadphaseInterface.h" />
