@@ -396,6 +396,22 @@ namespace hdt
 			SMPDebug_PrintDetailed(false);
 			return true;
 		}
+		if (_strnicmp(buffer, "on", MAX_PATH) == 0)
+		{
+			SkyrimPhysicsWorld::get()->disabled = false;
+			{
+				Console_Print("HDT-SMP enabled");
+			}
+			return true;
+		}
+		if (_strnicmp(buffer, "off", MAX_PATH) == 0)
+		{
+			SkyrimPhysicsWorld::get()->disabled = true;
+			{
+				Console_Print("HDT-SMP disabled");
+			}
+			return true;
+		}
 
 		auto skeletons = ActorManager::instance()->getSkeletons();
 

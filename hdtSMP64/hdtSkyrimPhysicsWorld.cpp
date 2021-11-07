@@ -71,7 +71,7 @@ namespace hdt
 		m_substepTick = std::min(m_substepTick, 1.0f);
 
 		m_accumulatedInterval += interval;
-		if (m_accumulatedInterval > 0.25f * m_minSubstep)
+		if (!disabled && m_accumulatedInterval > 0.25f * m_minSubstep)
 		{
 			interval = std::min<float>(m_accumulatedInterval, m_timeTick * 1.2);
 

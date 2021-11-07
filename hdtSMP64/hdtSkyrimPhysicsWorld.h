@@ -65,6 +65,7 @@ namespace hdt
 		bool m_clampRotations = true;
 		bool m_unclampedResets = true;
 		float m_unclampedResetAngle = 120.0f;
+		bool disabled = false;
 		uint8_t m_resetPc;
 
 		float m_averageProcessingTime;
