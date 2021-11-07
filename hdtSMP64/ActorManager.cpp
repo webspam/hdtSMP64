@@ -110,7 +110,14 @@ namespace hdt
 
 		auto& playerCharacter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& s) { return s.isPlayerCharacter(); });
 		auto playerPosition = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->position();
-		auto playerRotation = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->skeleton->m_owner->rot;
+
+		std::optional<NiPoint3> playerRotation;
+		if (playerCharacter != m_skeletons.end() && playerCharacter->skeleton && playerCharacter->skeleton->m_owner && playerCharacter->skeleton->m_owner->rot.z) {
+			playerRotation.emplace(NiPoint3(0.f, 0.f, playerCharacter->skeleton->m_owner->rot.z));
+		} else {
+			playerRotation.emplace(NiPoint3(0.f,0.f,0.f));
+		}
+
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
 		for (auto& i : m_skeletons)
