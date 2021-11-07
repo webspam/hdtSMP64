@@ -477,8 +477,15 @@ bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
 	info->name = "hdtSSEPhysics";
 	info->version = 1;
 
-	hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim VR\\SKSE\\hdtSMP64.log");
-	hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
+		hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS,
+#ifndef SKYRIMVR
+			"\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log"
+
+#else
+			"\\My Games\\Skyrim VR\\SKSE\\hdtSMP64.log"
+#endif
+		);
+		hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
 
 	_MESSAGE("hdtSMP64 2.0");
 

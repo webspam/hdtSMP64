@@ -1,6 +1,10 @@
 #include "stdafx.h"
 #include "NetImmerseUtils.h"
+#ifndef SKYRIMVR
+#include <skse64/skse64/GameStreams.h>
+#else
 #include <sksevr/skse64/GameStreams.h>
+#endif
 #include <fstream>
 
 namespace hdt
