@@ -873,17 +873,17 @@ namespace hdt
 				{
 					auto str = m_reader->readText();
 					if (str == "public")
-						body->m_shared = SkyrimBody::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SharedType::SHARED_PUBLIC;
 					else if (str == "internal")
-						body->m_shared = SkyrimBody::SHARED_INTERNAL;
+						body->m_shared = SkyrimBody::SharedType::SHARED_INTERNAL;
 					else if (str == "external")
-						body->m_shared = SkyrimBody::SHARED_EXTERNAL;
+						body->m_shared = SkyrimBody::SharedType::SHARED_EXTERNAL;
 					else if (str == "private")
-						body->m_shared = SkyrimBody::SHARED_PRIVATE;
+						body->m_shared = SkyrimBody::SharedType::SHARED_PRIVATE;
 					else
 					{
 						Warning("unknown shared value, use default value \"public\"");
-						body->m_shared = SkyrimBody::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SharedType::SHARED_PUBLIC;
 					}
 				}
 				else if (name == "tag")
@@ -992,17 +992,17 @@ namespace hdt
 				{
 					auto str = m_reader->readText();
 					if (str == "public")
-						body->m_shared = SkyrimBody::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SharedType::SHARED_PUBLIC;
 					else if (str == "internal")
-						body->m_shared = SkyrimBody::SHARED_INTERNAL;
+						body->m_shared = SkyrimBody::SharedType::SHARED_INTERNAL;
 					else if (str == "external")
-						body->m_shared = SkyrimBody::SHARED_EXTERNAL;
+						body->m_shared = SkyrimBody::SharedType::SHARED_EXTERNAL;
 					else if (str == "private")
-						body->m_shared = SkyrimBody::SHARED_PRIVATE;
+						body->m_shared = SkyrimBody::SharedType::SHARED_PRIVATE;
 					else
 					{
 						Warning("unknown shared value, use default value \"public\"");
-						body->m_shared = SkyrimBody::SHARED_PUBLIC;
+						body->m_shared = SkyrimBody::SharedType::SHARED_PUBLIC;
 					}
 				}
 				else if (name == "prenetration" || name == "penetration")

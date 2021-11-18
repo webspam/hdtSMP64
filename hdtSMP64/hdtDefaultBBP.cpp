@@ -186,7 +186,7 @@ namespace hdt
 			{
 				if (!skinned->m_children.m_data[i]) continue;
 				auto tri = skinned->m_children.m_data[i]->GetAsBSTriShape();
-				if (!tri) continue;
+				if (!tri || !tri->m_name) continue;
 				nameMap.insert({ tri->m_name, {tri->m_name} });
 			}
 		}
@@ -194,7 +194,7 @@ namespace hdt
 		{
 			if (!armor->m_children.m_data[i]) continue;
 			auto tri = armor->m_children.m_data[i]->GetAsBSTriShape();
-			if (!tri) continue;
+			if (!tri || !tri->m_name) continue;
 			nameMap.insert({ tri->m_name, {tri->m_name} });
 		}
 		return nameMap;

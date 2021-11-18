@@ -10,7 +10,7 @@ namespace hdt
 	{
 	}
 
-	//static const CollisionResult zero;
+	// static const CollisionResult zero;
 
 	// Algorithm selection for collision checking.
 	// e_CPU is the original one, optimized for CPU performance.

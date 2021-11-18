@@ -14,7 +14,7 @@ namespace hdt
 		SkyrimBody();
 		~SkyrimBody();
 
-		enum SharedType
+		enum class SharedType
 		{
 			SHARED_PUBLIC,
 			SHARED_INTERNAL,

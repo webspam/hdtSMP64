@@ -24,7 +24,7 @@ namespace hdt
 
 	public:
 
-		enum ItemState
+		enum class ItemState
 		{
 			e_NoPhysics,
 			e_Inactive,
@@ -32,7 +32,7 @@ namespace hdt
 		};
 
 		// Overall skeleton state, purely for console debug info
-		enum SkeletonState
+		enum class SkeletonState
 		{
 			// Note order: inactive states must come before e_SkeletonActive, and active states after
 			e_InactiveNotInScene,
@@ -55,7 +55,7 @@ namespace hdt
 			void setPhysics(Ref<SkyrimSystem>& system, bool active);
 			void clearPhysics();
 			bool hasPhysics() const { return m_physics; }
-			ItemState state() const;
+			ActorManager::ItemState state() const;
 
 			const std::vector<Ref<SkinnedMeshBody>>& meshes() const;
 

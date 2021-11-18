@@ -89,6 +89,8 @@ namespace hdt
 					if (device >= 0 && device < CudaInterface::instance()->deviceCount())
 						CudaInterface::currentDevice = device;
 				}
+				else if (reader.GetLocalName() == "maximumAngle")
+					ActorManager::instance()->m_maxAngle = reader.readFloat();
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());

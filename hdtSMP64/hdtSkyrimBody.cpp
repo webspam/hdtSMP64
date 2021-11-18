@@ -6,7 +6,7 @@ namespace hdt
 	SkyrimBody::SkyrimBody()
 	{
 		m_mesh = nullptr;
-		m_shared = SHARED_PUBLIC;
+		m_shared = SharedType::SHARED_PUBLIC;
 	}
 
 
@@ -22,17 +22,17 @@ namespace hdt
 
 		switch (m_shared)
 		{
-		case SHARED_PUBLIC:
+		case SharedType::SHARED_PUBLIC:
 			break;
-		case SHARED_INTERNAL:
+		case SharedType::SHARED_INTERNAL:
 			if (m_mesh->m_skeleton != body->m_mesh->m_skeleton)
 				return false;
 			break;
-		case SHARED_EXTERNAL:
+		case SharedType::SHARED_EXTERNAL:
 			if (m_mesh->m_skeleton == body->m_mesh->m_skeleton)
 				return false;
 			break;
-		case SHARED_PRIVATE:
+		case SharedType::SHARED_PRIVATE:
 			if (m_mesh != body->m_mesh)
 				return false;
 			break;
