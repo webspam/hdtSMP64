@@ -1,0 +1,144 @@
+diff --git a/hdtSMP64/Hooks.cpp b/hdtSMP64/Hooks.cpp
+index 109a9b6..a72c580 100644
+--- a/hdtSMP64/Hooks.cpp
++++ b/hdtSMP64/Hooks.cpp
+@@ -115,6 +115,7 @@ namespace hdt
+ 		RelocAddr<uintptr_t> addr(offset::BSFaceGenNiNode_SkinSingleGeometry_bug);
+ 		SafeWrite8(addr.GetUIntPtr(), 0x7);
+ 
++		/*
+ 		struct BSFaceGenExtraModelData_BoneCount_Code : Xbyak::CodeGenerator
+ 		{
+ 			BSFaceGenExtraModelData_BoneCount_Code(void* buf) : CodeGenerator(4096, buf)
+@@ -136,6 +137,7 @@ namespace hdt
+ 		g_localTrampoline.EndAlloc(code.getCurr());
+ 
+ 		g_branchTrampoline.Write5Branch(BoneLimit.GetUIntPtr(), uintptr_t(code.getCode()));
++		*/
+ 	}
+ 
+ 	void unhookFaceGen()
+diff --git a/hdtSMP64/Offsets.h b/hdtSMP64/Offsets.h
+index 04779fd..d8d4adb 100644
+--- a/hdtSMP64/Offsets.h
++++ b/hdtSMP64/Offsets.h
+@@ -2,6 +2,16 @@
+ 
+ #include <cstdint>
+ 
++//function			                 1.5.97        1.6.318 	     id        1.6.323      1.6.342
++//GameStepTimer_SlowTime             0x02F6B948    0x030064C8    410199    0x030064c8   0x03007708
++//ArmorAttachFunction                0x001CAFB0    0x001D6740    15712     0x001d66b0   0x001d66a0
++//BSFaceGenNiNode_SkinAllGeometry    0x003D87B0    0x003F08C0    26986     0x003f0830   0x003f09c0
++//BSFaceGenNiNode_SkinSingleGeometry 0x003D8840    0x003F0A50    26987     0x003f09c0   0x003f0b50
++//GameLoopFunction                   0x005B2FF0   0x005D9F50     36564     0x005D9CC0   0x005dae80
++//GameShutdownFunction               0x01293D20    0x013B9A90    105623    0x013b99f0   0x013ba910
++//TESNPC_GetFaceGeomPath             0x00363210    0x00363210    24241     0x00363180   0x00363310
++//BSFaceGenModelExtraData_BoneLimit  0x0036B4C8
++
+ namespace hdt
+ {
+ 	// signatures generated with IDA SigMaker plugin
+@@ -9,15 +19,15 @@ namespace hdt
+ 	{
+ 		// hdtSkyrimPhysicsWorld.cpp
+ 		// 74 35 45 33 C0 33 D2
+-		constexpr std::uintptr_t GameStepTimer_SlowTime = 0x02F6B948;
++		constexpr std::uintptr_t GameStepTimer_SlowTime = 0x03007708;
+ 
+ 		// Hooks.cpp
+ 		// E8 ? ? ? ? 48 8B E8 FF C7 
+-		constexpr std::uintptr_t ArmorAttachFunction = 0x001CAFB0;
++		constexpr std::uintptr_t ArmorAttachFunction = 0x001d66a0;
+ 
+ 		// BSFaceGenNiNode last vfunc
+-		constexpr std::uintptr_t BSFaceGenNiNode_SkinAllGeometry = 0x003D87B0;
+-		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry = 0x003D8840;
++		constexpr std::uintptr_t BSFaceGenNiNode_SkinAllGeometry = 0x003f09c0;
++		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry = 0x003f0b50;
+ 		// .text:00000001403D88D4                 cmp     ebx, 8
+ 		// patch 8 -> 7
+ 		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry_bug = BSFaceGenNiNode_SkinSingleGeometry + 0x96;
+@@ -25,15 +35,15 @@ namespace hdt
+ 		// Hooks.cpp
+ 		// function responsible for majority of main game thread loop
+ 		// E8 ? ? ? ? 84 DB 74 24 
+-		constexpr std::uintptr_t GameLoopFunction = 0x005B2FF0;
++		constexpr std::uintptr_t GameLoopFunction = 0x005dae80;
+ 		// E8 ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? 48 8B 0D ? ? ? ? 48 85 C9 74 0C E8 ? ? ? ? 
+-		constexpr std::uintptr_t GameShutdownFunction = 0x01293D20;
++		constexpr std::uintptr_t GameShutdownFunction = 0x013ba910;
+ 
+ 		// FaceGeom string
+-		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x00363210;
++		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x00363310;
+ 
+ 		// BSFaceGenModelExtraData Bone Limit
+ 		// 8B 70 58 EB 02 
+ 		constexpr std::uintptr_t BSFaceGenModelExtraData_BoneLimit = 0x0036B4C8;
+ 	}
+-}
++}
+\ No newline at end of file
+diff --git a/hdtSMP64/main.cpp b/hdtSMP64/main.cpp
+index ff6e733..ed4e7f9 100644
+--- a/hdtSMP64/main.cpp
++++ b/hdtSMP64/main.cpp
+@@ -335,8 +335,7 @@ namespace hdt
+ 		memset(buffer, 0, MAX_PATH);
+ 		char buffer2[MAX_PATH];
+ 		memset(buffer2, 0, MAX_PATH);
+-
+-		if (!ObjScript_ExtractArgs(paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals,
++		if (!ObScript_ExtractArgs(paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals,
+ 		                           buffer, buffer2))
+ 		{
+ 			return false;
+@@ -430,6 +429,19 @@ namespace hdt
+ }
+ 
+ extern "C" {
++	__declspec(dllexport) SKSEPluginVersionData SKSEPlugin_Version =
++	{
++		SKSEPluginVersionData::kVersion,
++		2,
++		"hdtSMP64",
++		"hydrogensaysHDT",
++		"",
++		0,	// not version independent
++		{ RUNTIME_VERSION_1_6_342, 0 },
++		0,	// works with any version of the script extender. you probably do not need to put anything here
++	};
++
++/*
+ bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
+ {
+ 	// populate info structure
+@@ -467,9 +479,27 @@ bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
+ 
+ 	return true;
+ }
++*/
+ 
+ bool SKSEPlugin_Load(const SKSEInterface* skse)
+ {
++	hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log");
++	hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
++
++	_MESSAGE("hdtSMP64 2.0");
++
++	if (!g_branchTrampoline.Create(1024 * 1))
++	{
++		_FATALERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
++		return false;
++	}
++
++	if (!g_localTrampoline.Create(1024 * 1, nullptr))
++	{
++		_FATALERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
++		return false;
++	}
++
+ 	hdt::g_frameEventDispatcher.addListener(hdt::ActorManager::instance());
+ 	hdt::g_frameEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
+ 	hdt::g_shutdownEventDispatcher.addListener(hdt::ActorManager::instance());
