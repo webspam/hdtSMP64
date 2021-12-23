@@ -80,6 +80,15 @@ index 04779fd..d8d4adb 100644
 -}
 +}
 \ No newline at end of file
+diff --git a/hdtSMP64/export.def b/hdtSMP64/export.def
+index bc24e46..9272b88 100644
+--- a/hdtSMP64/export.def
++++ b/hdtSMP64/export.def
+@@ -1,4 +1,3 @@
+ LIBRARY
+ EXPORTS
+-SKSEPlugin_Query
+ SKSEPlugin_Load
 diff --git a/hdtSMP64/main.cpp b/hdtSMP64/main.cpp
 index ff6e733..ed4e7f9 100644
 --- a/hdtSMP64/main.cpp
