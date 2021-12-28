@@ -1,8 +1,108 @@
+diff --git a/hdtSMP64/ActorManager.cpp b/hdtSMP64/ActorManager.cpp
+index d040b27..f913faf 100644
+--- a/hdtSMP64/ActorManager.cpp
++++ b/hdtSMP64/ActorManager.cpp
+@@ -270,6 +270,25 @@ namespace hdt
+ 		return m_skeletons;
+ 	}
+ 
++	bool ActorManager::skeletonNeedsParts(NiNode* skeleton)
++	{
++		if (isFirstPersonSkeleton(skeleton))
++		{
++			return false;
++		}
++		/*
++		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
++			{
++				return i.skeleton == skeleton;
++			});
++		if (iter != m_skeletons.end())
++		{
++			return (iter->head.headNode == 0);
++		}
++		*/
++		return true;
++	}
++
+ 	ActorManager::Skeleton& ActorManager::getSkeletonData(NiNode* skeleton)
+ 	{
+ 		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
+diff --git a/hdtSMP64/ActorManager.h b/hdtSMP64/ActorManager.h
+index e47b409..7aa05a1 100644
+--- a/hdtSMP64/ActorManager.h
++++ b/hdtSMP64/ActorManager.h
+@@ -157,6 +157,7 @@ namespace hdt
+ 
+ 		void reloadMeshes();
+ 
++		bool skeletonNeedsParts(NiNode* skeleton);
+ 		std::vector<Skeleton> getSkeletons() const;
+ 
+ 		bool m_skinNPCFaceParts = true;
 diff --git a/hdtSMP64/Hooks.cpp b/hdtSMP64/Hooks.cpp
-index 109a9b6..a72c580 100644
+index 109a9b6..77087e1 100644
 --- a/hdtSMP64/Hooks.cpp
 +++ b/hdtSMP64/Hooks.cpp
-@@ -115,6 +115,7 @@ namespace hdt
+@@ -28,6 +28,48 @@ namespace hdt
+ 		DEFINE_MEMBER_FN_HOOK(SkinSingleGeometry, void, offset::BSFaceGenNiNode_SkinSingleGeometry, NiNode* a_skeleton,
+ 		                      BSGeometry* a_geometry, char a_unk);
+ 
++		BSGeometry* GetHeadGeometry(Actor* actor, UInt32 partType)
++		{
++			//BSFaceGenNiNode* faceNode = actor->GetFaceGenNiNode();
++			TESNPC* actorBase = DYNAMIC_CAST(actor->baseForm, TESForm, TESNPC);
++
++			if (this && actorBase) {
++				BGSHeadPart* facePart = actorBase->GetCurrentHeadPartByType(partType);
++				if (facePart) {
++					NiAVObject* headNode = this->GetObjectByName(&facePart->partName.data);
++					if (headNode) {
++						BSGeometry* geometry = headNode->GetAsBSGeometry();
++						if (geometry)
++							return geometry;
++					}
++				}
++			}
++
++			return NULL;
++		}
++
++		void SkinAllGeometryCalls(NiNode* a_skeleton, char a_unk)
++		{
++			bool needRegularCall = true;
++
++			if (ActorManager::instance()->skeletonNeedsParts(a_skeleton))
++			{
++				TESForm* form = LookupFormByID(a_skeleton->m_owner->formID);
++				Actor* actor = DYNAMIC_CAST(form, TESForm, Actor);
++				if (actor)
++				{
++					int HeadPartKTypes[] = { BGSHeadPart::kTypeMisc, BGSHeadPart::kTypeFace, BGSHeadPart::kTypeEyes, BGSHeadPart::kTypeHair, BGSHeadPart::kTypeFacialHair, BGSHeadPart::kTypeScar, BGSHeadPart::kTypeBrows };
++					for (int i = 0; i < 7; i++)
++					{
++						BSGeometry* headGeo = GetHeadGeometry(actor, HeadPartKTypes[i]);
++						if (headGeo)SkinSingleGeometry(a_skeleton, headGeo, 20);
++					}
++					if (a_skeleton->m_owner && a_skeleton->m_owner->formID == 0x14) needRegularCall = false;
++				}
++			}
++			if (needRegularCall) CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
++		}
++
+ 		void SkinSingleGeometry(NiNode* a_skeleton, BSGeometry* a_geometry, char a_unk)
+ 		{
+ 			const char* name = "";
+@@ -92,7 +134,7 @@ namespace hdt
+ 				e.skeleton = a_skeleton;
+ 				e.headNode = this;
+ 				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+-				CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
++				SkinAllGeometryCalls(a_skeleton, a_unk);
+ 				e.hasSkinned = true;
+ 				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+ 			}
+@@ -115,6 +157,7 @@ namespace hdt
  		RelocAddr<uintptr_t> addr(offset::BSFaceGenNiNode_SkinSingleGeometry_bug);
  		SafeWrite8(addr.GetUIntPtr(), 0x7);
  
@@ -10,7 +110,7 @@ index 109a9b6..a72c580 100644
  		struct BSFaceGenExtraModelData_BoneCount_Code : Xbyak::CodeGenerator
  		{
  			BSFaceGenExtraModelData_BoneCount_Code(void* buf) : CodeGenerator(4096, buf)
-@@ -136,6 +137,7 @@ namespace hdt
+@@ -136,6 +179,7 @@ namespace hdt
  		g_localTrampoline.EndAlloc(code.getCurr());
  
  		g_branchTrampoline.Write5Branch(BoneLimit.GetUIntPtr(), uintptr_t(code.getCode()));
@@ -19,7 +119,7 @@ index 109a9b6..a72c580 100644
  
  	void unhookFaceGen()
 diff --git a/hdtSMP64/Offsets.h b/hdtSMP64/Offsets.h
-index 04779fd..d8d4adb 100644
+index 04779fd..b6220fa 100644
 --- a/hdtSMP64/Offsets.h
 +++ b/hdtSMP64/Offsets.h
 @@ -2,6 +2,16 @@
@@ -31,9 +131,9 @@ index 04779fd..d8d4adb 100644
 +//ArmorAttachFunction                0x001CAFB0    0x001D6740    15712     0x001d66b0   0x001d66a0
 +//BSFaceGenNiNode_SkinAllGeometry    0x003D87B0    0x003F08C0    26986     0x003f0830   0x003f09c0
 +//BSFaceGenNiNode_SkinSingleGeometry 0x003D8840    0x003F0A50    26987     0x003f09c0   0x003f0b50
-+//GameLoopFunction                   0x005B2FF0   0x005D9F50     36564     0x005D9CC0   0x005dae80
++//GameLoopFunction                   0x005B2FF0    0x005D9F50    36564     0x005D9CC0   0x005dae80
 +//GameShutdownFunction               0x01293D20    0x013B9A90    105623    0x013b99f0   0x013ba910
-+//TESNPC_GetFaceGeomPath             0x00363210    0x00363210    24241     0x00363180   0x00363310
++//TESNPC_GetFaceGeomPath             0x00363210    0x0037A240    24726     0x0037a1b0   0x0037a340
 +//BSFaceGenModelExtraData_BoneLimit  0x0036B4C8
 +
  namespace hdt
@@ -71,7 +171,7 @@ index 04779fd..d8d4adb 100644
  
  		// FaceGeom string
 -		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x00363210;
-+		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x00363310;
++		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x0037a340;
  
  		// BSFaceGenModelExtraData Bone Limit
  		// 8B 70 58 EB 02 
