@@ -270,6 +270,23 @@ namespace hdt
 		return m_skeletons;
 	}
 
+#ifdef ANNIVERSARY_EDITION
+	bool ActorManager::skeletonNeedsParts(NiNode * skeleton)
+	{
+		return !isFirstPersonSkeleton(skeleton);
+		/*
+		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
+		{
+			return i.skeleton == skeleton;
+		});
+		if (iter != m_skeletons.end())
+		{
+			return (iter->head.headNode == 0);
+		}
+		*/
+	}
+#endif
+
 	ActorManager::Skeleton& ActorManager::getSkeletonData(NiNode* skeleton)
 	{
 		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)

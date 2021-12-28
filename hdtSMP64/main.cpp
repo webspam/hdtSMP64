@@ -336,8 +336,11 @@ namespace hdt
 		char buffer2[MAX_PATH];
 		memset(buffer2, 0, MAX_PATH);
 
-		if (!ObjScript_ExtractArgs(paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals,
-		                           buffer, buffer2))
+#ifdef ANNIVERSARY_EDITION
+		if (!ObScript_ExtractArgs(paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals, buffer, buffer2))
+#else
+		if (!ObjScript_ExtractArgs(paramInfo, scriptData, opcodeOffsetPtr, thisObj, containingObj, scriptObj, locals, buffer, buffer2))
+#endif
 		{
 			return false;
 		}
@@ -430,6 +433,19 @@ namespace hdt
 }
 
 extern "C" {
+#ifdef ANNIVERSARY_EDITION
+	__declspec(dllexport) SKSEPluginVersionData SKSEPlugin_Version =
+	{
+		SKSEPluginVersionData::kVersion,
+		2,
+		"hdtSMP64",
+		"hydrogensaysHDT",
+		"",
+		0,	// not version independent
+		{ RUNTIME_VERSION_1_6_342, 0 },
+		0,	// works with any version of the script extender. you probably do not need to put anything here
+	};
+#else
 bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
 {
 	// populate info structure
@@ -467,9 +483,28 @@ bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
 
 	return true;
 }
+#endif
 
 bool SKSEPlugin_Load(const SKSEInterface* skse)
 {
+#ifdef ANNIVERSARY_EDITION
+	hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log");
+	hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
+	_MESSAGE("hdtSMP64 2.0");
+	
+	if (!g_branchTrampoline.Create(1024 * 1))
+	{
+		_FATALERROR("Couldn't create branch trampoline. This is fatal. Skipping remainder of init process.");
+		return false;
+	}
+	
+	if (!g_localTrampoline.Create(1024 * 1, nullptr))
+	{
+		_FATALERROR("Couldn't create codegen buffer. This is fatal. Skipping remainder of init process.");
+		return false;
+	}
+#endif // ANNIVERSARY_EDITION
+
 	hdt::g_frameEventDispatcher.addListener(hdt::ActorManager::instance());
 	hdt::g_frameEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
 	hdt::g_shutdownEventDispatcher.addListener(hdt::ActorManager::instance());

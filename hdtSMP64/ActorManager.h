@@ -156,7 +156,9 @@ namespace hdt
 		void onEvent(const SkinAllHeadGeometryEvent&) override;
 
 		void reloadMeshes();
-
+#ifdef ANNIVERSARY_EDITION
+		bool skeletonNeedsParts(NiNode * skeleton);
+#endif
 		std::vector<Skeleton> getSkeletons() const;
 
 		bool m_skinNPCFaceParts = true;
