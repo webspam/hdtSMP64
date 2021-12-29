@@ -29,24 +29,25 @@ namespace hdt
 		                      BSGeometry* a_geometry, char a_unk);
 
 #ifdef ANNIVERSARY_EDITION
-		BSGeometry* GetHeadGeometry(Actor* actor, UInt32 partType)
+		void ProcessHeadPart(BGSHeadPart* headPart, NiNode* a_skeleton)
 		{
-			//BSFaceGenNiNode* faceNode = actor->GetFaceGenNiNode();
-			TESNPC* actorBase = DYNAMIC_CAST(actor->baseForm, TESForm, TESNPC);
-			if (this && actorBase) {
-				BGSHeadPart* facePart = actorBase->GetCurrentHeadPartByType(partType);
-				if (facePart)
+			if (headPart)
+			{
+				NiAVObject* headNode = this->GetObjectByName(&headPart->partName.data);
+				if (headNode)
 				{
-					NiAVObject* headNode = this->GetObjectByName(&facePart->partName.data);
-					if (headNode)
-					{
-						BSGeometry* geometry = headNode->GetAsBSGeometry();
-						if (geometry)
-							return geometry;
-					}
+					BSGeometry* headGeo = headNode->GetAsBSGeometry();
+					if (headGeo)
+						SkinSingleGeometry(a_skeleton, headGeo, 20);
+				}
+
+				BGSHeadPart* extraPart = NULL;
+				for (UInt32 p = 0; p < headPart->extraParts.count; p++)
+				{
+					if (headPart->extraParts.GetNthItem(p, extraPart))
+						ProcessHeadPart(extraPart, a_skeleton);
 				}
 			}
-			return NULL;
 		}
 
 		void SkinAllGeometryCalls(NiNode* a_skeleton, char a_unk)
@@ -58,12 +59,11 @@ namespace hdt
 				Actor* actor = DYNAMIC_CAST(form, TESForm, Actor);
 				if (actor)
 				{
-					int HeadPartKTypes[] = { BGSHeadPart::kTypeMisc, BGSHeadPart::kTypeFace, BGSHeadPart::kTypeEyes, BGSHeadPart::kTypeHair, BGSHeadPart::kTypeFacialHair, BGSHeadPart::kTypeScar, BGSHeadPart::kTypeBrows };
-					for (int i = 0; i < 7; i++)
+					TESNPC* actorBase = DYNAMIC_CAST(actor->baseForm, TESForm, TESNPC);
+					for (int i = 0; i < actorBase->numHeadParts; i++)
 					{
-						BSGeometry* headGeo = GetHeadGeometry(actor, HeadPartKTypes[i]);
-						if (headGeo)
-							SkinSingleGeometry(a_skeleton, headGeo, 20);
+						BGSHeadPart* headPart = actorBase->GetCurrentHeadPartByType(i);
+						ProcessHeadPart(headPart, a_skeleton);
 					}
 					if (a_skeleton->m_owner && a_skeleton->m_owner->formID == 0x14)
 						needRegularCall = false;
