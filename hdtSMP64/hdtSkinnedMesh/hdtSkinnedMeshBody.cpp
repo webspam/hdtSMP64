@@ -113,21 +113,29 @@ __kernel void updateVertices(
 	__forceinline __m128 calcVertexState(__m128 skinPos, const Bone& bone, __m128 w)
 	{
 		auto p = bone.m_vertexToWorld * skinPos;
-		p = _mm_blend_ps(p.get128(), _mm_load_ps(bone.m_reserved), 0x8);
+		p = _mm_blend_ps(p.get128(), bone.m_vertexToWorld.m_col[3].get128(), 0x8);
 		return _mm_mul_ps(w, p.get128());
 	}
 
-	void SkinnedMeshBody::internalUpdate()
+	void SkinnedMeshBody::updateBones()
 	{
 		for (size_t i = 0; i < m_skinnedBones.size(); ++i)
 		{
 			auto& v = m_skinnedBones[i];
 			auto boneT = v.ptr->m_currentTransform;
 			m_bones[i].m_vertexToWorld = btMatrix4x3T(boneT) * v.vertexToBone;
-			m_bones[i].m_maginMultipler = v.ptr->m_marginMultipler * boneT.getScale();
-		}
 
-		int size = m_vpos.size();
+			// Element [3][3] of the matrix is otherwise unused, so we put the margin multiplier there. On
+			// GPU we use homogeneous coordinates with w=1, so this gets applied properly as normal matrix
+			// multiplication. On CPU we have w=0, so have to do it explicitly.
+			m_bones[i].m_vertexToWorld.m_col[3][3] *= v.ptr->m_marginMultipler;
+		}
+	}
+	void SkinnedMeshBody::internalUpdate()
+	{
+		updateBones();
+
+		int size = m_vertices.size();
 
 		for (int idx = 0; idx < size; ++idx)
 		{
@@ -141,9 +149,6 @@ __kernel void updateVertices(
 			if (flg & 0b1000) posMargin += calcVertexState(p, m_bones[v.getBoneIdx(3)], setAll3(w));
 			m_vpos[idx].set(posMargin);
 		}
-
-		m_shape->internalUpdate();
-		m_bulletShape.m_aabb = m_shape->m_tree.aabbAll;
 	}
 
 	float SkinnedMeshBody::flexible(const Vertex& v)
@@ -173,10 +178,9 @@ __kernel void updateVertices(
 
 	void SkinnedMeshBody::finishBuild()
 	{
-		m_bones.resize(m_skinnedBones.size());
+		m_bones.reset(new Bone[m_skinnedBones.size()]);
 
 		m_shape->clipColliders();
-		m_vpos.resize(m_vertices.size());
 
 		m_isKinematic = true;
 		for (auto& i : m_skinnedBones)
@@ -199,14 +203,13 @@ __kernel void updateVertices(
 			if (flags[i])
 			{
 				m_vertices[numUsed] = m_vertices[i];
-				m_vpos[numUsed] = m_vpos[i];
 				map[i] = numUsed++;
 			}
 		}
 		delete[] flags;
 		m_shape->remapVertices(map.data());
 		m_vertices.resize(numUsed);
-		m_vpos.resize(numUsed);
+		m_vpos.reset(new VertexPos[numUsed]);
 
 		m_useBoundingSphere = m_shape->m_colliders.size() > 10;
 	}
@@ -230,17 +233,23 @@ __kernel void updateVertices(
 
 	void SkinnedMeshBody::updateBoundingSphereAabb()
 	{
-		m_bulletShape.m_aabb.invalidate();
-		for (auto& i : m_skinnedBones)
+		if (m_useBoundingSphere)
 		{
-			auto sp = i.localBoundingSphere;
-			auto tr = i.ptr->m_currentTransform;
-			i.worldBoundingSphere = BoundingSphere(tr * sp.center(), tr.getScale() * sp.radius());
-			m_bulletShape.m_aabb.merge(i.worldBoundingSphere.getAabb());
+			m_bulletShape.m_aabb.invalidate();
+			for (auto& i : m_skinnedBones)
+			{
+				auto sp = i.localBoundingSphere;
+				auto tr = i.ptr->m_currentTransform;
+				i.worldBoundingSphere = BoundingSphere(tr * sp.center(), tr.getScale() * sp.radius());
+				m_bulletShape.m_aabb.merge(i.worldBoundingSphere.getAabb());
+			}
 		}
-
-		if (!m_useBoundingSphere)
+		else
+		{
 			internalUpdate();
+			m_shape->internalUpdate();
+			m_bulletShape.m_aabb = m_shape->m_tree.aabbAll;
+		}
 	}
 
 	bool SkinnedMeshBody::isBoundingSphereCollided(SkinnedMeshBody* rhs)

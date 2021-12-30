@@ -18,6 +18,9 @@
 #include "skse64/GameRTTI.h"
 #include "skse64_common/BranchTrampoline.h"
 
+#include "hdtSkinnedMesh/hdtCudaInterface.h"
+#include "hdtSkinnedMesh/hdtFrameTimer.h"
+
 namespace hdt
 {
 	IDebugLog gLog;
@@ -353,6 +356,25 @@ namespace hdt
 			SkyrimPhysicsWorld::get()->resetSystems();
 			return true;
 		}
+		if (_strnicmp(buffer, "gpu", MAX_PATH) == 0)
+		{
+			CudaInterface::enableCuda = !CudaInterface::enableCuda;
+			if (CudaInterface::instance()->hasCuda())
+			{
+				Console_Print("CUDA collision enabled");
+			}
+			else
+			{
+				Console_Print("CUDA collision disabled");
+			}
+			return true;
+		}
+		if (_strnicmp(buffer, "timing", MAX_PATH) == 0)
+		{
+			FrameTimer::instance()->reset(200);
+			Console_Print("Started frame timing");
+			return true;
+		}
 		if (_strnicmp(buffer, "dumptree", MAX_PATH) == 0)
 		{
 			if (thisObj)
@@ -427,6 +449,8 @@ namespace hdt
 		Console_Print("[HDT-SMP] active armor addons: %d", activeArmors);
 		Console_Print("[HDT-SMP] active head parts: %d", activeHeadParts);
 		Console_Print("[HDT-SMP] active collision meshes: %d", activeCollisionMeshes);
+		Console_Print("[HDT-SMP] average physics processing time: %f ms", SkyrimPhysicsWorld::get()->m_averageProcessingTime);
+		Console_Print("[HDT-SMP] substep tick: %f ms", SkyrimPhysicsWorld::get()->m_substepTick * 1000);
 
 		return true;
 	}

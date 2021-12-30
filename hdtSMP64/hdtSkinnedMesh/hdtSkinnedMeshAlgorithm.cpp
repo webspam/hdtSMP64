@@ -1,6 +1,8 @@
 #include "hdtSkinnedMeshAlgorithm.h"
 #include "hdtCollider.h"
 
+#include <numeric>
+
 namespace hdt
 {
 	SkinnedMeshAlgorithm::SkinnedMeshAlgorithm(const btCollisionAlgorithmConstructionInfo& ci)
@@ -13,14 +15,11 @@ namespace hdt
 	// Algorithm selection for collision checking.
 	// e_CPU is the original one, optimized for CPU performance.
 	// e_CPURefactored is an alternate CPU one, modified for conversion to GPU but still using CPU in practice.
-	// e_CUDA will (eventually) be an actual GPGPU algorithm.
 	enum CollisionCheckAlgorithmType
 	{
 		e_CPU,
-		e_CPURefactored,
-		e_CUDA
+		e_CPURefactored
 	};
-
 
 	// CollisionCheckBase1 provides data members and the basic constructor for the target types. Note that we
 	// always collide a vertex shape against something else, so only the second type is templated.
@@ -31,9 +30,10 @@ namespace hdt
 		typedef typename T::ShapeProp SP1;
 
 		CollisionCheckBase1(PerVertexShape* a, T* b, CollisionResult* r)
+			: shapeA(a), shapeB(b)
 		{
-			v0 = a->m_owner->m_vpos.data();
-			v1 = b->m_owner->m_vpos.data();
+			v0 = a->m_owner->m_vpos.get();
+			v1 = b->m_owner->m_vpos.get();
 			c0 = &a->m_tree;
 			c1 = &b->m_tree;
 			sp0 = &a->m_shapeProp;
@@ -41,6 +41,9 @@ namespace hdt
 			results = r;
 			numResults = 0;
 		}
+
+		PerVertexShape* shapeA;
+		T* shapeB;
 
 		VertexPos* v0;
 		VertexPos* v1;
@@ -122,7 +125,7 @@ namespace hdt
 			auto s0 = v0[a->vertex];
 			auto r0 = s0.marginMultiplier() * sp0->margin;
 			auto s1 = v0[a->vertex];
-			auto r1 = s1.marginMultiplier() * sp0->margin;
+			auto r1 = s1.marginMultiplier() * sp1->margin;
 
 			auto ret = checkSphereSphere(s0.pos(), s1.pos(), r0, r1, res);
 			res.colliderA = a;
@@ -167,35 +170,34 @@ namespace hdt
 				penetration = 0;
 			}
 
-			// Compute unit normal and (twice) area of triangle
+			// Compute unit normal. Keep the original normal because we'll need it later for the triangle
+			// check.
 			auto ab = (p1.pos() - p0.pos()).get128();
 			auto ac = (p2.pos() - p0.pos()).get128();
-			auto normal = cross_product(ab, ac);
-			auto area = _mm_sqrt_ps(_mm_dp_ps(normal, normal, 0x77));
-			if (_mm_cvtss_f32(area) < FLT_EPSILON)
+			auto raw_normal = cross_product(ab, ac);
+			auto len = _mm_sqrt_ps(_mm_dp_ps(raw_normal, raw_normal, 0x77));
+			if (_mm_cvtss_f32(len) < FLT_EPSILON)
 			{
 				return false;
 			}
-			normal = _mm_div_ps(normal, area);
+			auto normal = _mm_div_ps(raw_normal, len);
 			if (penetration < 0)
 			{
 				normal = _mm_sub_ps(_mm_set1_ps(0.0), normal);
 				penetration = -penetration;
 			}
 
-			// Compute distance from point to plane, and projection onto plane
-			auto ap = (s.pos() - p0.pos()).get128();
+			// Compute distance from point to plane
+			auto ap = _mm_sub_ps(s.pos().get128(), p0.pos().get128());
 			auto distance = _mm_dp_ps(ap, normal, 0x77);
-			auto projection = _mm_mul_ps(normal, distance);
-			projection = _mm_sub_ps(s.pos().get128(), projection);
+			float distanceFromPlane = _mm_cvtss_f32(distance);
 
-			// Logic to decide if we're within range of the plane - don't completely understand all the cases here
+			// Decide whether point is close enough to plane
 			float radiusWithMargin = r + margin;
 			bool isInsideContactPlane;
-			float distanceFromPlane = _mm_cvtss_f32(distance);
 			if (penetration >= FLT_EPSILON)
 			{
-				isInsideContactPlane = distanceFromPlane < radiusWithMargin&& distanceFromPlane >= -penetration;
+				isInsideContactPlane = distanceFromPlane < radiusWithMargin && distanceFromPlane >= -penetration;
 			}
 			else
 			{
@@ -204,30 +206,28 @@ namespace hdt
 					distanceFromPlane = -distanceFromPlane;
 					normal = _mm_sub_ps(_mm_set1_ps(0.0), normal);
 				}
-				isInsideContactPlane = distanceFromPlane > -radiusWithMargin;
+				isInsideContactPlane = distanceFromPlane < radiusWithMargin;
 			}
 			if (!isInsideContactPlane)
 			{
 				return false;
 			}
 
-			// Compute (twice) area of each triangle between projection and two triangle points
-			ap = _mm_sub_ps(projection, p0.pos().get128());
-			auto bp = _mm_sub_ps(projection, p1.pos().get128());
-			auto cp = _mm_sub_ps(projection, p2.pos().get128());
+			// Compute the triple product of the triangle normal with vectors from the sphere center to each
+			// pair of triangle vertices (note ordering of the vertices is important). The projection of the
+			// center onto the triangle plane lies within the triangle if and only if all three products are
+			// positive.
+			auto bp = _mm_sub_ps(s.pos().get128(), p1.pos().get128());
+			auto cp = _mm_sub_ps(s.pos().get128(), p2.pos().get128());
 			auto aa = cross_product(bp, cp);
 			ab = cross_product(cp, ap);
 			ac = cross_product(ap, bp);
-			aa = _mm_dp_ps(aa, aa, 0x74);
-			ab = _mm_dp_ps(ab, ab, 0x72);
-			ac = _mm_dp_ps(ac, ac, 0x71);
+			aa = _mm_dp_ps(aa, raw_normal, 0x74);
+			ab = _mm_dp_ps(ab, raw_normal, 0x72);
+			ac = _mm_dp_ps(ac, raw_normal, 0x71);
 			aa = _mm_or_ps(aa, ab);
 			aa = _mm_or_ps(aa, ac);
-			aa = _mm_sqrt_ps(aa);
-
-			// Now if every pair of elements in aa sums to no more than area, then the point is inside the triangle
-			aa = _mm_add_ps(aa, _mm_shuffle_ps(aa, aa, _MM_SHUFFLE(3, 0, 2, 1)));
-			aa = _mm_cmpgt_ps(aa, area);
+			aa = _mm_cmpgt_ps(_mm_set1_ps(0.0), aa);
 			auto pointInTriangle = _mm_test_all_zeros(_mm_set_epi32(0, -1, -1, -1), _mm_castps_si128(aa));
 
 			res.colliderA = a;
@@ -236,7 +236,7 @@ namespace hdt
 			{
 				res.normOnB.set128(normal);
 				res.posA = s.pos() - res.normOnB * r;
-				res.posB.set128(projection);
+				res.posB = s.pos() - res.normOnB * (distanceFromPlane - margin);
 				res.depth = distanceFromPlane - radiusWithMargin;
 				return res.depth < -FLT_EPSILON;
 			}
@@ -319,15 +319,6 @@ namespace hdt
 		}
 	};
 
-	// Dispatcher specialization for sphere-triangle collisions on CUDA. Sphere-sphere collisions will
-	// continue to use the CPU dispatcher. Doesn't actually do anything yet (and will fail to compile).
-	template <bool SwapResults>
-	struct CollisionCheckDispatcher<PerTriangleShape, SwapResults, e_CUDA>
-		: public CollisionCheckBase2<PerTriangleShape, SwapResults>
-	{
-
-	};
-
 	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
 	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CPURefactored>
 	struct CollisionCheckAlgorithm : public CollisionCheckDispatcher<T, SwapResults, Algorithm>
@@ -336,7 +327,7 @@ namespace hdt
 		CollisionCheckAlgorithm(Ts&&... ts)
 			: CollisionCheckDispatcher(std::forward<Ts>(ts)...)
 		{}
-
+		
 		int operator()()
 		{
 			static_assert(Algorithm != e_CPU, "Old CPU algorithm specialization missing");
@@ -483,7 +474,7 @@ namespace hdt
 					}
 				}
 				else
-				{
+				{     
 					list.reserve(std::max<size_t>(bsize, list.capacity()));
 					for (auto i = abeg; i < aend; ++i)
 					{
@@ -544,10 +535,10 @@ namespace hdt
 		for (int i = 0; i < count; ++i)
 		{
 			auto& res = collision[i];
-			if (res.depth >= -FLT_EPSILON) break;
+			if (res.depth >= -FLT_EPSILON) continue;
 
 			auto flexible = std::max(res.colliderA->flexible, res.colliderB->flexible);
-			if (flexible < FLT_EPSILON) return;
+			if (flexible < FLT_EPSILON) continue;
 
 			for (int ib = 0; ib < a->getBonePerCollider(); ++ib)
 			{
@@ -626,6 +617,84 @@ namespace hdt
 		int count = std::min(checkCollide(shape0, shape1, collision), MaxCollisionCount);
 		if (count > 0)
 			merge.doMerge(shape0, shape1, collision, count);
+	}
+
+	template<bool Swap, typename T>
+	void launchCollision(
+		PerVertexShape* shape0,
+		T* shape1,
+		std::shared_ptr<CudaMergeBuffer> cudaMerge)
+	{
+		ColliderTree* c0 = &shape0->m_tree;
+		ColliderTree* c1 = &shape1->m_tree;
+
+		std::vector<std::pair<ColliderTree*, ColliderTree*>> pairs;
+		pairs.reserve(c0->colliders.size() + c1->colliders.size());
+		c0->checkCollisionL(c1, pairs);
+		if (pairs.empty()) return;
+		int npairs = pairs.size();
+
+		// Create buffers for collision processing
+		CudaCollisionPair<T::CudaType> collisionPair(
+			shape0->m_cudaObject.get(),
+			shape1->m_cudaObject.get(),
+			npairs);
+
+		// Set up data for each pair of collision trees
+		for (int i = 0; i < npairs; ++i)
+		{
+			auto a = pairs[i].first;
+			auto b = pairs[i].second;
+			auto asize = b->isKinematic ? a->dynCollider : a->numCollider;
+			auto bsize = a->isKinematic ? b->dynCollider : b->numCollider;
+
+			if (asize > 0 && bsize > 0)
+			{
+				collisionPair.addPair(
+					pairs[i].first->cbuf - shape0->m_colliders.data(),
+					pairs[i].second->cbuf - shape1->m_colliders.data(),
+					asize,
+					bsize,
+					a->aabbMe,
+					b->aabbMe);
+			}
+		}
+
+		// Run the kernel
+		collisionPair.launch(cudaMerge.get(), Swap);
+	}
+
+	std::function<void()> SkinnedMeshAlgorithm::queueCollision(
+		SkinnedMeshBody* body0,
+		SkinnedMeshBody* body1,
+		CollisionDispatcher* dispatcher)
+	{
+		std::shared_ptr<CudaMergeBuffer> cudaMerge = std::make_shared<CudaMergeBuffer>(body0, body1);
+
+		if (body0->m_shape->asPerTriangleShape() && body1->m_shape->asPerTriangleShape())
+		{
+			launchCollision<true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), cudaMerge);
+			launchCollision<false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), cudaMerge);
+		}
+		else if (body0->m_shape->asPerTriangleShape())
+			launchCollision<true>(body1->m_shape->asPerVertexShape(), body0->m_shape->asPerTriangleShape(), cudaMerge);
+		else if (body1->m_shape->asPerTriangleShape())
+			launchCollision<false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), cudaMerge);
+		else
+			launchCollision<false>(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), cudaMerge);
+
+		cudaMerge->launchTransfer();
+
+		std::weak_ptr<CudaBody> weak0 = body0->m_cudaObject;
+		std::weak_ptr<CudaBody> weak1 = body1->m_cudaObject;
+
+		return [=]()
+		{
+			if (weak0.lock() && weak1.lock())
+			{
+				cudaMerge->apply(body0, body1, dispatcher);
+			}
+		};
 	}
 
 	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
