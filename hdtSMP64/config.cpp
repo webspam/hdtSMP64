@@ -2,7 +2,9 @@
 #include "XmlReader.h"
 
 #include "hdtSkyrimPhysicsWorld.h"
+#ifdef CUDA
 #include "hdtSkinnedMesh/hdtCudaInterface.h"
+#endif
 
 #include <clocale>
 
@@ -77,6 +79,7 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
 				else if (reader.GetLocalName() == "maximumDistance")
 					ActorManager::instance()->m_maxDistance = reader.readFloat();
+#ifdef CUDA
 				else if (reader.GetLocalName() == "enableCuda")
 					CudaInterface::enableCuda = reader.readBool();
 				else if (reader.GetLocalName() == "cudaDevice")
@@ -85,6 +88,7 @@ namespace hdt
 					if (device >= 0 && device < CudaInterface::instance()->deviceCount())
 						CudaInterface::currentDevice = device;
 				}
+#endif
 				else if (reader.GetLocalName() == "maximumAngle")
 					ActorManager::instance()->m_maxAngle = reader.readFloat();
 				else

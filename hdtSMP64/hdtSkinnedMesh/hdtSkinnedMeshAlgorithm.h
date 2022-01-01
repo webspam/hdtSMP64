@@ -2,12 +2,14 @@
 
 #include "hdtSkinnedMeshShape.h"
 #include "hdtDispatcher.h"
+#ifdef CUDA
 #include "hdtCudaInterface.h"
 
 // Define this to do actual collision checking on GPU. This is currently slow and has very inconsistent
 // framerate. If not defined, the GPU will still be used if available for vertex and bounding box
 // calculations, but collision will be done on the CPU.
 #define USE_GPU_COLLISION
+#endif
 
 namespace hdt
 {
@@ -45,10 +47,12 @@ namespace hdt
 
 		static const int MaxCollisionCount = 256;
 
+#ifdef CUDA
 		static std::function<void()> queueCollision(
 			SkinnedMeshBody* body0Wrap,
 			SkinnedMeshBody* body1Wrap,
 			CollisionDispatcher* dispatcher);
+#endif
 
 		static void processCollision(SkinnedMeshBody* body0Wrap, SkinnedMeshBody* body1Wrap,
 		                             CollisionDispatcher* dispatcher);
@@ -97,7 +101,9 @@ namespace hdt
 			int mergeStride;
 			int mergeSize;
 			CollisionMerge* buffer;
+#ifdef CUDA
 			std::mutex lock;
+#endif
 		};
 
 		template <class T0, class T1>

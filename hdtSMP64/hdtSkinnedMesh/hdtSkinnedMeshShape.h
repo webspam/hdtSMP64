@@ -8,8 +8,10 @@ namespace hdt
 {
 	class PerVertexShape;
 	class PerTriangleShape;
+#ifdef CUDA
 	class CudaPerVertexShape;
 	class CudaPerTriangleShape;
+#endif // CUDA
 
 	class SkinnedMeshShape : public RefObject
 	{
@@ -33,9 +35,17 @@ namespace hdt
 
 		virtual float getColliderBoneWeight(const Collider* c, int boneIdx) = 0;
 		virtual int getColliderBoneIndex(const Collider* c, int boneIdx) = 0;
+#ifndef CUDA
+		virtual btVector3 baryCoord(const Collider* c, const btVector3& p) = 0;
+		virtual float baryWeight(const btVector3 & w, int boneIdx) = 0;
+#endif // !CUDA
 
 		SkinnedMeshBody* m_owner;
+#ifdef CUDA
 		std::shared_ptr<Aabb[]> m_aabb;
+#else
+		vectorA16<Aabb> m_aabb;
+#endif // CUDA
 		vectorA16<Collider> m_colliders;
 		ColliderTree m_tree;
 		float m_windEffect = 0.f;
@@ -51,7 +61,9 @@ namespace hdt
 	class PerVertexShape : public SkinnedMeshShape
 	{
 	public:
+#ifdef CUDA
 		using CudaType = CudaPerVertexShape;
+#endif // CUDA
 
 		PerVertexShape(SkinnedMeshBody* body);
 		virtual ~PerVertexShape();
@@ -71,6 +83,10 @@ namespace hdt
 			return m_owner->m_vertices[c->vertex].getBoneIdx(boneIdx);
 		}
 
+#ifndef CUDA
+		btVector3 baryCoord(const Collider* c, const btVector3& p) override { return btVector3(1, 1, 1); }
+		float baryWeight(const btVector3 & w, int boneIdx) override { return 1; }
+#endif // !CUDA
 		void finishBuild() override;
 		void markUsedVertices(bool* flags) override;
 		void remapVertices(UINT* map) override;
@@ -82,7 +98,9 @@ namespace hdt
 			float margin = 1.0f;
 		} m_shapeProp;
 
+#ifdef CUDA
 		std::shared_ptr<CudaPerVertexShape> m_cudaObject;
+#endif // CUDA
 
 #ifdef ENABLE_CL
 		static hdtCLKernel		m_kernel;
@@ -94,7 +112,9 @@ namespace hdt
 	class PerTriangleShape : public SkinnedMeshShape
 	{
 	public:
+#ifdef CUDA
 		using CudaType = CudaPerTriangleShape;
+#endif
 
 		PerTriangleShape(SkinnedMeshBody* body);
 		virtual ~PerTriangleShape();
@@ -115,6 +135,17 @@ namespace hdt
 			return m_owner->m_vertices[c->vertices[boneIdx / 4]].getBoneIdx(boneIdx % 4);
 		}
 
+#ifndef CUDA
+		btVector3 baryCoord(const Collider* c, const btVector3& p) override
+		{
+			return BaryCoord(
+				m_owner->m_vpos[c->vertices[0]].pos(),
+				m_owner->m_vpos[c->vertices[1]].pos(),
+				m_owner->m_vpos[c->vertices[2]].pos(),
+				p);
+		}
+		float baryWeight(const btVector3 & w, int boneIdx) override { return w[boneIdx / 4]; }
+#endif
 		void finishBuild() override;
 		void markUsedVertices(bool* flags) override;
 		void remapVertices(UINT* map) override;
@@ -129,7 +160,9 @@ namespace hdt
 
 		Ref<PerVertexShape> m_verticesCollision;
 
+#ifdef CUDA
 		std::shared_ptr<CudaPerTriangleShape> m_cudaObject;
+#endif
 
 #ifdef ENABLE_CL
 		static hdtCLKernel		m_kernel;

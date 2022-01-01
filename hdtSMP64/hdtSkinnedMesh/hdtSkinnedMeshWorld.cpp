@@ -99,7 +99,12 @@ namespace hdt
 
 		applyGravity();
 
+		// [31/12/2021 DaydreamingDay] TODO what does this value mean? Make it configurable?
+#ifdef CUDA
 		while (timeStep >= fixedTimeStep * 1.5f)
+#else
+		while (timeStep >= fixedTimeStep * 1.25f)
+#endif
 		{
 			internalSingleStepSimulation(fixedTimeStep);
 			timeStep -= fixedTimeStep;

@@ -188,13 +188,22 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 		m_owner->setCollisionFlags(m_tree.isKinematic ? btCollisionObject::CF_KINEMATIC_OBJECT : 0);
 
 		m_tree.exportColliders(m_colliders);
+#ifdef CUDA
 		m_aabb.reset(new Aabb[m_colliders.size()]);
 		m_tree.remapColliders(m_colliders.data(), m_aabb.get());
+#else
+		m_aabb.resize(m_colliders.size());
+		m_tree.remapColliders(m_colliders.data(), m_aabb.data());
+#endif
 	}
 
 	void PerVertexShape::internalUpdate()
 	{
+#ifdef CUDA
 		auto vertices = m_owner->m_vpos.get();
+#else
+		auto& vertices = m_owner->m_vpos;
+#endif // CUDA
 
 		size_t size = m_colliders.size();
 		for (size_t i = 0; i < size; ++i)
@@ -261,7 +270,11 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 
 	void PerTriangleShape::internalUpdate()
 	{
+#ifdef CUDA
 		auto vertices = m_owner->m_vpos.get();
+#else
+		auto& vertices = m_owner->m_vpos;
+#endif // CUDA
 
 		size_t size = m_colliders.size();
 		for (size_t i = 0; i < size; ++i)
@@ -302,8 +315,14 @@ __kernel void updateCollider(__global float4* vertices, __global uint4* collider
 		m_owner->setCollisionFlags(m_tree.isKinematic ? btCollisionObject::CF_KINEMATIC_OBJECT : 0);
 
 		m_tree.exportColliders(m_colliders);
+#ifdef CUDA
 		m_aabb.reset(new Aabb[m_colliders.size()]);
 		m_tree.remapColliders(m_colliders.data(), m_aabb.get());
+#else
+		m_aabb.resize(m_colliders.size());
+		m_tree.remapColliders(m_colliders.data(), m_aabb.data());
+#endif // CUDA
+
 
 		Ref<PerTriangleShape> holder = this;
 		m_verticesCollision = new PerVertexShape(m_owner);

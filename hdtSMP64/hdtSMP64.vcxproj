@@ -1,36 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="AE_AVX2|x64">
-      <Configuration>AE_AVX2</Configuration>
+    <ProjectConfiguration Include="AE_CUDA_AVX2|x64">
+      <Configuration>AE_CUDA_AVX2</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="AE_AVX512|x64">
-      <Configuration>AE_AVX512</Configuration>
+    <ProjectConfiguration Include="AE_CUDA_AVX512|x64">
+      <Configuration>AE_CUDA_AVX512</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="AE_AVX|x64">
-      <Configuration>AE_AVX</Configuration>
+    <ProjectConfiguration Include="AE_CUDA_AVX|x64">
+      <Configuration>AE_CUDA_AVX</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="AE_NoAVX|x64">
-      <Configuration>AE_NoAVX</Configuration>
+    <ProjectConfiguration Include="AE_CUDA_NoAVX|x64">
+      <Configuration>AE_CUDA_NoAVX</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="SE_AVX2|x64">
-      <Configuration>SE_AVX2</Configuration>
+    <ProjectConfiguration Include="AE_NOCUDA_AVX2|x64">
+      <Configuration>AE_NOCUDA_AVX2</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="SE_AVX512|x64">
-      <Configuration>SE_AVX512</Configuration>
+    <ProjectConfiguration Include="AE_NOCUDA_AVX512|x64">
+      <Configuration>AE_NOCUDA_AVX512</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="SE_AVX|x64">
-      <Configuration>SE_AVX</Configuration>
+    <ProjectConfiguration Include="AE_NOCUDA_AVX|x64">
+      <Configuration>AE_NOCUDA_AVX</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="SE_NoAVX|x64">
-      <Configuration>SE_NoAVX</Configuration>
+    <ProjectConfiguration Include="AE_NOCUDA_NoAVX|x64">
+      <Configuration>AE_NOCUDA_NoAVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_CUDA_AVX2|x64">
+      <Configuration>SE_CUDA_AVX2</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_CUDA_AVX512|x64">
+      <Configuration>SE_CUDA_AVX512</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_CUDA_AVX|x64">
+      <Configuration>SE_CUDA_AVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_CUDA_NoAVX|x64">
+      <Configuration>SE_CUDA_NoAVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_NOCUDA_AVX2|x64">
+      <Configuration>SE_NOCUDA_AVX2</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_NOCUDA_AVX512|x64">
+      <Configuration>SE_NOCUDA_AVX512</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_NOCUDA_AVX|x64">
+      <Configuration>SE_NOCUDA_AVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SE_NOCUDA_NoAVX|x64">
+      <Configuration>SE_NOCUDA_NoAVX</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -43,56 +75,112 @@
     <ProjectName>hdtSMP64</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX2|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX2|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX512|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX512|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NoAVX|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NoAVX|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX2|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX2|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -101,75 +189,140 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 10.2.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX2|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX2|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX512|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX512|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NoAVX|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NoAVX|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX2|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX2|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX2|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX2|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX512|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX512|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NoAVX|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NoAVX|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX2|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX2|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -207,8 +360,473 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <CudaCompile>
+      <CudaRuntime>Static</CudaRuntime>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLink>false</PerformDeviceLink>
+    </CudaLink>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>ANNIVERSARY_EDITION;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>ANNIVERSARY_EDITION;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>ANNIVERSARY_EDITION;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX2|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX2|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>ANNIVERSARY_EDITION;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>false</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -247,7 +865,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX2|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -286,7 +904,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX2|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -325,7 +943,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_AVX512|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -364,7 +982,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_AVX512|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -403,7 +1021,7 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NoAVX|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -434,7 +1052,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NoAVX|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -679,9 +1297,19 @@
     <ClInclude Include="hdtSkinnedMesh\hdtCollisionAlgorithm.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtConeTwistConstraint.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtConstraintGroup.h" />
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaCollision.cuh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaInterface.h" />
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaPlanarStruct.cuh" />
     <ClInclude Include="hdtSkinnedMesh\hdtDispatcher.h" />
+    <ClInclude Include="hdtSkinnedMesh\hdtFrameTimer.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtGroupConstraintSolver.h" />
+    <ClInclude Include="hdtSkinnedMesh\hdtLCP.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtSimulationIslandManager.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtSkinnedMeshAlgorithm.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtSkinnedMeshBody.h" />
@@ -889,9 +1517,12 @@
     <ClCompile Include="hdtSkinnedMesh\hdtCollisionAlgorithm.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtConeTwistConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtConstraintGroup.cpp" />
+    <ClCompile Include="hdtSkinnedMesh\hdtCudaInterface.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtDispatcher.cpp" />
+    <ClCompile Include="hdtSkinnedMesh\hdtFrameTimer.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGeneric6DofConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtGroupConstraintSolver.cpp" />
+    <ClCompile Include="hdtSkinnedMesh\hdtLCP.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtSimulationIslandManager.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtSkinnedMeshAlgorithm.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtSkinnedMeshBody.cpp" />
@@ -934,8 +1565,22 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="export.def" />
+    <None Include="hdtSkinnedMesh\clkernel\updateTriShape.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateTShape.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateVertices.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateVShape.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateVtxShape.cl" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="hdtSkinnedMesh\hdtCudaCollision.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">true</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 10.2.targets" />
   </ImportGroup>
 </Project>

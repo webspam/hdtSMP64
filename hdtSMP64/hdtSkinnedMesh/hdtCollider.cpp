@@ -130,10 +130,12 @@ namespace hdt
 				aabb.merge(*i);
 			aabbMe = aabb;
 		}
+#ifdef CUDA
 		else
 		{
 			aabbMe.invalidate();
 		}
+#endif
 
 		aabbAll = aabbMe;
 		for (auto& i : children)
@@ -252,11 +254,12 @@ namespace hdt
 		for (auto& i : children)
 			i.remapColliders(start, startAabb);
 	}
-
+#ifdef CUDA
 	void ColliderTree::relocateAabb(Aabb* newAabb)
 	{
 		for (auto& i : children)
 			i.relocateAabb(newAabb + (i.aabb - aabb));
 		aabb = newAabb;
 	}
+#endif
 }

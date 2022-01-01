@@ -830,6 +830,17 @@
     <ClInclude Include="btBulletDynamicsCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaCollision.cuh" />
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtCudaPlanarStruct.cuh" />
+    <ClInclude Include="hdtSkinnedMesh\hdtFrameTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hdtSkinnedMesh\hdtLCP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
@@ -1384,10 +1395,27 @@
     <ClCompile Include="BulletCollision\CollisionShapes\btMiniSDF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hdtSkinnedMesh\hdtCudaInterface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hdtSkinnedMesh\hdtFrameTimer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hdtSkinnedMesh\hdtLCP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="export.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="hdtSkinnedMesh\clkernel\updateTriShape.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateTShape.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateVertices.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateVShape.cl" />
+    <None Include="hdtSkinnedMesh\clkernel\updateVtxShape.cl" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="hdtSkinnedMesh\hdtCudaCollision.cu" />
   </ItemGroup>
 </Project>
