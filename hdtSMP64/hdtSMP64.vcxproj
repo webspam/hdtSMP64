@@ -369,6 +369,10 @@
     <CudaLink>
       <PerformDeviceLink>false</PerformDeviceLink>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'">
     <ClCompile>
@@ -426,6 +430,10 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX|x64'">
     <ClCompile>
@@ -483,6 +491,10 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX|x64'">
     <ClCompile>
@@ -540,6 +552,10 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX|x64'">
     <ClCompile>
@@ -597,6 +613,14 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>
+      </Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512|x64'">
     <ClCompile>
@@ -654,6 +678,10 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512|x64'">
     <ClCompile>
@@ -711,6 +739,10 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX2|x64'">
     <ClCompile>
@@ -768,6 +800,10 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX2|x64'">
     <ClCompile>
@@ -825,6 +861,10 @@
     <CudaLink>
       <Optimization>O2</Optimization>
     </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'">
     <ClCompile>
@@ -864,6 +904,10 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">
     <ClCompile>
@@ -903,6 +947,10 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'">
     <ClCompile>
@@ -942,6 +990,10 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">
     <ClCompile>
@@ -981,6 +1033,10 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512|x64'">
     <ClCompile>
@@ -1020,6 +1076,10 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">
     <ClCompile>
@@ -1051,6 +1111,10 @@
       <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX|x64'">
     <ClCompile>
@@ -1082,6 +1146,10 @@
       <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ActorManager.h" />
