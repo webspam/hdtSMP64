@@ -65,15 +65,15 @@ namespace hdt
 		if (physics)
 		{
 			MessageBox(nullptr, TEXT(
-				           "hdtSSEPhysics.dll is loaded. This is an older verson of HDT-SMP and conflicts with hdtSMP64.dll. Please remove it."),
-			           TEXT("hdtSMP64"), MB_OK);
+				"hdtSSEPhysics.dll is loaded. This is an older verson of HDT-SMP and conflicts with hdtSMP64.dll. Please remove it."),
+				TEXT("hdtSMP64"), MB_OK);
 		}
 
 		if (framework && !hh)
 		{
 			MessageBox(nullptr, TEXT(
-				           "hdtSSEFramework.dll is loaded but hdtSSEHighHeels.dll is not being used. You no longer need hdtSSEFramework.dll with this version of SMP. Please remove it."),
-			           TEXT("hdtSMP64"), MB_OK);
+				"hdtSSEFramework.dll is loaded but hdtSSEHighHeels.dll is not being used. You no longer need hdtSSEFramework.dll with this version of SMP. Please remove it."),
+				TEXT("hdtSMP64"), MB_OK);
 		}
 	}
 
@@ -88,79 +88,79 @@ namespace hdt
 			return &material->texture2;
 			break;
 		case 2:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
 			{
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
-				{
-					return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkB0;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_GlowMap)
-				{
-					return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkB0;
-				}
-				return &material->texture3;
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkB0;
 			}
-			break;
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_GlowMap)
+			{
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkB0;
+			}
+			return &material->texture3;
+		}
+		break;
 		case 3:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
 			{
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
-				{
-					return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkA8;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_Parallax)
-				{
-					return &static_cast<BSLightingShaderMaterialParallax*>(material)->unkA0;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_Parallax || material->GetShaderType() ==
-					BSShaderMaterial::kShaderType_ParallaxOcc)
-				{
-					return &static_cast<BSLightingShaderMaterialParallaxOcc*>(material)->unkA0;
-				}
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->unkA8;
 			}
-			break;
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_Parallax)
+			{
+				return &static_cast<BSLightingShaderMaterialParallax*>(material)->unkA0;
+			}
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_Parallax || material->GetShaderType() ==
+				BSShaderMaterial::kShaderType_ParallaxOcc)
+			{
+				return &static_cast<BSLightingShaderMaterialParallaxOcc*>(material)->unkA0;
+			}
+		}
+		break;
 		case 4:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_Eye)
 			{
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_Eye)
-				{
-					return &static_cast<BSLightingShaderMaterialEye*>(material)->unkA0;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_EnvironmentMap)
-				{
-					return &static_cast<BSLightingShaderMaterialEnvmap*>(material)->unkA0;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
-				{
-					return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkA8;
-				}
+				return &static_cast<BSLightingShaderMaterialEye*>(material)->unkA0;
 			}
-			break;
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_EnvironmentMap)
+			{
+				return &static_cast<BSLightingShaderMaterialEnvmap*>(material)->unkA0;
+			}
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
+			{
+				return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkA8;
+			}
+		}
+		break;
 		case 5:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_Eye)
 			{
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_Eye)
-				{
-					return &static_cast<BSLightingShaderMaterialEye*>(material)->unkA8;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_EnvironmentMap)
-				{
-					return &static_cast<BSLightingShaderMaterialEnvmap*>(material)->unkA0;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
-				{
-					return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkB0;
-				}
+				return &static_cast<BSLightingShaderMaterialEye*>(material)->unkA8;
 			}
-			break;
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_EnvironmentMap)
+			{
+				return &static_cast<BSLightingShaderMaterialEnvmap*>(material)->unkA0;
+			}
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
+			{
+				return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkB0;
+			}
+		}
+		break;
 		case 6:
+		{
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
 			{
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_FaceGen)
-				{
-					return &static_cast<BSLightingShaderMaterialFacegen*>(material)->renderedTexture;
-				}
-				if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
-				{
-					return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkA0;
-				}
+				return &static_cast<BSLightingShaderMaterialFacegen*>(material)->renderedTexture;
 			}
-			break;
+			if (material->GetShaderType() == BSShaderMaterial::kShaderType_MultilayerParallax)
+			{
+				return &static_cast<BSLightingShaderMaterialMultiLayerParallax*>(material)->unkA0;
+			}
+		}
+		break;
 		case 7:
 			return &material->texture4;
 			break;
@@ -282,11 +282,11 @@ namespace hdt
 			}
 
 			Console_Print("[HDT-SMP] %s skeleton - owner %s (refr formid %08x, base formid %08x) - %s",
-			              skeleton.state > ActorManager::SkeletonState::e_SkeletonActive ? "active" : "inactive",
-			              ownerName ? ownerName->GetName() : "unk_name",
-			              skelOwner ? skelOwner->formID : 0x00000000,
-			              skelOwner && skelOwner->baseForm ? skelOwner->baseForm->formID : 0x00000000,
-			              stateStrings[skeleton.state]
+				skeleton.state > ActorManager::SkeletonState::e_SkeletonActive ? "active" : "inactive",
+				ownerName ? ownerName->GetName() : "unk_name",
+				skelOwner ? skelOwner->formID : 0x00000000,
+				skelOwner && skelOwner->baseForm ? skelOwner->baseForm->formID : 0x00000000,
+				stateStrings[skeleton.state]
 			);
 
 			if (includeItems)
@@ -333,8 +333,8 @@ namespace hdt
 	}
 
 	bool SMPDebug_Execute(const ObScriptParam* paramInfo, ScriptData* scriptData, TESObjectREFR* thisObj,
-	                      TESObjectREFR* containingObj, Script* scriptObj, ScriptLocals* locals, double& result,
-	                      UInt32& opcodeOffsetPtr)
+		TESObjectREFR* containingObj, Script* scriptObj, ScriptLocals* locals, double& result,
+		UInt32& opcodeOffsetPtr)
 	{
 		char buffer[MAX_PATH];
 		memset(buffer, 0, MAX_PATH);
@@ -398,7 +398,7 @@ namespace hdt
 			SMPDebug_PrintDetailed(true);
 			return true;
 		}
-		if(_strnicmp(buffer, "list", MAX_PATH) == 0)
+		if (_strnicmp(buffer, "list", MAX_PATH) == 0)
 		{
 			SMPDebug_PrintDetailed(false);
 			return true;
@@ -471,136 +471,136 @@ extern "C" {
 		"hydrogensaysHDT",
 		"",
 		0,	// not version independent
-		{ RUNTIME_VERSION_1_6_342, 0 },
+		{ RUNTIME_VERSION_1_6_353, 0 },
 		0,	// works with any version of the script extender. you probably do not need to put anything here
 	};
 #else
-bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
-{
-	// populate info structure
-	info->infoVersion = PluginInfo::kInfoVersion;
-	info->name = "hdtSSEPhysics";
-	info->version = 1;
-
-	hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log");
-	hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
-
-	_MESSAGE("hdtSMP64 2.0");
-
-	if (skse->isEditor)
+	bool SKSEPlugin_Query(const SKSEInterface* skse, PluginInfo* info)
 	{
-		return false;
-	}
+		// populate info structure
+		info->infoVersion = PluginInfo::kInfoVersion;
+		info->name = "hdtSSEPhysics";
+		info->version = 1;
 
-	if (skse->runtimeVersion != CURRENT_RELEASE_RUNTIME)
-	{
-		_FATALERROR("attempted to load plugin into unsupported game version, exiting");
-		return false;
-	}
+		hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log");
+		hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
 
-	if (!g_branchTrampoline.Create(1024 * 1))
-	{
-		_FATALERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
-		return false;
-	}
+		_MESSAGE("hdtSMP64 2.0");
 
-	if (!g_localTrampoline.Create(1024 * 1, nullptr))
-	{
-		_FATALERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
-		return false;
-	}
+		if (skse->isEditor)
+		{
+			return false;
+		}
 
-	return true;
-}
+		if (skse->runtimeVersion != CURRENT_RELEASE_RUNTIME)
+		{
+			_FATALERROR("attempted to load plugin into unsupported game version, exiting");
+			return false;
+		}
+
+		if (!g_branchTrampoline.Create(1024 * 1))
+		{
+			_FATALERROR("couldn't create branch trampoline. this is fatal. skipping remainder of init process.");
+			return false;
+		}
+
+		if (!g_localTrampoline.Create(1024 * 1, nullptr))
+		{
+			_FATALERROR("couldn't create codegen buffer. this is fatal. skipping remainder of init process.");
+			return false;
+		}
+
+		return true;
+	}
 #endif
 
-bool SKSEPlugin_Load(const SKSEInterface* skse)
-{
+	bool SKSEPlugin_Load(const SKSEInterface* skse)
+	{
 #ifdef ANNIVERSARY_EDITION
-	hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log");
-	hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
-	_MESSAGE("hdtSMP64 2.0");
-	
-	if (!g_branchTrampoline.Create(1024 * 1))
-	{
-		_FATALERROR("Couldn't create branch trampoline. This is fatal. Skipping remainder of init process.");
-		return false;
-	}
-	
-	if (!g_localTrampoline.Create(1024 * 1, nullptr))
-	{
-		_FATALERROR("Couldn't create codegen buffer. This is fatal. Skipping remainder of init process.");
-		return false;
-	}
+		hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log");
+		hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
+		_MESSAGE("hdtSMP64 2.0");
+
+		if (!g_branchTrampoline.Create(1024 * 1))
+		{
+			_FATALERROR("Couldn't create branch trampoline. This is fatal. Skipping remainder of init process.");
+			return false;
+		}
+
+		if (!g_localTrampoline.Create(1024 * 1, nullptr))
+		{
+			_FATALERROR("Couldn't create codegen buffer. This is fatal. Skipping remainder of init process.");
+			return false;
+		}
 #endif // ANNIVERSARY_EDITION
 
-	hdt::g_frameEventDispatcher.addListener(hdt::ActorManager::instance());
-	hdt::g_frameEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
-	hdt::g_shutdownEventDispatcher.addListener(hdt::ActorManager::instance());
-	hdt::g_shutdownEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
-	hdt::g_armorAttachEventDispatcher.addListener(hdt::ActorManager::instance());
-	hdt::g_skinSingleHeadGeometryEventDispatcher.addListener(hdt::ActorManager::instance());
-	hdt::g_skinAllHeadGeometryEventDispatcher.addListener(hdt::ActorManager::instance());
+		hdt::g_frameEventDispatcher.addListener(hdt::ActorManager::instance());
+		hdt::g_frameEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
+		hdt::g_shutdownEventDispatcher.addListener(hdt::ActorManager::instance());
+		hdt::g_shutdownEventDispatcher.addListener(hdt::SkyrimPhysicsWorld::get());
+		hdt::g_armorAttachEventDispatcher.addListener(hdt::ActorManager::instance());
+		hdt::g_skinSingleHeadGeometryEventDispatcher.addListener(hdt::ActorManager::instance());
+		hdt::g_skinAllHeadGeometryEventDispatcher.addListener(hdt::ActorManager::instance());
 
-	hdt::hookAll();
+		hdt::hookAll();
 
-	const auto messageInterface = reinterpret_cast<SKSEMessagingInterface*>(skse->QueryInterface(kInterface_Messaging));
-	if (messageInterface)
-	{
-		const auto cameraDispatcher = static_cast<EventDispatcher<SKSECameraEvent>*>(messageInterface->
-			GetEventDispatcher(SKSEMessagingInterface::kDispatcher_CameraEvent));
-
-		if (cameraDispatcher)
-			cameraDispatcher->AddEventSink(hdt::SkyrimPhysicsWorld::get());
-
-		messageInterface->RegisterListener(skse->GetPluginHandle(), "SKSE", [](SKSEMessagingInterface::Message* msg)
+		const auto messageInterface = reinterpret_cast<SKSEMessagingInterface*>(skse->QueryInterface(kInterface_Messaging));
+		if (messageInterface)
 		{
-			if (msg && msg->type == SKSEMessagingInterface::kMessage_InputLoaded)
-			{
-				MenuManager* mm = MenuManager::GetSingleton();
-				if (mm)
-					mm->MenuOpenCloseEventDispatcher()->AddEventSink(&hdt::g_freezeEventHandler);
-				hdt::checkOldPlugins();
-				hdt::loadConfig();
+			const auto cameraDispatcher = static_cast<EventDispatcher<SKSECameraEvent>*>(messageInterface->
+				GetEventDispatcher(SKSEMessagingInterface::kDispatcher_CameraEvent));
+
+			if (cameraDispatcher)
+				cameraDispatcher->AddEventSink(hdt::SkyrimPhysicsWorld::get());
+
+			messageInterface->RegisterListener(skse->GetPluginHandle(), "SKSE", [](SKSEMessagingInterface::Message* msg)
+				{
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_InputLoaded)
+					{
+						MenuManager* mm = MenuManager::GetSingleton();
+						if (mm)
+							mm->MenuOpenCloseEventDispatcher()->AddEventSink(&hdt::g_freezeEventHandler);
+						hdt::checkOldPlugins();
+						hdt::loadConfig();
 #ifdef DEBUG
 						hdt::g_armorAttachEventDispatcher.addListener(&hdt::g_eventDebugLogger);
 						GetEventDispatcherList()->unk1B8.AddEventSink(&hdt::g_eventDebugLogger);
 						GetEventDispatcherList()->unk840.AddEventSink(&hdt::g_eventDebugLogger);
 #endif
-			}
-		});
-	}
-
-	ObScriptCommand* hijackedCommand = nullptr;
-	for (ObScriptCommand* iter = g_firstConsoleCommand; iter->opcode < kObScript_NumConsoleCommands +
-	     kObScript_ConsoleOpBase; ++iter)
-	{
-		if (!strcmp(iter->longName, "ShowRenderPasses"))
-		{
-			hijackedCommand = iter;
-			break;
+					}
+				});
 		}
+
+		ObScriptCommand* hijackedCommand = nullptr;
+		for (ObScriptCommand* iter = g_firstConsoleCommand; iter->opcode < kObScript_NumConsoleCommands +
+			kObScript_ConsoleOpBase; ++iter)
+		{
+			if (!strcmp(iter->longName, "ShowRenderPasses"))
+			{
+				hijackedCommand = iter;
+				break;
+			}
+		}
+		if (hijackedCommand)
+		{
+			static ObScriptParam params[1];
+			params[0].typeID = ObScriptParam::kType_String;
+			params[0].typeStr = "String (optional)";
+			params[0].isOptional = 1;
+
+			ObScriptCommand cmd = *hijackedCommand;
+
+			cmd.longName = "SMPDebug";
+			cmd.shortName = "smp";
+			cmd.helpText = "smp <reset>";
+			cmd.needsParent = 0;
+			cmd.numParams = 1;
+			cmd.params = params;
+			cmd.execute = hdt::SMPDebug_Execute;
+			cmd.flags = 0;
+			SafeWriteBuf(reinterpret_cast<uintptr_t>(hijackedCommand), &cmd, sizeof(cmd));
+		}
+
+		return true;
 	}
-	if (hijackedCommand)
-	{
-		static ObScriptParam params[1];
-		params[0].typeID = ObScriptParam::kType_String;
-		params[0].typeStr = "String (optional)";
-		params[0].isOptional = 1;
-
-		ObScriptCommand cmd = *hijackedCommand;
-
-		cmd.longName = "SMPDebug";
-		cmd.shortName = "smp";
-		cmd.helpText = "smp <reset>";
-		cmd.needsParent = 0;
-		cmd.numParams = 1;
-		cmd.params = params;
-		cmd.execute = hdt::SMPDebug_Execute;
-		cmd.flags = 0;
-		SafeWriteBuf(reinterpret_cast<uintptr_t>(hijackedCommand), &cmd, sizeof(cmd));
-	}
-
-	return true;
-}
 }
