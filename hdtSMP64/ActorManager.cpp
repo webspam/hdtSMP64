@@ -8,6 +8,7 @@
 #include <cinttypes>
 #include "Offsets.h"
 #include "skse64/GameStreams.h"
+#include <numeric>
 
 namespace hdt
 {
@@ -108,17 +109,20 @@ namespace hdt
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
 
+		// We get the player character and its cell.
+		// TODO Isn't there a more performing way to find the PC?? A singleton? And if it's the right way, why isn't it in utils functions?
 		auto& playerCharacter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [](Skeleton& s) { return s.isPlayerCharacter(); });
-		auto playerPosition = (playerCharacter == m_skeletons.end()) ? std::optional<NiPoint3>() : playerCharacter->position();
-
-		std::optional<NiPoint3> playerRotation;
-		if (playerCharacter != m_skeletons.end() && playerCharacter->skeleton && playerCharacter->skeleton->m_owner && playerCharacter->skeleton->m_owner->rot.z) {
-			playerRotation.emplace(NiPoint3(0.f, 0.f, playerCharacter->skeleton->m_owner->rot.z));
-		} else {
-			playerRotation.emplace(NiPoint3(0.f,0.f,0.f));
-		}
-
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
+
+		// We get the camera, its position and orientation.
+		PlayerCamera* camera = PlayerCamera::GetSingleton();
+		auto cameraPosition = camera->cameraNode->m_worldTransform.pos;
+		auto cameraOrientation = camera->cameraNode->m_worldTransform.rot * NiPoint3(0., 1., 0.); // The camera matrix is relative to the world.
+
+		// These values are calculated here for performance of the loop of updateAttachedState().
+		std::vector<float> cameraOrientationVector{ cameraOrientation.x, cameraOrientation.y, cameraOrientation.z };
+		auto maxdistance2 = m_maxDistance * m_maxDistance;
+		float maxAngle = m_maxAngle / MATH_PI * 180.0; // In radians
 
 		for (auto& i : m_skeletons)
 		{
@@ -128,9 +132,7 @@ namespace hdt
 				i.skeleton = nullptr;
 			}
 			else if (i.hasPhysics)
-			{
-				i.updateAttachedState(playerPosition, m_maxDistance, playerCell, playerRotation, m_maxAngle);
-			}
+				i.updateAttachedState(cameraPosition, maxdistance2, playerCell, cameraOrientationVector, maxAngle);
 		}
 
 		m_skeletons.erase(
@@ -558,14 +560,15 @@ namespace hdt
 	bool ActorManager::Skeleton::isActiveInScene() const
 	{
 		// TODO: do this better
-		// when entering/exiting an interior NPCs are detached from the scene but not unloaded, so we need to check two levels up 
-		// this properly removes exterior cell armors from the physics world when entering an interior, and vice versa
+		// When entering/exiting an interior, NPCs are detached from the scene but not unloaded, so we need to check two levels up.
+		// This properly removes exterior cell armors from the physics world when entering an interior, and vice versa.
 		return skeleton->m_parent && skeleton->m_parent->m_parent && skeleton->m_parent->m_parent->m_parent;
 	}
 
 	bool ActorManager::Skeleton::isPlayerCharacter() const
 	{
-		return skeletonOwner == *g_thePlayer.GetPtr() || (skeleton->m_owner ? skeleton->m_owner->formID : 0x0) == 0x14;
+		// TODO magic number to remove
+		return skeletonOwner == *g_thePlayer.GetPtr() || (skeleton->m_owner && skeleton->m_owner->formID == 0x14);
 	}
 
 	std::optional<NiPoint3> ActorManager::Skeleton::position() const
@@ -581,13 +584,14 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle)
+	void ActorManager::Skeleton::updateAttachedState(NiPoint3 cameraPosition, float maxDistance2, const NiNode* playerCell, std::vector<float> cameraOrientationVector, float maxAngle)
 	{
-		// Skeletons that aren't active in any scene are always detached, unless they are in the
+		// 1- Skeletons that aren't active in any scene are always detached, unless they are in the
 		// same cell as the player character (workaround for issue in Ancestor Glade).
-		// Player character is always attached.
-		// Otherwise, attach only if both the player character and this skeleton have a position,
-		// and the distance between them is below the threshold value.
+		// 2- Player character is always attached.
+		// 3- Otherwise, attach only if both the camera and this skeleton have a position,
+		// the distance between them is below the threshold value,
+		// and the angle difference between the camera orientation and the skeleton orientation is below the threshold value.
 		isActive = false;
 		state = SkeletonState::e_InactiveNotInScene;
 
@@ -601,38 +605,39 @@ namespace hdt
 			else
 			{
 				state = SkeletonState::e_InactiveTooFar;
-				if (playerPosition.has_value())
+				auto pos = position();
+				if (pos.has_value())
 				{
-					auto pos = position();
-					if (pos.has_value())
-					{
-						auto offset = pos.value() - playerPosition.value();
-						float distance2 = offset.x * offset.x + offset.y * offset.y + offset.z * offset.z;
+					// We calculate the vector between camera and the skeleton feets.
+					auto camera2SkeletonVector = pos.value() - cameraPosition;
+					auto c2SVMagnitude2 = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
 
-						if (distance2 <= maxDistance * maxDistance)
+					// If the distance squared is greater than the max distance squared, we let the skeleton inactive.
+					// We use the squared for performance reasons.
+					if (c2SVMagnitude2 <= maxDistance2)
+					{
+						// We calculate the angle between the camera vector and the camera2SkeletonVector.
+						std::vector<float> a{ camera2SkeletonVector.x, camera2SkeletonVector.y, camera2SkeletonVector.z };
+						// TODO Ease of configuration: maxAngle could be autocalculated depending on the FOV.
+						// TODO Precision: rather than working with the position of the skeleton feets, we could work with the skeleton size.
+						// TODO Shouldn't we work with double always instead of floats? The performance is improvement of using floats
+						// is probably lost by the different float-> double and double->float transformations.
+						auto angle = acosf(inner_product(begin(a), end(a), begin(cameraOrientationVector), 0.0) / sqrtf(c2SVMagnitude2));
+
+						// If the angle is greater than the max angle, we let the skeleton inactive.
+						if (angle <= maxAngle)
 						{
-							//calculate view angle
-							float theta = std::atan2(offset.x, offset.y);
-							static const float PI = acos(-1.f);
-							float heading = 180 / PI * (theta - playerRotation->z);
-							if (heading < -180) heading += 360;
-							else if (heading > 180) heading -= 360;
-							if (abs(heading) < maxAngle)
-							{
-								_DMESSAGE("%s (%f, %f) theta %f heading %f", name(), offset.x, offset.y, theta, heading);
-								isActive = true;
-								state = SkeletonState::e_ActiveNearPlayer;
-							}
+							isActive = true;
+							state = SkeletonState::e_ActiveNearPlayer;
 						}
 					}
 				}
 			}
 		}
 
+		// We update the active state of armors and head parts.
 		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.updateActive(isActive); });
 		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.updateActive(isActive); });
-
-
 	}
 
 	void ActorManager::Skeleton::reloadMeshes()
