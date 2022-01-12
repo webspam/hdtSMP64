@@ -109,7 +109,7 @@ namespace hdt
 			std::optional<NiPoint3> position() const;
 
 			/* Updates isActive, state, armors.isActive and	headParts.isActive. */
-			void updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, std::vector<float> cameraOrientationVector, float maxAngle);
+			void updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngle);
 			void reloadMeshes();
 
 			void scanHead();
