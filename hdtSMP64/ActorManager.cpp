@@ -119,11 +119,6 @@ namespace hdt
 		auto cameraPosition = camera.pos;
 		auto cameraOrientation = camera.rot * NiPoint3(0., 1., 0.); // The camera matrix is relative to the world.
 
-		// These values are calculated here for performance of the loop of updateAttachedState().
-		auto maxdistance2 = m_maxDistance * m_maxDistance;
-		// TODO Ease of configuration: maxAngle could be autocalculated depending on the FOV.
-		float maxAngleCosinus = cosf(m_maxAngle / MATH_PI * 180.0); // In radians
-
 		for (auto& i : m_skeletons)
 		{
 			if (i.skeleton->m_uiRefCount == 1)
@@ -132,7 +127,8 @@ namespace hdt
 				i.skeleton = nullptr;
 			}
 			else if (i.hasPhysics)
-				i.updateAttachedState(cameraPosition, maxdistance2, playerCell, cameraOrientation, maxAngleCosinus);
+				// TODO Ease of configuration: maxAngle could be autocalculated depending on the FOV.
+				i.updateAttachedState(cameraPosition, m_maxDistance2, playerCell, cameraOrientation, m_cosMaxAngle2);
 		}
 
 		m_skeletons.erase(
@@ -584,7 +580,7 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::updateAttachedState(NiPoint3 cameraPosition, float maxDistance2, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus)
+	void ActorManager::Skeleton::updateAttachedState(NiPoint3 cameraPosition, float maxDistance2, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2)
 	{
 		// 1- Skeletons that aren't active in any scene are always detached, unless they are in the
 		// same cell as the player character (workaround for issue in Ancestor Glade).
@@ -616,14 +612,12 @@ namespace hdt
 					// We use the squared for performance reasons.
 					if (c2SVMagnitude2 < maxDistance2)
 					{
-						// We calculate the angle between the camera vector and the camera2SkeletonVector.
 						// TODO Precision: rather than working with the position of the skeleton feets, we could work with the skeleton size.
-						auto angleCosinus = (camera2SkeletonVector.x * cameraOrientation.x
-											+ camera2SkeletonVector.y * cameraOrientation.y
-											+ camera2SkeletonVector.z * cameraOrientation.z) / sqrtf(c2SVMagnitude2);
-
+						// We calculate the angle between the camera vector and the camera2SkeletonVector.
 						// If the angle is lower than the max angle, we make the skeleton active.
-						if (angleCosinus > maxAngleCosinus)
+						// cos(angle) = dot(v1, v2)/(magnitude(v1)*magnitude(v2) Here, magnitude(CameraOrientation) = 1.
+						auto a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z;
+						if (a * a > maxAngleCosinus2 * c2SVMagnitude2)
 						{
 							isActive = true;
 							state = SkeletonState::e_ActiveNearPlayer;

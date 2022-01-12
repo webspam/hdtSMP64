@@ -109,7 +109,7 @@ namespace hdt
 			std::optional<NiPoint3> position() const;
 
 			/* Updates isActive, state, armors.isActive and	headParts.isActive. */
-			void updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngle);
+			void updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2);
 			void reloadMeshes();
 
 			void scanHead();
@@ -164,6 +164,8 @@ namespace hdt
 
 		bool m_skinNPCFaceParts = true;
 		float m_maxDistance = 1e4f;
-		float m_maxAngle = 45.0;
+		float m_maxDistance2 = 1e8f; // The maxDistance value needs to be transformed to be useful, this is the useful value.
+		float m_maxAngle = 45.0f;
+		float m_cosMaxAngle2 = 0.5f; // The maxAngle value needs to be transformed to be useful, this is the useful value.
 	};
 }

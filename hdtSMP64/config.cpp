@@ -78,7 +78,11 @@ namespace hdt
 				else if (reader.GetLocalName() == "unclampedResetAngle")
 					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
 				else if (reader.GetLocalName() == "maximumDistance")
-					ActorManager::instance()->m_maxDistance = reader.readFloat();
+				{
+					auto f = reader.readFloat();
+					ActorManager::instance()->m_maxDistance = f;
+					ActorManager::instance()->m_maxDistance2 = f*f;
+				}
 #ifdef CUDA
 				else if (reader.GetLocalName() == "enableCuda")
 					CudaInterface::enableCuda = reader.readBool();
@@ -90,7 +94,14 @@ namespace hdt
 				}
 #endif
 				else if (reader.GetLocalName() == "maximumAngle")
-					ActorManager::instance()->m_maxAngle = reader.readFloat();
+				{
+					auto f = reader.readFloat();
+					if (f != 45.0f) // When it's equal, the exact result of cosMaxAngle2 would be 0.5. Let's use the exact value.
+					{
+						ActorManager::instance()->m_maxAngle = f;
+						ActorManager::instance()->m_cosMaxAngle2 = cosf(f / MATH_PI * 180.0f) * cosf(f / MATH_PI * 180.0f);
+					}
+				}
 				else
 				{
 					_WARNING("Unknown config : ", reader.GetLocalName());
