@@ -1,4 +1,5 @@
 #pragma once
+#ifdef CUDA
 
 #include "hdtSkinnedMeshShape.h"
 #include "hdtDispatcher.h"
@@ -127,3 +128,4 @@ namespace hdt
 		bool m_enabled;
 	};
 }
+#endif

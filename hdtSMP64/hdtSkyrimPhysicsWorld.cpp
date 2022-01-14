@@ -14,9 +14,13 @@ namespace hdt
 		m_windSpeed.setValue(0, 0, 5 * scaleSkyrim);
 
 		getSolverInfo().m_friction = 0;
+#ifdef CUDA
 		m_substepTick = m_timeTick;
-		m_accumulatedInterval = 0;
 		m_averageProcessingTime = 0;
+#else
+		m_averageInterval = m_timeTick;
+#endif
+		m_accumulatedInterval = 0;
 	}
 
 	SkyrimPhysicsWorld::~SkyrimPhysicsWorld(void)
@@ -61,6 +65,7 @@ namespace hdt
 
 		//ScanHair();
 
+#ifdef CUDA
 		LARGE_INTEGER ticks;
 		QueryPerformanceCounter(&ticks);
 		int64_t startTime = ticks.QuadPart;
@@ -91,6 +96,24 @@ namespace hdt
 		float time = (endTime - startTime) / ticks_per_ms;
 
 		m_averageProcessingTime = (m_averageProcessingTime + time) / 2.0;
+#else
+		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
+		auto tick = std::min(m_averageInterval, m_timeTick);
+
+		m_accumulatedInterval += interval;
+		if (m_accumulatedInterval > tick * 0.25f)
+		{
+			interval = std::min<float>(m_accumulatedInterval, tick * 5);
+
+			readTransform(interval);
+			updateActiveState();
+			auto offset = applyTranslationOffset();
+			stepSimulation(interval, 5, tick);
+			restoreTranslationOffset(offset);
+			m_accumulatedInterval = 0;
+			writeTransform();
+		}
+#endif
 	}
 
 	btVector3 SkyrimPhysicsWorld::applyTranslationOffset()

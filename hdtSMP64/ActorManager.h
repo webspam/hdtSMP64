@@ -111,7 +111,8 @@ namespace hdt
 			bool hasPhysics = false;
 			std::optional<NiPoint3> position() const;
 
-			bool updateAttachedState(std::optional<NiPoint3> playerPosition, float maxDistance, const NiNode* playerCell, std::optional<NiPoint3> playerRotation, float maxAngle);
+			/* Updates isActive, state, armors.isActive and	headParts.isActive. */
+			void updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2);
 			bool deactivate();
 			void reloadMeshes();
 
@@ -160,11 +161,15 @@ namespace hdt
 		void onEvent(const SkinAllHeadGeometryEvent&) override;
 
 		void reloadMeshes();
-
+#ifdef ANNIVERSARY_EDITION
+		bool skeletonNeedsParts(NiNode * skeleton);
+#endif
 		std::vector<Skeleton> getSkeletons() const;
 
 		bool m_skinNPCFaceParts = true;
 		float m_maxDistance = 1e4f;
-		float m_maxAngle = 45.0;
+		float m_maxDistance2 = 1e8f; // The maxDistance value needs to be transformed to be useful, this is the useful value.
+		float m_maxAngle = 45.0f;
+		float m_cosMaxAngle2 = 0.5f; // The maxAngle value needs to be transformed to be useful, this is the useful value.
 	};
 }

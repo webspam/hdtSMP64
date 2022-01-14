@@ -143,7 +143,7 @@ The plugin recognizes the following optional parameters:
   to fix.
 + Physics enabled hair colours are sometimes wrong. This appears to happen there are two NPCs nearby using
   the same hair model.
-+ Physics may be less stable due to the new dynamic timestep calculation.jjjjjkj
++ Physics may be less stable due to the new dynamic timestep calculation.
 + Probably any open bug listed on Nexus that isn't resolved in changes, above. This list only contains
   issues I have personally observed.
 

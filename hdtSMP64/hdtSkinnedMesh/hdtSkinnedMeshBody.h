@@ -12,7 +12,9 @@
 namespace hdt
 {
 	class SkinnedMeshShape;
+#ifdef CUDA
 	class CudaBody;
+#endif
 
 	class SkinnedMeshBody
 		: public btCollisionObject
@@ -77,14 +79,24 @@ namespace hdt
 		int addBone(SkinnedMeshBone* bone, const btQsTransform& verticesToBone, const BoundingSphere& boundingSphere);
 
 		void finishBuild();
+#ifdef CUDA
 		void updateBones();
+#endif
 		virtual void internalUpdate();
 
 		std::vector<SkinnedBone> m_skinnedBones;
+#ifdef CUDA
 		std::shared_ptr<Bone[]> m_bones;
+#else
+		std::vector<Bone> m_bones;
+#endif
 
 		std::vector<Vertex> m_vertices;
+#ifdef CUDA
 		std::shared_ptr<VertexPos[]> m_vpos;
+#else
+		std::vector<VertexPos> m_vpos;
+#endif
 
 		std::vector<IDStr> m_tags;
 		std::unordered_set<IDStr> m_canCollideWithTags;
@@ -92,7 +104,9 @@ namespace hdt
 		std::vector<SkinnedMeshBone*> m_canCollideWithBones;
 		std::vector<SkinnedMeshBone*> m_noCollideWithBones;
 
+#ifdef CUDA
 		std::shared_ptr<CudaBody> m_cudaObject;
+#endif
 
 		float flexible(const Vertex& v);
 

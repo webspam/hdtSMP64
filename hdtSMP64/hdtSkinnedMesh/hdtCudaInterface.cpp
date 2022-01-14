@@ -1,3 +1,4 @@
+#ifdef CUDA
 #include "hdtCudaInterface.h"
 
 #include <ppl.h>
@@ -1001,3 +1002,4 @@ namespace hdt
 	template class CudaCollisionPair<CudaPerVertexShape>;
 	template class CudaCollisionPair<CudaPerTriangleShape>;
 }
+#endif

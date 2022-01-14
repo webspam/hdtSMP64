@@ -28,6 +28,52 @@ namespace hdt
 		DEFINE_MEMBER_FN_HOOK(SkinSingleGeometry, void, offset::BSFaceGenNiNode_SkinSingleGeometry, NiNode* a_skeleton,
 		                      BSGeometry* a_geometry, char a_unk);
 
+#ifdef ANNIVERSARY_EDITION
+		void ProcessHeadPart(BGSHeadPart* headPart, NiNode* a_skeleton)
+		{
+			if (headPart)
+			{
+				NiAVObject* headNode = this->GetObjectByName(&headPart->partName.data);
+				if (headNode)
+				{
+					BSGeometry* headGeo = headNode->GetAsBSGeometry();
+					if (headGeo)
+						SkinSingleGeometry(a_skeleton, headGeo, 20);
+				}
+
+				BGSHeadPart* extraPart = NULL;
+				for (UInt32 p = 0; p < headPart->extraParts.count; p++)
+				{
+					if (headPart->extraParts.GetNthItem(p, extraPart))
+						ProcessHeadPart(extraPart, a_skeleton);
+				}
+			}
+		}
+
+		void SkinAllGeometryCalls(NiNode* a_skeleton, char a_unk)
+		{
+			bool needRegularCall = true;
+			if (ActorManager::instance()->skeletonNeedsParts(a_skeleton))
+			{
+				TESForm* form = LookupFormByID(a_skeleton->m_owner->formID);
+				Actor* actor = DYNAMIC_CAST(form, TESForm, Actor);
+				if (actor)
+				{
+					TESNPC* actorBase = DYNAMIC_CAST(actor->baseForm, TESForm, TESNPC);
+					for (int i = 0; i < actorBase->numHeadParts; i++)
+					{
+						BGSHeadPart* headPart = actorBase->GetCurrentHeadPartByType(i);
+						ProcessHeadPart(headPart, a_skeleton);
+					}
+					if (a_skeleton->m_owner && a_skeleton->m_owner->formID == 0x14)
+						needRegularCall = false;
+				}
+			}
+			if (needRegularCall)
+				CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
+		}
+#endif
+
 		void SkinSingleGeometry(NiNode* a_skeleton, BSGeometry* a_geometry, char a_unk)
 		{
 			const char* name = "";
@@ -92,7 +138,11 @@ namespace hdt
 				e.skeleton = a_skeleton;
 				e.headNode = this;
 				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
+#ifdef ANNIVERSARY_EDITION
+				SkinAllGeometryCalls(a_skeleton, a_unk);
+#else
 				CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
+#endif
 				e.hasSkinned = true;
 				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
 			}
@@ -115,6 +165,7 @@ namespace hdt
 		RelocAddr<uintptr_t> addr(offset::BSFaceGenNiNode_SkinSingleGeometry_bug);
 		SafeWrite8(addr.GetUIntPtr(), 0x7);
 
+#ifndef ANNIVERSARY_EDITION
 		struct BSFaceGenExtraModelData_BoneCount_Code : Xbyak::CodeGenerator
 		{
 			BSFaceGenExtraModelData_BoneCount_Code(void* buf) : CodeGenerator(4096, buf)
@@ -136,6 +187,8 @@ namespace hdt
 		g_localTrampoline.EndAlloc(code.getCurr());
 
 		g_branchTrampoline.Write5Branch(BoneLimit.GetUIntPtr(), uintptr_t(code.getCode()));
+#endif // !ANNIVERSARY_EDITION
+
 	}
 
 	void unhookFaceGen()

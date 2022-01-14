@@ -9,7 +9,7 @@
     <clampRotations>true</clampRotations>
     <!-- unclampedResets: when unclamped, if you do a large turn (full 180 for example) SMP will attempt to apply physics
 		                      for that enormous turn. setting this to true will instead trigger a physics reset on the actor
-				      if the turn is large enough. you can try setting this false and deciding if you're OK with the 
+				      if the turn is large enough. you can try setting this false and deciding if you're OK with the
 				      results -->
     <unclampedResets>true</unclampedResets>
     <!-- unclampedResetAngle: angle to reset at. you'll probably want to tweak this until you're happy. -->

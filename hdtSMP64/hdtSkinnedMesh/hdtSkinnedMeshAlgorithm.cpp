@@ -1,7 +1,9 @@
 #include "hdtSkinnedMeshAlgorithm.h"
 #include "hdtCollider.h"
 
+#ifdef CUDA
 #include <numeric>
+#endif
 
 namespace hdt
 {
@@ -18,7 +20,11 @@ namespace hdt
 	enum CollisionCheckAlgorithmType
 	{
 		e_CPU,
-		e_CPURefactored
+		e_CPURefactored,
+// Remove if useless
+#ifndef CUDA
+		e_CUDA
+#endif // !CUDA
 	};
 
 	// CollisionCheckBase1 provides data members and the basic constructor for the target types. Note that we
@@ -30,10 +36,17 @@ namespace hdt
 		typedef typename T::ShapeProp SP1;
 
 		CollisionCheckBase1(PerVertexShape* a, T* b, CollisionResult* r)
+#ifdef CUDA
 			: shapeA(a), shapeB(b)
+#endif
 		{
+#ifdef CUDA
 			v0 = a->m_owner->m_vpos.get();
 			v1 = b->m_owner->m_vpos.get();
+#else
+			v0 = a->m_owner->m_vpos.data();
+			v1 = b->m_owner->m_vpos.data();
+#endif
 			c0 = &a->m_tree;
 			c1 = &b->m_tree;
 			sp0 = &a->m_shapeProp;
@@ -42,8 +55,10 @@ namespace hdt
 			numResults = 0;
 		}
 
+#ifdef CUDA
 		PerVertexShape* shapeA;
 		T* shapeB;
+#endif
 
 		VertexPos* v0;
 		VertexPos* v1;
@@ -187,18 +202,22 @@ namespace hdt
 				penetration = -penetration;
 			}
 
-			// Compute distance from point to plane
+			// Compute distance from point to plane // ifndef CUDA: and projection onto plane
+#ifdef CUDA
 			auto ap = _mm_sub_ps(s.pos().get128(), p0.pos().get128());
 			auto distance = _mm_dp_ps(ap, normal, 0x77);
 			float distanceFromPlane = _mm_cvtss_f32(distance);
-
+#else
+			auto ap = (s.pos() - p0.pos()).get128();
+			auto distance = _mm_dp_ps(ap, normal, 0x77);
+			float distanceFromPlane = _mm_cvtss_f32(distance);
+			auto projection = _mm_sub_ps(s.pos().get128(), _mm_mul_ps(normal, distance));
+#endif
 			// Decide whether point is close enough to plane
 			float radiusWithMargin = r + margin;
 			bool isInsideContactPlane;
 			if (penetration >= FLT_EPSILON)
-			{
 				isInsideContactPlane = distanceFromPlane < radiusWithMargin && distanceFromPlane >= -penetration;
-			}
 			else
 			{
 				if (distanceFromPlane < 0)
@@ -213,6 +232,7 @@ namespace hdt
 				return false;
 			}
 
+#ifdef CUDA
 			// Compute the triple product of the triangle normal with vectors from the sphere center to each
 			// pair of triangle vertices (note ordering of the vertices is important). The projection of the
 			// center onto the triangle plane lies within the triangle if and only if all three products are
@@ -228,7 +248,26 @@ namespace hdt
 			aa = _mm_or_ps(aa, ab);
 			aa = _mm_or_ps(aa, ac);
 			aa = _mm_cmpgt_ps(_mm_set1_ps(0.0), aa);
-			auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
+#else
+			// Compute (twice) area of each triangle between projection and two triangle points
+			ap = _mm_sub_ps(projection, p0.pos().get128());
+			auto bp = _mm_sub_ps(projection, p1.pos().get128());
+			auto cp = _mm_sub_ps(projection, p2.pos().get128());
+			auto aa = cross_product(bp, cp);
+			ab = cross_product(cp, ap);
+			ac = cross_product(ap, bp);
+			aa = _mm_dp_ps(aa, aa, 0x74);
+			ab = _mm_dp_ps(ab, ab, 0x72);
+			ac = _mm_dp_ps(ac, ac, 0x71);
+			aa = _mm_or_ps(aa, ab);
+			aa = _mm_or_ps(aa, ac);
+			aa = _mm_sqrt_ps(aa);
+			// Now if every pair of elements in aa sums to no more than area, then the point is inside the triangle
+			aa = _mm_add_ps(aa, _mm_shuffle_ps(aa, aa, _MM_SHUFFLE(3, 0, 2, 1)));
+			aa = _mm_cmpgt_ps(aa, len);
+#endif
+			auto pointInTriangle = _mm_test_all_zeros(_mm_set_epi32(0, -1, -1, -1), _mm_castps_si128(aa));
+			//auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
 
 			res.colliderA = a;
 			res.colliderB = b;
@@ -236,7 +275,11 @@ namespace hdt
 			{
 				res.normOnB.set128(normal);
 				res.posA = s.pos() - res.normOnB * r;
+#ifdef CUDA
 				res.posB = s.pos() - res.normOnB * (distanceFromPlane - margin);
+#else
+				res.posB.set128(projection);
+#endif
 				res.depth = distanceFromPlane - radiusWithMargin;
 				return res.depth < -FLT_EPSILON;
 			}
@@ -270,7 +313,7 @@ namespace hdt
 			res.colliderB = b;
 			return ret;
 		}
-	}; 
+	};
 #endif
 
 	// CollisionCheckDispatcher provides a dispatch method to process two lists of colliders. It is needed for
@@ -319,6 +362,16 @@ namespace hdt
 		}
 	};
 
+// [31/12/2021 DaydreamingDay] TODO See if the block can be removed with the enum.
+#ifndef CUDA
+	// Dispatcher specialization for sphere-triangle collisions on CUDA. Sphere-sphere collisions will
+	// continue to use the CPU dispatcher. Doesn't actually do anything yet (and will fail to compile).
+	template <bool SwapResults>
+	struct CollisionCheckDispatcher<PerTriangleShape, SwapResults, e_CUDA>
+	: public CollisionCheckBase2<PerTriangleShape, SwapResults>
+	{};
+#endif
+
 	// Finally, CollisionCheckAlgorithm does the full check between collider trees.
 	template <typename T, bool SwapResults = false, CollisionCheckAlgorithmType Algorithm = e_CPURefactored>
 	struct CollisionCheckAlgorithm : public CollisionCheckDispatcher<T, SwapResults, Algorithm>
@@ -327,7 +380,7 @@ namespace hdt
 		CollisionCheckAlgorithm(Ts&&... ts)
 			: CollisionCheckDispatcher(std::forward<Ts>(ts)...)
 		{}
-		
+
 		int operator()()
 		{
 			static_assert(Algorithm != e_CPU, "Old CPU algorithm specialization missing");
@@ -474,7 +527,7 @@ namespace hdt
 					}
 				}
 				else
-				{     
+				{
 					list.reserve(std::max<size_t>(bsize, list.capacity()));
 					for (auto i = abeg; i < aend; ++i)
 					{
@@ -535,10 +588,18 @@ namespace hdt
 		for (int i = 0; i < count; ++i)
 		{
 			auto& res = collision[i];
+#ifdef CUDA
 			if (res.depth >= -FLT_EPSILON) continue;
+#else
+			if (res.depth >= -FLT_EPSILON) break;
+#endif
 
 			auto flexible = std::max(res.colliderA->flexible, res.colliderB->flexible);
+#ifdef CUDA
 			if (flexible < FLT_EPSILON) continue;
+#else
+			if (flexible < FLT_EPSILON) return;
+#endif
 
 			for (int ib = 0; ib < a->getBonePerCollider(); ++ib)
 			{
@@ -619,6 +680,7 @@ namespace hdt
 			merge.doMerge(shape0, shape1, collision, count);
 	}
 
+#ifdef CUDA
 	template<bool Swap, typename T>
 	void launchCollision(
 		PerVertexShape* shape0,
@@ -696,6 +758,7 @@ namespace hdt
 			}
 		};
 	}
+#endif
 
 	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
 	                                            CollisionDispatcher* dispatcher)
