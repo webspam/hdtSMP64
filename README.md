@@ -5,16 +5,18 @@ Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 
 ## Changes 
 
++ Managed AE version, and corresponding SKSE (currently 1.6.353 and 2.1.5).
++ Added maximum angle in ActorManager. A max angle can be used to specify physics on NPCs within a field of view.
+  0 degrees represents straight in front of the camera. Default is 45 which is treated as + or - 45 degrees,
+  so 90 total degrees. 180 would be all around.
++ Merged the CUDA version in the master branch through preprocessor directives to allow a continuous evolution,
+  and easier building.
 + Added CUDA support for several parts of collision detection (still a work in progress). This includes
   everything that had OpenCL support in earlier releases, as well as the final collision check. CPU collision
   is still fully supported, and is used as a fallback if a CUDA-capable GPU is not available.
-+ Added maximum angle in ActorManager. A max angle can be used to specify physics on NPCs within a field of view.
-  0 degrees represents straight in front. Default is 45 which is treated as + or - 45 degrees so 90 total degrees. 
-  180 would be all around.
 + Added distance check in ActorManager to disable NPCs more than a certain distance from the player. This
   resolves the massive FPS drop in certain cell transitions (such as Blue Palace -> Solitude). Default
-  maximum distance is 10000, which resolves that issue, but I recommend something around 2000 for better
-  general performance in cities.
+  maximum distance is 500.
 + New method for dynamically updating timesteps. This is technically less stable in terms of physics
   accuracy, but avoids a problem where one very slow frame (for example, where NPCs are added to the scene)
   causes a feedback loop that drops the framerate. If you saw framerates drop to 12-13 in the Blue Palace or
@@ -109,8 +111,8 @@ infamous dark face bug. Special restrictions apply to NPCs that do have facegen 
 The `smp` console command will print some basic information about the number of tracked and active objects.
 The plugin recognizes the following optional parameters:
 
-* `smp reset` attempts to reload all meshes and reset the whole HDT-SMP system. However, it is a little buggy
-  and may fail to reload some meshes or constraints properly.
+* `smp reset` reloads the configs.xml file, attempts to reload all meshes and reset the whole HDT-SMP system.
+  However, it is a little buggy and may fail to reload some meshes or constraints properly.
 * `smp gpu` toggles the CUDA collision algorithm, if there is at least one CUDA device available. If there is
   no device available, it does nothing.
 * `smp timing` starts a timing sequence for the collision detection algorithm. The next 200 frames will
@@ -143,126 +145,16 @@ The plugin recognizes the following optional parameters:
 + Physics may be less stable due to the new dynamic timestep calculation.
 + Probably any open bug listed on Nexus that isn't resolved in changes, above. This list only contains
   issues I have personally observed.
++ [Known bugs on the Nexus](https://nexusmods.com/skyrimspecialedition/mods/57339?tab=bugs&BH=5)
 
 ## Build Instructions
 
+Here is the [article](https://www.nexusmods.com/skyrimspecialedition/articles/3606) by DayDreamingDay.
 These should be complete instructions to set up and build the plugin, without assuming prior coding
-experience. I'm checking everything out into D:\Dev-noAVX and building without AVX support, but of course you
-can use any directory.
-
-You will need:
-+ Visual Studio 2019 (any edition)
-+ Git
-+ CMake
-+ CUDA 10.2
-
-Open a VS2019 command prompt ("x64 Native Tools Command Prompt for VS2019"). Download and build Detours and
-Bullet:
-
-```
-d:
-mkdir Dev-noAVX
-cd Dev-noAVX
-git clone https://github.com/microsoft/Detours.git
-git clone https://github.com/bulletphysics/bullet3.git
-cd Detours
-nmake
-cd ..\bullet3
-cmake .
-```
-
-If you want AVX support in Bullet, use `cmake-gui` instead of `cmake`, and check the `USE_MSVC_AVX` box
-before clicking Configure then Generate. This should give a fairly significant performance boost if your CPU
-supports it.
-+ Note that AVX support in Bullet and the HDT-SMP plugin itself are independent configuration options. Enable
-  it in both for maximum performance; disable it in both for maximum compatibility.
-
-Open D:\Dev-noAVX\bullet3\BULLET_PHYSICS.sln in Visual Studio, select the Release configuration, then 
-Build -> Build solution.
-
-Download skse64_2_00_19.7z and unpack into Dev-noAVX (source code is included in the official distribution),
-then get the HDT-SMP source:
-
-```
-cd D:\Dev-noAVX\skse64_2_00_19\src\skse64
-git init
-git remote add origin https://github/com/Karonar1/hdtSMP64.git
-git fetch
-git checkout master
-```
-
-Open D:\Dev-noAVX\skse64_2_00_19\src\skse64\hdtSMP64.sln in Visual Studio. If you are asked to retarget
-projects, just accept the defaults and click OK.
-
-Open properties for the hdtSMP64 project. Select "All Configurations" at the top, and the C/C++ page. Add the
-following to Additional Include Directories (just delete anything that was there before):
-+ D:\Dev-noAVX\Detours\include
-+ D:\Dev-noAVX\bullet3\src
-+ D:\Dev-noAVX\skse64_2_00_19\src
-
-On the Linker -> General page, add the following to Additional Library Directories:
-+ D:\Dev-noAVX\bullet3\lib\Release
-+ D:\Dev-noAVX\Detours\lib.X64
-
-Open properties for the skse64 project. Select General, and change Configuration Type from "Dynamic Library
-(.dll)" to "Static Library (.lib)".
-
-Make the following changes to the SKSE code:
-
-In NiObjects.h, at line 81, delete:
-```cpp
-virtual void			* Unk_05(void);
-```
-
-and replace it with:
-```cpp
-virtual BSFadeNode		* GetAsBSFadeNode(void);
-```
-
-At line 88, delete:
-```cpp
-virtual void			* Unk_0C(void);
-```
-
-and replace it with:
-```cpp
-virtual BSDynamicTriShape	* GetAsBSDynamicTriShape(void);
-```
-
-In the same file, at line 36 (the end of the list of class declarations), add:
-```cpp
-class BSDynamicTriShape;
-class BSFadeNode;
-```
-
-And at line 174 (inside the `enum` definition), add:
-```cpp
-kNone =		0,
-```
-
-In GameEvents.h, at line 667, delete:
-```cpp
-EventDispatcher<void>								unk840;					//  840 - sink offset 0C8
-```
-
-and replace it with:
-```cpp
-EventDispatcher<TESMoveAttachDetachEvent>			unk840;					//  840 - sink offset 0C8
-```
-
-In GameMenus.h, before line 1105 (just before the GetSingleton declaration), add:
-```cpp
-bool IsGamePaused() { return numPauseGame > 0; }
-```
-
-Now you should be able to select the Release or Release_noAVX configuration and build the plugin.
+experience.
 
 ## Credits
 
-hydrogensaysHDT - Creating this plugin
-
-aers - fixes and improvements
-
-ousnius - some fixes, and "consulting"
-
-
++ hydrogensaysHDT - Creating this plugin
++ aers - fixes and improvements
++ ousnius - some fixes, and "consulting"
