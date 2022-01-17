@@ -353,6 +353,7 @@ namespace hdt
 		if (_strnicmp(buffer, "reset", MAX_PATH) == 0)
 		{
 			Console_Print("running full smp reset");
+			hdt::loadConfig();
 			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
 			ActorManager::instance()->reloadMeshes();
 			SkyrimPhysicsWorld::get()->resetSystems();
