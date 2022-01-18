@@ -606,16 +606,32 @@ namespace hdt
 				{
 					// We calculate the vector between camera and the skeleton feets.
 					auto camera2SkeletonVector = pos.value() - cameraPosition;
+					// This is the distance (squared) between the camera and the skeleton feets.
 					auto c2SVMagnitude2 = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
 
-					// If the distance squared is greater than the max distance squared, we let the skeleton inactive.
-					// We use the squared for performance reasons.
+					/* If the distance is greater than the max distance, we let the skeleton inactive.
+					 * We compare their squares rather than the distances themselves to avoid costly sqrt() operations. */
 					if (c2SVMagnitude2 < maxDistance2)
 					{
 						// TODO Precision: rather than working with the position of the skeleton feets, we could work with the skeleton size.
-						// We calculate the angle between the camera vector and the camera2SkeletonVector.
-						// If the angle is lower than the max angle, we make the skeleton active.
-						// cos(angle) = dot(v1, v2)/(magnitude(v1)*magnitude(v2) Here, magnitude(CameraOrientation) = 1.
+						/* We calculate the angle between the camera direction and the camera2SkeletonVector.
+						 * If the angle is lower than the max angle, we make the skeleton active.
+						 * Demonstration leading to our check, based on scalar product of vectors (sometimes called inner product):
+						 * 1/ dot(v1->, v2->) = |v1->| * |v2->| * cos(a) with a the angle between v1-> and v2->
+						 * 2/ dot(v1->, v2->) = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+						 * => cos(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z) / (|v1->| * |v2->|)
+						 * => cos^2(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2) * (v2.x^2 + v2.y^2 + v2.z^2))
+						 * In our case, we have:
+						 * 1/ a < maxAngle (our test)
+						 * 2/ |cameraOrientation| = 1 (because I built it by applying the rotational matrix to (0,1,0) which length is 1.)
+						 * => cos(a) > cos(maxAngle)
+						 * => cos^2(a) > cos^2(maxAngle)
+						 * => (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2)) > cos^2(maxAngle)
+						 *    with v1-> = camera2SkeletonVector and v2-> = cameraOrientation
+						 * => (camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z)^2
+						      / c2SVMagnitude2 > cos^2(maxAngle)
+						 * => (camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z)^2
+						 *    > cos^2(maxAngle) * c2SVMagnitude2 */
 						auto a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z;
 						if (a * a > maxAngleCosinus2 * c2SVMagnitude2)
 						{
