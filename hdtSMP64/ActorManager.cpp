@@ -625,15 +625,19 @@ namespace hdt
 						 * 1/ a < maxAngle (our test)
 						 * 2/ |cameraOrientation| = 1 (because I built it by applying the rotational matrix to (0,1,0) which length is 1.)
 						 * => cos(a) > cos(maxAngle)
-						 * => cos^2(a) > cos^2(maxAngle)
+						 * => cos^2(a) > cos^2(maxAngle) && cos(a) > 0
 						 * => (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2)) > cos^2(maxAngle)
 						 *    with v1-> = camera2SkeletonVector and v2-> = cameraOrientation
-						 * => (camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z)^2
-						      / c2SVMagnitude2 > cos^2(maxAngle)
-						 * => (camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z)^2
-						 *    > cos^2(maxAngle) * c2SVMagnitude2 */
+						 *    && dot(v1->, v2->) > 0
+						 * => a^2 / c2SVMagnitude2 > cos^2(maxAngle)
+						 *	  && a > 0
+						 *    with a = dot(camera2SkeletonVector, cameraOrientation)
+						 *           = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
+						 * => a > 0 && a^2 > cos^2(maxAngle) * c2SVMagnitude2
+						 *    with a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
+						 */
 						auto a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z;
-						if (a * a > maxAngleCosinus2 * c2SVMagnitude2)
+						if (a > 0 && a * a > maxAngleCosinus2 * c2SVMagnitude2)
 						{
 							isActive = true;
 							state = SkeletonState::e_ActiveNearPlayer;
