@@ -17,23 +17,16 @@ namespace hdt
 
 	void StiffSpringConstraint::scaleConstraint()
 	{
-		float w0 = m_boneA->m_rig.getInvMass();
-		float w1 = m_boneB->m_rig.getInvMass();
-		w0 /= (w0 + w1);
-		w1 /= (w0 + w1);
-
 		auto newScaleA = m_boneA->m_currentTransform.getScale();
 		auto newScaleB = m_boneB->m_currentTransform.getScale();
-		auto factorA = newScaleA / m_scaleA;
-		auto factorB = newScaleB / m_scaleB;
-		auto factorA2 = factorA * factorA;
-		auto factorB2 = factorB * factorB;
-		auto factor = factorA * w0 + factorB * w1;
-		auto factor2 = factor * factor;
-		auto factor3 = factor2 * factor;
 
 		if (btFuzzyZero(newScaleA - m_scaleA) && btFuzzyZero(newScaleB - m_scaleB))
 			return;
+
+		float w0 = m_boneA->m_rig.getInvMass();
+		float w1 = m_boneB->m_rig.getInvMass();
+		auto factor = (newScaleA / m_scaleA * w0 + newScaleB / m_scaleB * w1) / (w0 + w1);
+		auto factor3 = factor * factor * factor;
 
 		m_minDistance *= factor;
 		m_maxDistance *= factor;
