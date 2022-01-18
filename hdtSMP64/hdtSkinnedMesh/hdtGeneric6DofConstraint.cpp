@@ -23,31 +23,32 @@ namespace hdt
 
 	void Generic6DofConstraint::scaleConstraint()
 	{
-		float w0 = m_boneA->m_rig.getInvMass();
-		float w1 = m_boneB->m_rig.getInvMass();
-		w0 /= (w0 + w1);
-		w1 /= (w0 + w1);
-
 		auto newScaleA = m_boneA->m_currentTransform.getScale();
 		auto newScaleB = m_boneB->m_currentTransform.getScale();
-		auto factorA = newScaleA / m_scaleA;
-		auto factorB = newScaleB / m_scaleB;
-		auto factor = factorA * w0 + factorB * w1;
-		auto factor2 = factor * factor;
-		auto factor3 = factor2 * factor;
 
 		if (btFuzzyZero(newScaleA - m_scaleA) && btFuzzyZero(newScaleB - m_scaleB))
 			return;
 
-		getFrameOffsetA().setOrigin(getFrameOffsetA().getOrigin() * factorA);
-		getFrameOffsetB().setOrigin(getFrameOffsetB().getOrigin() * factorB);
+		float w0 = m_boneA->m_rig.getInvMass();
+		float w1 = m_boneB->m_rig.getInvMass();
+		auto factorA = newScaleA / m_scaleA;
+		auto factorB = newScaleB / m_scaleB;
+		auto factor = (factorA * w0 + factorB * w1) / (w0 + w1);
+		auto factor2 = factor * factor;
+		auto factor3 = factor2 * factor;
+		auto factor5 = factor3 * factor2;
+
+		auto frameA = getFrameOffsetA();
+		auto frameB = getFrameOffsetB();
+
+		frameA.setOrigin(frameA.getOrigin() * factorA);
+		frameB.setOrigin(frameB.getOrigin() * factorB);
+		m_linearLimits.m_equilibriumPoint *= factor;
+		// target k = ma / x(kg/s^2)
+		m_linearLimits.m_springStiffness *= factor3;
+		m_linearLimits.m_springDamping *= factor3;
 		for (int i = 0; i < 3; ++i)
 		{
-			auto factor5 = factor3 * factor2;
-			m_linearLimits.m_equilibriumPoint[i] *= factor;
-			// target k = ma / x(kg/s^2)
-			m_linearLimits.m_springStiffness[i] *= factor3;
-			m_linearLimits.m_springDamping[i] *= factor3;
 			m_angularLimits[i].m_springStiffness *= factor5;
 			m_angularLimits[i].m_springDamping *= factor5;
 		}
