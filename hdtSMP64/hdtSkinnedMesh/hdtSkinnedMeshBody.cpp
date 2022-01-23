@@ -136,6 +136,7 @@ __kernel void updateVertices(
 			m_bones[i].m_vertexToWorld.m_col[3][3] *= v.ptr->m_marginMultipler;
 		}
 	}
+
 	void SkinnedMeshBody::internalUpdate()
 	{
 		updateBones();
@@ -180,7 +181,9 @@ __kernel void updateVertices(
 			m_vpos[idx].set(posMargin);
 		}
 
+		// FIXME PROFILING Lots of times is spent here.
 		m_shape->internalUpdate();
+
 		m_bulletShape.m_aabb = m_shape->m_tree.aabbAll;
 	}
 #endif
@@ -265,17 +268,11 @@ __kernel void updateVertices(
 	{
 		if (m_isKinematic && body->m_isKinematic) return false;
 
-		if (m_canCollideWithTags.empty())
-		{
-			for (auto& i : body->m_tags)
-				if (m_noCollideWithTags.find(i) != m_noCollideWithTags.end())
-					return false;
-			return true;
-		}
+		auto res = m_canCollideWithTags.empty();
 		for (auto& i : body->m_tags)
 			if (m_canCollideWithTags.find(i) != m_canCollideWithTags.end())
-				return true;
-		return false;
+				return !res;
+		return res;
 	}
 
 	void SkinnedMeshBody::updateBoundingSphereAabb()

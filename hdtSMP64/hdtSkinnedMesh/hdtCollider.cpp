@@ -140,7 +140,9 @@ namespace hdt
 		aabbAll = aabbMe;
 		for (auto& i : children)
 		{
+			// FIXME PROFILING Lots of time is used here, because this is called a lot.
 			i.updateAabb();
+
 			aabbAll.merge(i.aabbAll);
 		}
 	}

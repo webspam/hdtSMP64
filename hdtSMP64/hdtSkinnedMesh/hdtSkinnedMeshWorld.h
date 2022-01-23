@@ -14,7 +14,7 @@ namespace hdt
 		virtual void addSkinnedMeshSystem(SkinnedMeshSystem* system);
 		virtual void removeSkinnedMeshSystem(SkinnedMeshSystem* system);
 
-		int stepSimulation(btScalar timeStep, int maxSubSteps = 1,
+		int stepSimulation(btScalar remainingTimeStep, int maxSubSteps = 1,
 		                   btScalar fixedTimeStep = btScalar(1.) / btScalar(60.)) override;
 
 		btVector3& getWind() { return m_windSpeed; }

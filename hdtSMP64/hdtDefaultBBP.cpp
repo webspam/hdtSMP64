@@ -179,6 +179,7 @@ namespace hdt
 	DefaultBBP::NameMap DefaultBBP::defaultNameMap(NiNode* armor)
 	{
 		std::unordered_map<std::string, std::unordered_set<std::string> > nameMap;
+		// This case never happens to a lurker skeleton, thus we don't need to test.
 		auto skinned = findNode(armor, "BSFaceGenNiNodeSkinned");
 		if (skinned)
 		{

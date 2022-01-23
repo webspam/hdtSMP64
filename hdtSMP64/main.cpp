@@ -447,6 +447,7 @@ namespace hdt
 			}
 		}
 
+		// TODO debug for these messages?
 		Console_Print("[HDT-SMP] tracked skeletons: %d", skeletons.size());
 		Console_Print("[HDT-SMP] active skeletons: %d", activeSkeletons);
 		Console_Print("[HDT-SMP] tracked armor addons: %d", armors);
@@ -454,10 +455,6 @@ namespace hdt
 		Console_Print("[HDT-SMP] active armor addons: %d", activeArmors);
 		Console_Print("[HDT-SMP] active head parts: %d", activeHeadParts);
 		Console_Print("[HDT-SMP] active collision meshes: %d", activeCollisionMeshes);
-#ifdef CUDA
-		Console_Print("[HDT-SMP] average physics processing time: %f ms", SkyrimPhysicsWorld::get()->m_averageProcessingTime);
-		Console_Print("[HDT-SMP] substep tick: %f ms", SkyrimPhysicsWorld::get()->m_substepTick * 1000);
-#endif
 		return true;
 	}
 }

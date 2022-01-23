@@ -452,6 +452,7 @@ namespace hdt
 			};
 
 			if (pairs.size() >= std::thread::hardware_concurrency())
+				// FIXME PROFILING This is the line where we spend the most time in the whole mod.
 				concurrency::parallel_for_each(pairs.begin(), pairs.end(), func);
 			else for (auto& i : pairs) func(i);
 

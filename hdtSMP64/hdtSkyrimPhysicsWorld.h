@@ -59,16 +59,10 @@ namespace hdt
 		btContactSolverInfo& getSolverInfo() { return btDiscreteDynamicsWorld::getSolverInfo(); }
 		
 		float m_timeTick = 1 / 60.f;
-#ifdef CUDA
-		float m_minSubstep = 1 / 300.f;
-		float m_substepTick;
-		float m_averageProcessingTime;
-#endif
 		bool m_clampRotations = true;
 		bool m_unclampedResets = true;
 		float m_unclampedResetAngle = 120.0f;
 		uint8_t m_resetPc;
-
 
 	private:
 
@@ -80,8 +74,6 @@ namespace hdt
 		std::atomic_bool m_suspended;
 		std::atomic_bool m_loading;
 		float m_accumulatedInterval;
-#ifndef CUDA
 		float m_averageInterval;
-#endif // !CUDA
 	};
 }
