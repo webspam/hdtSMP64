@@ -65,7 +65,9 @@ namespace hdt
 		for (int i = 0; i < system->m_constraints.size(); ++i)
 			addConstraint(system->m_constraints[i]->m_constraint, true);
 
+		// -10 allows RESET_PHYSICS down the calls. But equality with a float?...
 		system->readTransform(-10.0);
+
 		system->m_world = this;
 	}
 
@@ -92,24 +94,20 @@ namespace hdt
 		system->m_world = nullptr;
 	}
 
-	int SkinnedMeshWorld::stepSimulation(btScalar timeStep, int maxSubSteps, btScalar fixedTimeStep)
+	int SkinnedMeshWorld::stepSimulation(btScalar remainingTimeStep, int maxSubSteps, btScalar fixedTimeStep)
 	{
-		if (timeStep > fixedTimeStep * maxSubSteps)
-			timeStep = fixedTimeStep * maxSubSteps;
-
 		applyGravity();
 
-		// [31/12/2021 DaydreamingDay] TODO what does this value mean? Make it configurable?
-#ifdef CUDA
-		while (timeStep >= fixedTimeStep * 1.5f)
-#else
-		while (timeStep >= fixedTimeStep * 1.25f)
-#endif
+		while (remainingTimeStep > fixedTimeStep)
 		{
 			internalSingleStepSimulation(fixedTimeStep);
-			timeStep -= fixedTimeStep;
+			remainingTimeStep -= fixedTimeStep;
 		}
-		internalSingleStepSimulation(timeStep);
+		// For the sake of the bullet library, we don't manage a step that would be lower than a 300Hz frame.
+		// Review this when (screens / Skyrim) will allow 300Hz+.
+		const auto minPossiblePeriod = 1.0f / 300.0f;
+		if (remainingTimeStep > minPossiblePeriod)
+			internalSingleStepSimulation(remainingTimeStep);
 		clearForces();
 
 		_bodies.clear();

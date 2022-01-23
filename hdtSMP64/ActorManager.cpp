@@ -8,14 +8,12 @@
 #include <cinttypes>
 #include "Offsets.h"
 #include "skse64/GameStreams.h"
-#include <numeric>
 
 namespace hdt
 {
 	ActorManager::ActorManager()
 	{
 	}
-
 
 	ActorManager::~ActorManager()
 	{
@@ -44,32 +42,28 @@ namespace hdt
 	inline bool isFirstPersonSkeleton(NiNode* npc)
 	{
 		if (!npc) return false;
-		if (findNode(npc, "Camera1st [Cam1]")) return true;
-		return false;
+		return findNode(npc, "Camera1st [Cam1]") ? true : false;
 	}
 
 	NiNode* getNpcNode(NiNode* skeleton)
 	{
 		// TODO: replace this with a generic skeleton fixing configuration option
 		// hardcode an exception for lurker skeletons because they are made incorrectly
-		auto npc = findNode(skeleton, "NPC");
+		auto shouldFix = false;
 		if (skeleton->m_owner && skeleton->m_owner->baseForm)
 		{
 			auto npcForm = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESNPC);
-			if (npcForm && npcForm->race.race)
-			{
-				if (!strcmp(npcForm->race.race->models[0].GetModelName(),
-					"Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
-				{
-					npc = findNode(skeleton, "NPC Root [Root]");
-				}
-			}
+			if (npcForm && npcForm->race.race
+				&&!strcmp(npcForm->race.race->models[0].GetModelName(), "Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
+				shouldFix = true;
 		}
-		return npc;
+		return findNode(skeleton, shouldFix ? "NPC Root [Root]" : "NPC");
 	}
 
+	// TODO Shouldn't there be an ArmorDetachEvent?
 	void ActorManager::onEvent(const ArmorAttachEvent& e)
 	{
+		// No armor is ever attached to a lurker skeleton, thus we don't need to test.
 		if (e.skeleton == nullptr || !findNode(e.skeleton, "NPC"))
 		{
 			return;
@@ -106,7 +100,15 @@ namespace hdt
 
 	void ActorManager::onEvent(const FrameEvent& e)
 	{
-		std::lock_guard<decltype(m_lock)> l(m_lock);
+		// Other events have to be managed. The FrameEvent is the only event that we can drop,
+		// we always have one later where we'll be able to manage the passed time.
+		// We drop this execution when the lock is already taken; in that case, we would execute the code later.
+		// It is better to drop it now, and let the next frame manage it.
+		// Moreover, dropping a locked part of the code allows to reduce the total wait times.
+		// Finally, some skse mods issue FrameEvents, this mechanism manages the case where they issue too many.
+		std::unique_lock<decltype(m_lock)> lock(m_lock, std::try_to_lock);
+		if (!lock.owns_lock()) return;
+
 		if (m_shutdown) return;
 
 		// We get the player character and its cell.
@@ -158,8 +160,8 @@ namespace hdt
 
 	void ActorManager::onEvent(const SkinSingleHeadGeometryEvent& e)
 	{
+		// This case never happens to a lurker skeleton, thus we don't need to test.
 		auto npc = findNode(e.skeleton, "NPC");
-
 		if (!npc) return;
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
@@ -183,6 +185,7 @@ namespace hdt
 				_DMESSAGE("renaming nodes in original part %s back", headPartIter->origPartRootNode->m_name);
 				for (auto& entry : skeleton.head.renameMap)
 				{
+					// This case never happens to a lurker skeleton, thus we don't need to test.
 					auto node = findNode(headPartIter->origPartRootNode, entry.second->cstr());
 					if (node)
 					{
@@ -200,8 +203,8 @@ namespace hdt
 
 	void ActorManager::onEvent(const SkinAllHeadGeometryEvent& e)
 	{
+		// This case never happens to a lurker skeleton, thus we don't need to test.
 		auto npc = findNode(e.skeleton, "NPC");
-
 		if (!npc) return;
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
@@ -290,7 +293,6 @@ namespace hdt
 		*/
 	}
 #endif
-
 	ActorManager::Skeleton& ActorManager::getSkeletonData(NiNode* skeleton)
 	{
 		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
@@ -341,6 +343,7 @@ namespace hdt
 				continue;
 			}
 
+			// TODO check it's not a lurker skeleton
 			auto dstChild = findNode(dst, srcChild->m_name);
 			if (dstChild)
 			{
@@ -403,22 +406,22 @@ namespace hdt
 		}
 	}
 
+	// returns the name of the skeleton owner
 	std::string ActorManager::Skeleton::name()
-		//return the name of the skeleton owner
 	{
-		auto name = "";
 		if (skeleton->m_owner && skeleton->m_owner->baseForm) {
 			auto bname = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESFullName);
 			if (bname)
-				name = bname->GetName();
+				return bname->GetName();
 		}
-		return name;
+		return "";
 	}
 
 	void ActorManager::Skeleton::addArmor(NiNode* armorModel)
 	{
 		IDType id = armors.size() ? armors.back().id + 1 : 0;
 		auto prefix = armorPrefix(id);
+		// FIXME we probably could simplify this by using findNode as surely we don't merge Armors with lurkers skeleton?
 		npc = getNpcNode(skeleton);
 		auto physicsFile = DefaultBBP::instance()->scanBBP(armorModel);
 
@@ -437,20 +440,18 @@ namespace hdt
 			_MESSAGE("Not attaching armor - no record or physics already exists");
 		}
 		Armor& armor = armors.back();
-
 		armor.armorWorn = attachedNode;
-		std::unordered_map<IDStr, IDStr> renameMap = armor.renameMap;
 
 		if (!isFirstPersonSkeleton(skeleton))
 		{
+			// FIXME we probably could simplify this by using findNode as surely we don't attach Armors to lurkers skeleton?
 			auto system = SkyrimSystemCreator().createSystem(getNpcNode(skeleton), attachedNode, armor.physicsFile,
-				std::move(renameMap));
+				std::move(armor.renameMap));
 
 			if (system)
 			{
 				armor.setPhysics(system, isActive);
 				hasPhysics = true;
-				armorMeshes += armor.meshes().size();
 			}
 		}
 	}
@@ -541,6 +542,7 @@ namespace hdt
 		armors.clear();
 	}
 
+	// Is called to print messages only
 	bool ActorManager::Skeleton::checkPhysics()
 	{
 		hasPhysics = false;
@@ -576,11 +578,9 @@ namespace hdt
 	{
 		if (npc)
 		{
+			// This works for lurker skeletons.
 			auto rootNode = findNode(npc, "NPC Root [Root]");
-			if (rootNode)
-			{
-				return rootNode->m_worldTransform.pos;
-			}
+			if (rootNode) return rootNode->m_worldTransform.pos;
 		}
 		return std::optional<NiPoint3>();
 	}
@@ -611,18 +611,38 @@ namespace hdt
 				{
 					// We calculate the vector between camera and the skeleton feets.
 					auto camera2SkeletonVector = pos.value() - cameraPosition;
+					// This is the distance (squared) between the camera and the skeleton feets.
 					auto c2SVMagnitude2 = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
 
-					// If the distance squared is greater than the max distance squared, we let the skeleton inactive.
-					// We use the squared for performance reasons.
+					/* If the distance is greater than the max distance, we let the skeleton inactive.
+					 * We compare their squares rather than the distances themselves to avoid costly sqrt() operations. */
 					if (c2SVMagnitude2 < maxDistance2)
 					{
 						// TODO Precision: rather than working with the position of the skeleton feets, we could work with the skeleton size.
-						// We calculate the angle between the camera vector and the camera2SkeletonVector.
-						// If the angle is lower than the max angle, we make the skeleton active.
-						// cos(angle) = dot(v1, v2)/(magnitude(v1)*magnitude(v2) Here, magnitude(CameraOrientation) = 1.
+						/* We calculate the angle between the camera direction and the camera2SkeletonVector.
+						 * If the angle is lower than the max angle, we make the skeleton active.
+						 * Demonstration leading to our check, based on scalar product of vectors (sometimes called inner product):
+						 * 1/ dot(v1->, v2->) = |v1->| * |v2->| * cos(a) with a the angle between v1-> and v2->
+						 * 2/ dot(v1->, v2->) = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+						 * => cos(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z) / (|v1->| * |v2->|)
+						 * => cos^2(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2) * (v2.x^2 + v2.y^2 + v2.z^2))
+						 * In our case, we have:
+						 * 1/ a < maxAngle (our test)
+						 * 2/ |cameraOrientation| = 1 (because I built it by applying the rotational matrix to (0,1,0) which length is 1.)
+						 * => cos(a) > cos(maxAngle)
+						 * => cos^2(a) > cos^2(maxAngle) && cos(a) > 0
+						 * => (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2)) > cos^2(maxAngle)
+						 *    with v1-> = camera2SkeletonVector and v2-> = cameraOrientation
+						 *    && dot(v1->, v2->) > 0
+						 * => a^2 / c2SVMagnitude2 > cos^2(maxAngle)
+						 *	  && a > 0
+						 *    with a = dot(camera2SkeletonVector, cameraOrientation)
+						 *           = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
+						 * => a > 0 && a^2 > cos^2(maxAngle) * c2SVMagnitude2
+						 *    with a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
+						 */
 						auto a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z;
-						if (a * a > maxAngleCosinus2 * c2SVMagnitude2)
+						if (a > 0 && a * a > maxAngleCosinus2 * c2SVMagnitude2)
 						{
 							isActive = true;
 							state = SkeletonState::e_ActiveNearPlayer;
@@ -639,8 +659,6 @@ namespace hdt
 
 	void ActorManager::Skeleton::reloadMeshes()
 	{
-		armorMeshes = 0;
-		headMeshes = 0;
 		for (auto& i : armors)
 		{
 			i.clearPhysics();
@@ -655,7 +673,6 @@ namespace hdt
 				{
 					i.setPhysics(system, isActive);
 					hasPhysics = true;
-					armorMeshes += i.meshes().size();
 				}
 			}
 		}
@@ -664,15 +681,15 @@ namespace hdt
 
 	void ActorManager::Skeleton::scanHead()
 	{
-		if (isFirstPersonSkeleton(this->skeleton))
-		{
-			_DMESSAGE("not scanning head of first person skeleton");
-			return;
-		}
-
 		if (!this->head.headNode)
 		{
 			_DMESSAGE("actor has no head node");
+			return;
+		}
+
+		if (isFirstPersonSkeleton(this->skeleton))
+		{
+			_DMESSAGE("not scanning head of first person skeleton");
 			return;
 		}
 
@@ -709,7 +726,6 @@ namespace hdt
 				_DMESSAGE("success");
 				headPart.setPhysics(system, isActive);
 				hasPhysics = true;
-				headMeshes += headPart.meshes().size();
 			}
 		}
 	}
@@ -856,10 +872,12 @@ namespace hdt
 				auto obj = findObject(head.npcFaceGeomNode, geometry->m_name);
 				if (obj)
 				{
-					if (obj->GetAsBSGeometry())
-						origGeom = obj->GetAsBSGeometry();
-					else if (obj->GetAsNiGeometry())
-						origNiGeom = obj->GetAsNiGeometry();
+					auto ob = obj->GetAsBSGeometry();
+					if (ob) origGeom = ob;
+					else {
+						auto on = obj->GetAsNiGeometry();
+						if (on) origNiGeom = on;
+					}
 				}
 			}
 		}
@@ -898,7 +916,7 @@ namespace hdt
 				boneName = renameIt->second->cstr();
 				hasRenames = true;
 			}
-
+			
 			auto boneNode = findNode(this->npc, boneName);
 
 			if (!boneNode && !hasMerged)
@@ -912,6 +930,7 @@ namespace hdt
 				{
 					// Facegen data doesn't have any tree structure to the skeleton. We need to make any new
 					// nodes children of the head node, so that they move properly when there's no physics.
+					// This case never happens to a lurker skeleton, thus we don't need to test.
 					auto headNode = findNode(head.npcFaceGeomNode, "NPC Head [Head]");
 					if (headNode)
 					{
@@ -920,6 +939,7 @@ namespace hdt
 						for (int i = 0; i < head.npcFaceGeomNode->m_children.m_arrayBufLen; ++i)
 						{
 							Ref<NiNode> child = castNiNode(head.npcFaceGeomNode->m_children.m_data[i]);
+							// This case never happens to a lurker skeleton, thus we don't need to test.
 							if (child && !findNode(npc, child->m_name))
 							{
 								child->m_localTransform = invTransform * child->m_localTransform;
@@ -940,8 +960,8 @@ namespace hdt
 					boneName = postMergeRenameIt->second->cstr();
 					hasRenames = true;
 				}
-
-				boneNode = findNode(this->npc, boneName);
+				
+				boneNode = findNode(this->npc, boneName);		
 			}
 
 			if (!boneNode)
@@ -968,7 +988,6 @@ namespace hdt
 					{
 						findNode->second += 1;
 						_DMESSAGE("incrementing use count by 1, it is now %d", findNode->second);
-
 					}
 					else
 					{

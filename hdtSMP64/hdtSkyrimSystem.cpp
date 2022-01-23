@@ -153,6 +153,7 @@ namespace hdt
 
 	NiNode* SkyrimSystemCreator::findObjectByName(const IDStr& name)
 	{
+		// TODO check it's not a lurker skeleton
 		return findNode(m_skeleton, name->cstr());
 	}
 
@@ -191,15 +192,12 @@ namespace hdt
 	                                               std::unordered_map<IDStr, IDStr> renameMap)
 	{
 		auto path = file.first;
-		auto meshNameMap = file.second;
-
 		if (path.empty()) return nullptr;
+
 		auto loaded = readAllFile(path.c_str());
-		if (loaded.empty())
-			return nullptr;
+		if (loaded.empty()) return nullptr;
 
 		m_renameMap = std::move(renameMap);
-
 		m_skeleton = skeleton;
 		m_model = model;
 		m_filePath = path;
@@ -209,8 +207,9 @@ namespace hdt
 		m_reader = &reader;
 
 		m_reader->nextStartElement();
-		if (m_reader->GetName() != "system")
-			return nullptr;
+		if (m_reader->GetName() != "system") return nullptr;
+
+		auto meshNameMap = file.second;
 
 		m_mesh = new SkyrimSystem(skeleton);
 
@@ -231,7 +230,6 @@ namespace hdt
 					if (name == "bone")
 					{
 						readBone();
-						//if(bone) m_mesh->m_bones.push_back(bone);
 					}
 					else if (name == "bone-default")
 					{
@@ -983,7 +981,7 @@ namespace hdt
 				auto name = m_reader->GetName();
 				if (name == "priority")
 				{
-					Warning("piority is deprecated and no longer used");
+					Warning("priority is deprecated and no longer used");
 					m_reader->skipCurrentElement();
 				}
 				else if (name == "margin")

@@ -16,28 +16,16 @@ namespace hdt
 
 	void ConeTwistConstraint::scaleConstraint()
 	{
-		float w0 = m_boneA->m_rig.getInvMass();
-		float w1 = m_boneB->m_rig.getInvMass();
-		w0 /= (w0 + w1);
-		w1 /= (w0 + w1);
-
 		auto newScaleA = m_boneA->m_currentTransform.getScale();
 		auto newScaleB = m_boneB->m_currentTransform.getScale();
-		auto factorA = newScaleA / m_scaleA;
-		auto factorB = newScaleB / m_scaleB;
-		auto factorA2 = factorA * factorA;
-		auto factorB2 = factorB * factorB;
-		auto factor = factorA * w0 + factorB * w1;
-		auto factor2 = factor * factor;
-		auto factor3 = factor2 * factor;
 
 		if (btFuzzyZero(newScaleA - m_scaleA) && btFuzzyZero(newScaleB - m_scaleB))
 			return;
 
 		auto frameA = getFrameOffsetA();
 		auto frameB = getFrameOffsetB();
-		frameA.setOrigin(frameA.getOrigin() * factorA);
-		frameB.setOrigin(frameB.getOrigin() * factorB);
+		frameA.setOrigin(frameA.getOrigin() * (newScaleA / m_scaleA));
+		frameB.setOrigin(frameB.getOrigin() * (newScaleB / m_scaleB));
 		setFrames(frameA, frameB);
 		m_scaleA = newScaleA;
 		m_scaleB = newScaleB;

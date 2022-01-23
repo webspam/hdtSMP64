@@ -14,12 +14,7 @@ namespace hdt
 		m_windSpeed.setValue(0, 0, 5 * scaleSkyrim);
 
 		getSolverInfo().m_friction = 0;
-#ifdef CUDA
-		m_substepTick = m_timeTick;
-		m_averageProcessingTime = 0;
-#else
 		m_averageInterval = m_timeTick;
-#endif
 		m_accumulatedInterval = 0;
 	}
 
@@ -63,57 +58,54 @@ namespace hdt
 	{
 		_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 
-		//ScanHair();
-
-#ifdef CUDA
+		/*
+		// TODO #ifdef DEBUG ?
 		LARGE_INTEGER ticks;
 		QueryPerformanceCounter(&ticks);
 		int64_t startTime = ticks.QuadPart;
+		*/
 
-		float error = interval - m_timeTick;
-		m_substepTick = 0.95 * m_substepTick + 0.25 * error;
-		m_substepTick = std::max(m_substepTick, m_minSubstep);
-		m_substepTick = std::min(m_substepTick, 1.0f);
-
+		// Time passed since last computation
 		m_accumulatedInterval += interval;
-		if (!disabled && m_accumulatedInterval > 0.25f * m_minSubstep)
-		{
-			interval = std::min<float>(m_accumulatedInterval, m_timeTick * 1.2);
 
-			readTransform(interval);
+		// Exponential average - becomes the tick; the tick equals the average interval when the interval is stable.
+		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
+
+		// The tick is the given time for each computation substep. We set it to the average fps
+		// to have one average computation each frame when everything is usual.
+		// In case of poor fps, we set it to the configured minimum engine value (60 Hz),
+		// to still allow a physics with max increments of 1/60s.
+		auto tick = std::min(m_averageInterval, m_timeTick);
+
+		// No need to calculate physics when too little time has passed (time exceptionally short since last computation).
+		// This magic value directly impacts the number of computations and the time cost of the mod...
+		if (m_accumulatedInterval * 2.0f > tick)
+		{
+			// We limit the interval to 3 substeps.
+			// Additional substeps happens when there is a very sudden slowdown, we have to compute for the passed time we haven't computed.
+			// n substeps means that when instant fps is n times lower than usual current fps, we stop computing.
+			// This value impacts directly the performance when very sudden slowdown.
+			const auto maxSubSteps = 3;
+			auto remainingTimeStep = std::min(m_accumulatedInterval, tick * maxSubSteps);
+
+			readTransform(remainingTimeStep);
 			updateActiveState();
 			auto offset = applyTranslationOffset();
-			stepSimulation(interval, 5, m_substepTick);
+			stepSimulation(remainingTimeStep, 0/*=maxSubSteps, ignored*/, tick);
 			restoreTranslationOffset(offset);
 			m_accumulatedInterval = 0;
 			writeTransform();
 		}
 
+		/*
+		// TODO introduce #ifdef DEBUG
 		QueryPerformanceCounter(&ticks);
 		int64_t endTime = ticks.QuadPart;
 		QueryPerformanceFrequency(&ticks);
-		float ticks_per_ms = static_cast<float>(ticks.QuadPart) / 1e3;
-		float time = (endTime - startTime) / ticks_per_ms;
-
-		m_averageProcessingTime = (m_averageProcessingTime + time) / 2.0;
-#else
-		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
-		auto tick = std::min(m_averageInterval, m_timeTick);
-
-		m_accumulatedInterval += interval;
-		if (m_accumulatedInterval > tick * 0.25f)
-		{
-			interval = std::min<float>(m_accumulatedInterval, tick * 5);
-
-			readTransform(interval);
-			updateActiveState();
-			auto offset = applyTranslationOffset();
-			stepSimulation(interval, 5, tick);
-			restoreTranslationOffset(offset);
-			m_accumulatedInterval = 0;
-			writeTransform();
-		}
-#endif
+		// float ticks_per_ms = static_cast<float>(ticks.QuadPart) * 1e-3;
+		float lastProcessingTime = (endTime - startTime) / static_cast<float>(ticks.QuadPart) * 1e3;
+		m_averageProcessingTime = (m_averageProcessingTime + lastProcessingTime) * 0.5;
+		*/
 	}
 
 	btVector3 SkyrimPhysicsWorld::applyTranslationOffset()
@@ -137,12 +129,8 @@ namespace hdt
 			for (int i = 0; i < m_collisionObjects.size(); ++i)
 			{
 				auto rig = btRigidBody::upcast(m_collisionObjects[i]);
-				if (rig)
-				{
-					rig->getWorldTransform().getOrigin() -= center;
-				}
+				if (rig) rig->getWorldTransform().getOrigin() -= center;
 			}
-			return center;
 		}
 		return center;
 	}
@@ -253,7 +241,6 @@ namespace hdt
 		SkinnedMeshWorld::resetTransformsToOriginal();
 	}
 
-
 	void SkyrimPhysicsWorld::resetSystems()
 	{
 		std::lock_guard<decltype(m_lock)> l(m_lock);
@@ -270,7 +257,10 @@ namespace hdt
 		else if (!(e.gamePaused || mm->IsGamePaused()) && m_suspended)
 			resume();
 
-		std::lock_guard<decltype(m_lock)> l(m_lock);
+		// See comment in void ActorManager::onEvent(const FrameEvent& e) about why try_to_lock on FrameEvent.
+		std::unique_lock<decltype(m_lock)> lock(m_lock, std::try_to_lock);
+		if (!lock.owns_lock()) return;
+
 		float interval = *(float*)(RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime);
 
 		if (interval > FLT_EPSILON && !m_suspended && !m_systems.empty())
