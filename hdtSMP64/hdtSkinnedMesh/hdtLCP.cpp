@@ -492,7 +492,7 @@ namespace hdt
 	void btSolveL1T(const btScalar *L, btScalar *B, int n, int lskip1)
 	{
 		/* declare variables - Z matrix, p and q vectors, etc */
-		btScalar Z11, m11, Z21, m21, Z31, m31, Z41, m41, p1, q1, p2, p3, p4, *ex;
+		btScalar Z11, m11, Z21, /*m21, */Z31, /*m31, */Z41, /*m41, */p1, q1, p2, p3, /*p4, */* ex;
 		const btScalar *ell;
 		int lskip2, i, j;
 		//  int lskip3;
