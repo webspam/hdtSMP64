@@ -435,9 +435,9 @@ namespace hdt
 
 		if (!isFirstPersonSkeleton(skeleton))
 		{
+			std::unordered_map<IDStr, IDStr> renameMap = armor.renameMap;
 			// FIXME we probably could simplify this by using findNode as surely we don't attach Armors to lurkers skeleton?
-			auto system = SkyrimSystemCreator().createSystem(getNpcNode(skeleton), attachedNode, armor.physicsFile,
-				std::move(armor.renameMap));
+			auto system = SkyrimSystemCreator().createSystem(getNpcNode(skeleton), attachedNode, armor.physicsFile, std::move(renameMap));
 
 			if (system)
 			{
