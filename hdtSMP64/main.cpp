@@ -42,13 +42,17 @@ namespace hdt
 			if (evn && evn->opening && (!strcmp(evn->menuName.data, "Loading Menu") || !strcmp(
 				evn->menuName.data, "RaceSex Menu")))
 			{
+#ifdef _DEBUG
 				_DMESSAGE("loading menu/racesexmenu detected, scheduling physics reset on world un-suspend");
+#endif // _DEBUG
 				SkyrimPhysicsWorld::get()->suspend(true);
 			}
 
 			if (evn && !evn->opening && !strcmp(evn->menuName.data, "RaceSex Menu"))
 			{
+#ifdef _DEBUG
 				_DMESSAGE("racemenu closed, reloading meshes");
+#endif // _DEBUG
 				ActorManager::instance()->reloadMeshes();
 			}
 

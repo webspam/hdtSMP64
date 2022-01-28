@@ -34,14 +34,14 @@ namespace hdt
 
 	float LargeDot(float* a, float* b, int n)
 	{
-		register __m128 xmm0 = _mm_setzero_ps();
-		register int i;
+		__m128 xmm0 = _mm_setzero_ps();
+		int i;
 		for (i = 0; i < n - 7; i+=8, a+=8, b+=8)
 		{
-			register __m128 xmm1 = _mm_loadu_ps(a);
-			register __m128 xmm2 = _mm_loadu_ps(b);
-			register __m128 xmm3 = _mm_loadu_ps(a + 4);
-			register __m128 xmm4 = _mm_loadu_ps(b + 4);
+			__m128 xmm1 = _mm_loadu_ps(a);
+			__m128 xmm2 = _mm_loadu_ps(b);
+			__m128 xmm3 = _mm_loadu_ps(a + 4);
+			__m128 xmm4 = _mm_loadu_ps(b + 4);
 			xmm1 *= xmm2;
 			xmm3 *= xmm4;
 			xmm1 += xmm3;
@@ -492,7 +492,7 @@ namespace hdt
 	void btSolveL1T(const btScalar *L, btScalar *B, int n, int lskip1)
 	{
 		/* declare variables - Z matrix, p and q vectors, etc */
-		btScalar Z11, m11, Z21, m21, Z31, m31, Z41, m41, p1, q1, p2, p3, p4, *ex;
+		btScalar Z11, m11, Z21, /*m21, */Z31, /*m31, */Z41, /*m41, */p1, q1, p2, p3, /*p4, */* ex;
 		const btScalar *ell;
 		int lskip2, i, j;
 		//  int lskip3;
