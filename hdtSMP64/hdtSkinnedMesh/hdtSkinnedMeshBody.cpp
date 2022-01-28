@@ -268,11 +268,17 @@ __kernel void updateVertices(
 	{
 		if (m_isKinematic && body->m_isKinematic) return false;
 
-		auto res = m_canCollideWithTags.empty();
+		if (m_canCollideWithTags.empty())
+		{
+			for (auto& i : body->m_tags)
+				if (m_noCollideWithTags.find(i) != m_noCollideWithTags.end())
+					return false;
+			return true;
+		}
 		for (auto& i : body->m_tags)
 			if (m_canCollideWithTags.find(i) != m_canCollideWithTags.end())
-				return !res;
-		return res;
+				return true;
+		return false;
 	}
 
 	void SkinnedMeshBody::updateBoundingSphereAabb()
