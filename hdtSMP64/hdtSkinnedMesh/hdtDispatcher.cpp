@@ -131,7 +131,7 @@ namespace hdt
 						if (b)
 							triangle_shapes.insert(b);
 						else
-							vertex_shapes.insert(shape0->m_shape->asPerVertexShape());
+							vertex_shapes.insert(shape1->m_shape->asPerVertexShape());
 						if (a && b)
 						{
 							vertex_shapes.insert(a->m_verticesCollision);
