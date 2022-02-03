@@ -46,11 +46,12 @@ namespace hdt
 
 	void SkyrimSystem::readTransform(float timeStep)
 	{
+
 		auto newRoot = m_skeleton;
 		while (newRoot->m_parent)newRoot = newRoot->m_parent;
 		if (m_oldRoot != newRoot)
 			timeStep = RESET_PHYSICS;
-
+		
 		if (!m_initialized)
 		{
 			timeStep = RESET_PHYSICS;
@@ -59,7 +60,7 @@ namespace hdt
 
 		if (timeStep <= RESET_PHYSICS)
 		{
-			updateTransformUpDown(m_skeleton, true);
+			if (!this->block_resetting)updateTransformUpDown(m_skeleton, true);
 			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 		}
 		else if (m_skeleton->m_parent == (*g_thePlayer)->GetNiNode())
@@ -163,7 +164,7 @@ namespace hdt
 		if (node)
 		{
 			auto defaultBoneInfo = getBoneTemplate("");
-			bone = new SkyrimBone(node->m_name, node, defaultBoneInfo);
+			bone = new SkyrimBone(node->m_name, node, this->m_skeleton, defaultBoneInfo);
 
 			bone->m_localToRig = defaultBoneInfo.m_centerOfMassTransform;
 			bone->m_rigToLocal = defaultBoneInfo.m_centerOfMassTransform.inverse();
@@ -338,6 +339,164 @@ namespace hdt
 		{
 			return static_cast<SkyrimBone*>(a)->m_depth < static_cast<SkyrimBone*>(b)->m_depth;
 		});
+
+		return m_mesh->valid() ? m_mesh : nullptr;
+	}
+
+	Ref<SkyrimSystem> SkyrimSystemCreator::updateSystem(SkyrimSystem* old_system, NiNode* skeleton, NiAVObject* model, const DefaultBBP::PhysicsFile file,
+		std::unordered_map<IDStr, IDStr> renameMap)
+	{
+		auto path = file.first;
+		if (path.empty()) return nullptr;
+
+		auto loaded = readAllFile(path.c_str());
+		if (loaded.empty()) return nullptr;
+
+		m_renameMap = std::move(renameMap);
+		m_skeleton = skeleton;
+		m_model = model;
+		m_filePath = path;
+		//updateTransformUpDown(m_skeleton, true);
+
+		XMLReader reader((uint8_t*)loaded.data(), loaded.size());
+		m_reader = &reader;
+
+		m_reader->nextStartElement();
+		if (m_reader->GetName() != "system") return nullptr;
+
+		auto meshNameMap = file.second;
+
+		m_mesh = new SkyrimSystem(skeleton);
+
+		// Store original locale
+		char saved_locale[32];
+		strcpy_s(saved_locale, std::setlocale(LC_NUMERIC, nullptr));
+
+		// Set locale to en_US
+		std::setlocale(LC_NUMERIC, "en_US");
+
+		try
+		{
+			while (m_reader->Inspect())
+			{
+				if (m_reader->GetInspected() == XMLReader::Inspected::StartTag)
+				{
+					auto name = m_reader->GetName();
+					if (name == "bone")
+					{
+						readBone2(old_system);
+					}
+					else if (name == "bone-default")
+					{
+						auto clsname = m_reader->getAttribute("name", "");
+						auto extends = m_reader->getAttribute("extends", "");
+						auto defaultBoneInfo = getBoneTemplate(extends);
+						readBoneTemplate(defaultBoneInfo);
+						m_boneTemplates[clsname] = defaultBoneInfo;
+					}
+					else if (name == "per-vertex-shape")
+					{
+						auto shape = readPerVertexShape(meshNameMap);
+						if (shape && shape->m_vertices.size())
+						{
+							m_mesh->m_meshes.push_back(shape);
+							shape->m_mesh = m_mesh;
+						}
+					}
+					else if (name == "per-triangle-shape")
+					{
+						auto shape = readPerTriangleShape(meshNameMap);
+						if (shape && shape->m_vertices.size())
+						{
+							m_mesh->m_meshes.push_back(shape);
+							shape->m_mesh = m_mesh;
+						}
+					}
+					else if (name == "constraint-group")
+					{
+						auto constraint = readConstraintGroup();
+						if (constraint) m_mesh->m_constraintGroups.push_back(constraint);
+					}
+					else if (name == "generic-constraint")
+					{
+						auto constraint = readGenericConstraint();
+						if (constraint) m_mesh->m_constraints.push_back(constraint);
+					}
+					else if (name == "stiffspring-constraint")
+					{
+						auto constraint = readStiffSpringConstraint();
+						if (constraint) m_mesh->m_constraints.push_back(constraint);
+					}
+					else if (name == "conetwist-constraint")
+					{
+						auto constraint = readConeTwistConstraint();
+						if (constraint) m_mesh->m_constraints.push_back(constraint);
+					}
+					else if (name == "generic-constraint-default")
+					{
+						auto clsname = m_reader->getAttribute("name", "");
+						auto extends = m_reader->getAttribute("extends", "");
+						auto defaultGenericConstraintTemplate = getGenericConstraintTemplate(extends);
+						readGenericConstraintTemplate(defaultGenericConstraintTemplate);
+						m_genericConstraintTemplates[clsname] = defaultGenericConstraintTemplate;
+					}
+					else if (name == "stiffspring-constraint-default")
+					{
+						auto clsname = m_reader->getAttribute("name", "");
+						auto extends = m_reader->getAttribute("extends", "");
+						auto defaultStiffSpringConstraintTemplate = getStiffSpringConstraintTemplate(extends);
+						readStiffSpringConstraintTemplate(defaultStiffSpringConstraintTemplate);
+						m_stiffSpringConstraintTemplates[clsname] = defaultStiffSpringConstraintTemplate;
+					}
+					else if (name == "conetwist-constraint-default")
+					{
+						auto clsname = m_reader->getAttribute("name", "");
+						auto extends = m_reader->getAttribute("extends", "");
+						auto defaultConeTwistConstraintTemplate = getConeTwistConstraintTemplate(extends);
+						readConeTwistConstraintTemplate(defaultConeTwistConstraintTemplate);
+						m_coneTwistConstraintTemplates[clsname] = defaultConeTwistConstraintTemplate;
+					}
+					else if (name == "shape")
+					{
+						auto name = m_reader->getAttribute("name");
+						auto shape = readShape();
+						if (shape)
+						{
+							m_shapeRefs.push_back(shape);
+							m_shapes.insert(std::make_pair(name, shape));
+						}
+					}
+					else
+					{
+						Warning("unknown element - %s", name.c_str());
+						m_reader->skipCurrentElement();
+					}
+				}
+				else if (m_reader->GetInspected() == XMLReader::Inspected::EndTag)
+					break;
+			}
+		}
+		catch (const std::string& err)
+		{
+			Error("xml parse error - %s", err.c_str());
+			return nullptr;
+		}
+
+		// Restore original locale
+		std::setlocale(LC_NUMERIC, saved_locale);
+
+		if (m_reader->GetErrorCode() != Xml::ErrorCode::None)
+		{
+			Error("xml parse error - %s", m_reader->GetErrorMessage());
+			return nullptr;
+		}
+
+		m_mesh->m_skeleton = m_skeleton;
+		m_mesh->m_shapeRefs.swap(m_shapeRefs);
+		std::sort(m_mesh->m_bones.begin(), m_mesh->m_bones.end(), [](SkinnedMeshBone* a, SkinnedMeshBone* b)
+			{
+				return static_cast<SkyrimBone*>(a)->m_depth < static_cast<SkyrimBone*>(b)->m_depth;
+			});
 
 		return m_mesh->valid() ? m_mesh : nullptr;
 	}
@@ -688,7 +847,7 @@ namespace hdt
 
 		BoneTemplate cinfo = m_boneTemplates[cls];
 		readBoneTemplate(cinfo);
-		auto b = new SkyrimBone(node->m_name, node, cinfo);
+		auto b = new SkyrimBone(node->m_name, node, this->m_skeleton, cinfo);
 		b->m_localToRig = cinfo.m_centerOfMassTransform;
 		b->m_rigToLocal = cinfo.m_centerOfMassTransform.inverse();
 		b->m_marginMultipler = cinfo.m_marginMultipler;
@@ -696,6 +855,55 @@ namespace hdt
 		//b->m_collisionFilter = cinfo.m_collisionFilter;
 
 		b->readTransform(RESET_PHYSICS);
+
+		m_mesh->m_bones.push_back(b);
+	}
+
+	void SkyrimSystemCreator::readBone2(SkyrimSystem* old_system)
+	{
+		IDStr name = getRenamedBone(m_reader->getAttribute("name"));
+		IDStr cls = m_reader->getAttribute("template", "");
+
+		if (m_mesh->findBone(name))
+		{
+			Warning("Bone %s is already exist, skipped", name->cstr());
+			return;
+		}
+
+		auto node = findObjectByName(name);
+		if (!node)
+		{
+			Warning("Bone %s is not exist, skipped", name->cstr());
+			m_reader->skipCurrentElement();
+			return;
+		}
+
+		BoneTemplate cinfo = m_boneTemplates[cls];
+		readBoneTemplate(cinfo);
+		auto b = new SkyrimBone(node->m_name, node, this->m_skeleton, cinfo);
+		b->m_localToRig = cinfo.m_centerOfMassTransform;
+		b->m_rigToLocal = cinfo.m_centerOfMassTransform.inverse();
+		b->m_marginMultipler = cinfo.m_marginMultipler;
+		b->m_gravityFactor = cinfo.m_gravityFactor;
+		//b->m_collisionFilter = cinfo.m_collisionFilter;
+
+		//b->readTransform(RESET_PHYSICS);
+		auto old_b = old_system->findBone(name);
+
+		b->m_currentTransform = convertNi(b->m_skeleton->m_worldTransform) * old_b->m_origToSkeletonTransform;
+		
+		auto dest = b->m_currentTransform.asTransform() * b->m_localToRig;
+		
+		b->m_origToSkeletonTransform = old_b->m_origToSkeletonTransform;
+		b->m_origTransform = old_b->m_origTransform;
+		b->m_rig.setWorldTransform(dest);
+		b->m_rig.setInterpolationWorldTransform(dest);
+		b->m_rig.setLinearVelocity(btVector3(0, 0, 0));
+		b->m_rig.setAngularVelocity(btVector3(0, 0, 0));
+		b->m_rig.setInterpolationLinearVelocity(btVector3(0, 0, 0));
+		b->m_rig.setInterpolationAngularVelocity(btVector3(0, 0, 0));
+		b->m_rig.updateInertiaTensor();
+
 
 		m_mesh->m_bones.push_back(b);
 	}
@@ -765,7 +973,7 @@ namespace hdt
 				if (!bone)
 				{
 					auto defaultBoneInfo = getBoneTemplate("");
-					bone = new SkyrimBone(boneName, node->GetAsNiNode(), defaultBoneInfo);
+					bone = new SkyrimBone(boneName, node->GetAsNiNode(), this->m_skeleton, defaultBoneInfo);
 					m_mesh->m_bones.push_back(bone);
 				}
 
@@ -1155,7 +1363,7 @@ namespace hdt
 			if (node)
 			{
 				auto defaultBoneInfo = getBoneTemplate("");
-				bodyA = new SkyrimBone(node->m_name, node, defaultBoneInfo);
+				bodyA = new SkyrimBone(node->m_name, node, this->m_skeleton, defaultBoneInfo);
 				bodyA->m_localToRig = defaultBoneInfo.m_centerOfMassTransform;
 				bodyA->m_rigToLocal = defaultBoneInfo.m_centerOfMassTransform.inverse();
 				bodyA->m_marginMultipler = defaultBoneInfo.m_marginMultipler;
@@ -1176,7 +1384,7 @@ namespace hdt
 			if (node)
 			{
 				auto defaultBoneInfo = getBoneTemplate("");
-				bodyB = new SkyrimBone(node->m_name, node, defaultBoneInfo);
+				bodyB = new SkyrimBone(node->m_name, node, this->m_skeleton, defaultBoneInfo);
 				bodyB->m_localToRig = defaultBoneInfo.m_centerOfMassTransform;
 				bodyB->m_rigToLocal = defaultBoneInfo.m_centerOfMassTransform.inverse();
 				bodyB->m_marginMultipler = defaultBoneInfo.m_marginMultipler;

@@ -11,6 +11,8 @@
 #include <mutex>
 #include <optional>
 
+#include "DynamicHDT.h"
+
 namespace hdt
 {
 	class ActorManager
@@ -57,7 +59,7 @@ namespace hdt
 			const std::vector<Ref<SkinnedMeshBody>>& meshes() const;
 
 			void updateActive(bool active);
-		private:
+		
 			Ref<SkyrimSystem> m_physics;
 		};
 
@@ -120,7 +122,7 @@ namespace hdt
 			static NiNode* cloneNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static void renameTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 
-			const std::vector<Armor>& getArmors() { return armors; }
+			std::vector<Armor>& getArmors() { return armors; }
 
 		private:
 			bool isActiveInScene() const;
@@ -157,7 +159,7 @@ namespace hdt
 #ifdef ANNIVERSARY_EDITION
 		bool skeletonNeedsParts(NiNode * skeleton);
 #endif
-		std::vector<Skeleton> getSkeletons() const;
+		std::vector<Skeleton>& getSkeletons();//Altered by Dynamic HDT
 
 		bool m_skinNPCFaceParts = true;
 		float m_maxDistance = 1e4f;

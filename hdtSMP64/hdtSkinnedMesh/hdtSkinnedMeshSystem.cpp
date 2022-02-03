@@ -14,6 +14,9 @@ namespace hdt
 
 	void SkinnedMeshSystem::readTransform(float timeStep)
 	{
+		//Added by Dynamic HDT
+		if (this->block_resetting)return;
+
 		for (int i = 0; i < m_bones.size(); ++i)
 			m_bones[i]->readTransform(timeStep);
 

@@ -9,7 +9,7 @@ namespace hdt
 	{
 	public:
 
-		SkyrimBone(IDStr name, NiNode* node, btRigidBody::btRigidBodyConstructionInfo& ci);
+		SkyrimBone(IDStr name, NiNode* node, NiNode* skeleton, btRigidBody::btRigidBodyConstructionInfo& ci);
 
 		void resetTransformToOriginal() override;
 		void readTransform(float timeStep) override;
@@ -17,5 +17,6 @@ namespace hdt
 
 		int m_depth;
 		NiNode* m_node;
+		NiNode* m_skeleton;
 	};
 }

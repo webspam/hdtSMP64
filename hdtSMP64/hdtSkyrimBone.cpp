@@ -3,8 +3,8 @@
 
 namespace hdt
 {
-	SkyrimBone::SkyrimBone(IDStr name, NiNode* node, btRigidBody::btRigidBodyConstructionInfo& ci)
-		: SkinnedMeshBone(name, ci), m_node(node)
+	SkyrimBone::SkyrimBone(IDStr name, NiNode* node, NiNode* skeleton, btRigidBody::btRigidBodyConstructionInfo& ci)
+		: SkinnedMeshBone(name, ci), m_node(node), m_skeleton(skeleton)
 	{
 		if (ci.m_mass)
 			m_rig.setCollisionFlags(0);
@@ -52,6 +52,7 @@ namespace hdt
 
 		if (timeStep <= RESET_PHYSICS)
 		{
+			m_origToSkeletonTransform = convertNi(m_skeleton->m_worldTransform).inverse() * convertNi(m_node->m_worldTransform);
 			m_origTransform = convertNi(m_node->m_localTransform);
 			m_rig.setWorldTransform(dest);
 			m_rig.setInterpolationWorldTransform(dest);

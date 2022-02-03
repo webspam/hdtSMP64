@@ -14,7 +14,6 @@ namespace hdt
 	class SkyrimSystem : public SkinnedMeshSystem
 	{
 		friend class SkyrimSystemCreator;
-
 	public:
 		struct BoneData
 		{
@@ -33,6 +32,7 @@ namespace hdt
 
 		const std::vector<Ref<SkinnedMeshBody>>& meshes() const { return m_meshes; }
 
+
 		Ref<NiNode> m_skeleton;
 		Ref<NiNode> m_oldRoot;
 		bool m_initialized = false;
@@ -49,7 +49,8 @@ namespace hdt
 		SkyrimSystemCreator();
 		Ref<SkyrimSystem> createSystem(NiNode* skeleton, NiAVObject* model, const DefaultBBP::PhysicsFile file,
 		                             std::unordered_map<IDStr, IDStr> renameMap);
-
+		Ref<SkyrimSystem> updateSystem(SkyrimSystem* old_system, NiNode* skeleton, NiAVObject* model, const DefaultBBP::PhysicsFile file,
+			std::unordered_map<IDStr, IDStr> renameMap);
 	protected:
 
 		using VertexOffsetMap = std::unordered_map<std::string, int>;
@@ -166,6 +167,7 @@ namespace hdt
 		const ConeTwistConstraintTemplate& getConeTwistConstraintTemplate(const IDStr& name);
 
 		void readBone();
+		void readBone2(SkyrimSystem* old_system);
 		Ref<SkyrimBody> readPerVertexShape(DefaultBBP::NameMap meshNameMap);
 		Ref<SkyrimBody> readPerTriangleShape(DefaultBBP::NameMap meshNameMap);
 		Ref<Generic6DofConstraint> readGenericConstraint();
