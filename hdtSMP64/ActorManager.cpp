@@ -698,18 +698,18 @@ namespace hdt
 
 	void ActorManager::Skeleton::scanHead()
 	{
-		if (!this->head.headNode)
-		{
-#ifdef _DEBUG
-			_DMESSAGE("actor has no head node");
-#endif // _DEBUG
-			return;
-		}
-
 		if (isFirstPersonSkeleton(this->skeleton))
 		{
 #ifdef _DEBUG
 			_DMESSAGE("not scanning head of first person skeleton");
+#endif // _DEBUG
+			return;
+		}
+
+		if (!this->head.headNode)
+		{
+#ifdef _DEBUG
+			_DMESSAGE("actor has no head node");
 #endif // _DEBUG
 			return;
 		}
