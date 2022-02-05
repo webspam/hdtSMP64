@@ -841,6 +841,15 @@
     <ClInclude Include="hdtSkinnedMesh\hdtLCP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dhdtOverrideManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dhdtPapyrusFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicHDT.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
@@ -1404,6 +1413,15 @@
     <ClCompile Include="hdtSkinnedMesh\hdtLCP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dhdtOverrideManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dhdtPapyrusFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DynamicHDT.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="export.def">
@@ -1414,6 +1432,7 @@
     <None Include="hdtSkinnedMesh\clkernel\updateVertices.cl" />
     <None Include="hdtSkinnedMesh\clkernel\updateVShape.cl" />
     <None Include="hdtSkinnedMesh\clkernel\updateVtxShape.cl" />
+    <None Include="DaymarOn.ruleset" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="hdtSkinnedMesh\hdtCudaCollision.cu" />
