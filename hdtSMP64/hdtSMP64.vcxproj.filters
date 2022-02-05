@@ -15,15 +15,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="DynamicHDT">
-      <UniqueIdentifier>{f65833a6-40d9-408e-9f50-cae1ebfe18b4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="DynamicHDT\headers">
-      <UniqueIdentifier>{2c39fbaa-5fc3-46c7-bb3c-0c806b54d264}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="DynamicHDT\source">
-      <UniqueIdentifier>{c379dba5-bf12-47e9-82bd-dddc3634634d}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -850,15 +841,6 @@
     <ClInclude Include="hdtSkinnedMesh\hdtLCP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DynamicHDT.h">
-      <Filter>DynamicHDT\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="dhdtPapyrusFunctions.h">
-      <Filter>DynamicHDT\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="dhdtOverrideManager.h">
-      <Filter>DynamicHDT\headers</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
@@ -1421,15 +1403,6 @@
     </ClCompile>
     <ClCompile Include="hdtSkinnedMesh\hdtLCP.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dhdtOverrideManager.cpp">
-      <Filter>DynamicHDT\source</Filter>
-    </ClCompile>
-    <ClCompile Include="dhdtPapyrusFunctions.cpp">
-      <Filter>DynamicHDT\source</Filter>
-    </ClCompile>
-    <ClCompile Include="DynamicHDT.cpp">
-      <Filter>DynamicHDT\source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
