@@ -30,7 +30,6 @@ namespace hdt
 		std::vector<std::shared_ptr<btCollisionShape>> m_shapeRefs;
 		SkinnedMeshWorld* m_world = nullptr;
 
-		//Added by Dynamic HDT
 		bool block_resetting = false;
 		std::vector<Ref<SkinnedMeshBone>>& getBones() { return m_bones; };
 

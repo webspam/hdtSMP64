@@ -409,7 +409,6 @@ namespace hdt
 			return true;
 		}
 
-		//Added by Dynamic HDT
 		if (_strnicmp(buffer, "QueryOverride", MAX_PATH) == 0) {
 			Console_Print(hdt::Override::OverrideManager::GetSingleton()->queryOverrideData().c_str());
 			return true;
@@ -577,7 +576,6 @@ extern "C" {
 #endif
 					}
 
-					//Added by Dynamic HDT
 					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame) {
 						auto OM = hdt::Override::OverrideManager::GetSingleton();
 						std::string save_name = reinterpret_cast<char*>(msg->data);
@@ -622,7 +620,6 @@ extern "C" {
 			SafeWriteBuf(reinterpret_cast<uintptr_t>(hijackedCommand), &cmd, sizeof(cmd));
 		}
 
-		//Added by Dynamic HDT
 		hdt::papyrus::RegisterAllFunctions(reinterpret_cast<SKSEPapyrusInterface*>(skse->QueryInterface(kInterface_Papyrus)));
 
 		return true;

@@ -278,7 +278,6 @@ namespace hdt
 
 		float interval = *(float*)(RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime);
 
-		//Altered by Dynamic HDT
 		if (interval > FLT_EPSILON && !m_suspended && !m_isStasis && !m_systems.empty())
 		{
 			doUpdate(interval);

@@ -60,7 +60,8 @@ namespace hdt
 
 		if (timeStep <= RESET_PHYSICS)
 		{
-			if (!this->block_resetting)updateTransformUpDown(m_skeleton, true);
+			if (!this->block_resetting)
+				updateTransformUpDown(m_skeleton, true);
 			m_lastRootRotation = convertNi(m_skeleton->m_worldTransform.rot);
 		}
 		else if (m_skeleton->m_parent == (*g_thePlayer)->GetNiNode())

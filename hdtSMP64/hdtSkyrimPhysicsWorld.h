@@ -53,10 +53,8 @@ namespace hdt
 			}
 		}
 
-		//Added by Dynamic HDT
 		void suspendSimulationUntilFinished(std::function<void(void)> process);
-		//Added by Dynamic HDT
-		std::atomic_bool m_isStasis;
+		std::atomic_bool m_isStasis = false;
 
 		btVector3 applyTranslationOffset();
 		void restoreTranslationOffset(const btVector3&);

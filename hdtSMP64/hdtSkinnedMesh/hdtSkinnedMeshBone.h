@@ -24,7 +24,7 @@ namespace hdt
 		btTransform m_rigToLocal;
 		btQsTransform m_currentTransform;
 		btQsTransform m_origTransform;
-		btQsTransform m_origToSkeletonTransform;//Added by Dynamic HDT
+		btQsTransform m_origToSkeletonTransform;
 
 		std::vector<IDStr> m_canCollideWithBone;
 		std::vector<IDStr> m_noCollideWithBone;
