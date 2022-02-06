@@ -62,7 +62,7 @@ namespace hdt
 			const std::vector<Ref<SkinnedMeshBody>>& meshes() const;
 
 			void updateActive(bool active);
-		
+
 			Ref<SkyrimSystem> m_physics;
 		};
 
@@ -166,6 +166,7 @@ namespace hdt
 		std::vector<Skeleton>& getSkeletons();//Altered by Dynamic HDT
 
 		bool m_skinNPCFaceParts = true;
+		bool m_autoAdjustMaxSkeletons = true; // Whether to dynamically change the maxActive skeletons to maintain min_fps
 		float m_maxDistance = 1e4f;
 		float m_maxDistance2 = 1e8f; // The maxDistance value needs to be transformed to be useful, this is the useful value.
 		float m_maxAngle = 45.0f;

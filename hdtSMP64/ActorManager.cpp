@@ -54,7 +54,7 @@ namespace hdt
 		{
 			auto npcForm = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESNPC);
 			if (npcForm && npcForm->race.race
-				&&!strcmp(npcForm->race.race->models[0].GetModelName(), "Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
+				&& !strcmp(npcForm->race.race->models[0].GetModelName(), "Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
 				shouldFix = true;
 		}
 		return findNode(skeleton, shouldFix ? "NPC Root [Root]" : "NPC");
@@ -310,7 +310,7 @@ namespace hdt
 	}
 
 #ifdef ANNIVERSARY_EDITION
-	bool ActorManager::skeletonNeedsParts(NiNode * skeleton)
+	bool ActorManager::skeletonNeedsParts(NiNode* skeleton)
 	{
 		return !isFirstPersonSkeleton(skeleton);
 		/*
@@ -766,7 +766,7 @@ namespace hdt
 			{
 #ifdef _DEBUG
 				_DMESSAGE("previous head part generated physics system for file %s, skipping",
-				          headPart.physicsFile.first.c_str());
+					headPart.physicsFile.first.c_str());
 #endif // _DEBUG
 				continue;
 			}
@@ -775,7 +775,7 @@ namespace hdt
 
 #ifdef _DEBUG
 			_DMESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name,
-			          headPart.physicsFile.first.c_str());
+				headPart.physicsFile.first.c_str());
 #endif // _DEBUG
 			physicsDupes.insert(headPart.physicsFile.first);
 			auto system = SkyrimSystemCreator().createSystem(npc, this->head.headNode, headPart.physicsFile,
@@ -848,7 +848,7 @@ namespace hdt
 
 		// Skinning
 #ifdef _DEBUG
-		_DMESSAGE("skinning geometry to skeleton");		
+		_DMESSAGE("skinning geometry to skeleton");
 #endif // _DEBUG
 
 		if (!geometry->m_spSkinInstance || !geometry->m_spSkinInstance->m_spSkinData)
@@ -925,7 +925,7 @@ namespace hdt
 #ifdef _DEBUG
 										_DMESSAGE("npc root fadenode found");
 #endif // _DEBUG
-										head.npcFaceGeomNode = rootFadeNode;							
+										head.npcFaceGeomNode = rootFadeNode;
 									}
 #ifdef _DEBUG
 									else
@@ -999,7 +999,7 @@ namespace hdt
 				boneName = renameIt->second->cstr();
 				hasRenames = true;
 			}
-			
+
 			auto boneNode = findNode(this->npc, boneName);
 
 			if (!boneNode && !hasMerged)
@@ -1047,8 +1047,7 @@ namespace hdt
 					boneName = postMergeRenameIt->second->cstr();
 					hasRenames = true;
 				}
-				
-				boneNode = findNode(this->npc, boneName);		
+
 			}
 
 			if (!boneNode)

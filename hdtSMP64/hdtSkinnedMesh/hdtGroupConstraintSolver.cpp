@@ -56,7 +56,7 @@ namespace hdt
 
 	// Enhanced version of gResolveSingleConstraintRowGeneric_sse2 with AVX
 	static btScalar gResolveSingleConstraintRowGeneric_avx256(btSolverBody& body1, btSolverBody& body2,
-	                                                          const btSolverConstraint& c)
+		const btSolverConstraint& c)
 	{
 		__m128 tmp = _mm_set_ps1(c.m_jacDiagABInv);
 		__m128 deltaImpulse = _mm_set_ps1(c.m_rhs - btScalar(c.m_appliedImpulse) * c.m_cfm);
@@ -65,14 +65,14 @@ namespace hdt
 
 		__m256 invMass = pack256(body1.internalGetInvMass().mVec128, body2.internalGetInvMass().mVec128);
 		__m256 deltaLinearVelocity = pack256(body1.internalGetDeltaLinearVelocity().mVec128,
-		                                     body2.internalGetDeltaLinearVelocity().mVec128);
+			body2.internalGetDeltaLinearVelocity().mVec128);
 		__m256 deltaAngularVelocity = pack256(body1.internalGetDeltaAngularVelocity().mVec128,
-		                                      body2.internalGetDeltaAngularVelocity().mVec128);
+			body2.internalGetDeltaAngularVelocity().mVec128);
 
 		__m256 contactNormal = pack256(c.m_contactNormal1.mVec128, c.m_contactNormal2.mVec128);
 		__m256 relposCrossNormal = pack256(c.m_relpos1CrossNormal.mVec128, c.m_relpos2CrossNormal.mVec128);
 		__m256 deltaVelDotn = _mm256_add_ps(_mm256_dp_ps(contactNormal, deltaLinearVelocity, 0x7f),
-		                                    _mm256_dp_ps(relposCrossNormal, deltaAngularVelocity, 0x7f));
+			_mm256_dp_ps(relposCrossNormal, deltaAngularVelocity, 0x7f));
 		deltaImpulse = FMNADD(_mm256_castps256_ps128(deltaVelDotn), tmp, deltaImpulse);
 		deltaImpulse = FMNADD(_mm256_extractf128_ps(deltaVelDotn, 1), tmp, deltaImpulse);
 
@@ -107,7 +107,7 @@ namespace hdt
 
 	// Enhanced version of gResolveSingleConstraintRowGeneric_sse2 with AVX
 	static btScalar gResolveSingleConstraintRowLowerLimit_avx256(btSolverBody& body1, btSolverBody& body2,
-	                                                             const btSolverConstraint& c)
+		const btSolverConstraint& c)
 	{
 		__m128 tmp = _mm_set_ps1(c.m_jacDiagABInv);
 		__m128 deltaImpulse = _mm_set_ps1(c.m_rhs - btScalar(c.m_appliedImpulse) * c.m_cfm);
@@ -115,14 +115,14 @@ namespace hdt
 
 		__m256 invMass = pack256(body1.internalGetInvMass().mVec128, body2.internalGetInvMass().mVec128);
 		__m256 deltaLinearVelocity = pack256(body1.internalGetDeltaLinearVelocity().mVec128,
-		                                     body2.internalGetDeltaLinearVelocity().mVec128);
+			body2.internalGetDeltaLinearVelocity().mVec128);
 		__m256 deltaAngularVelocity = pack256(body1.internalGetDeltaAngularVelocity().mVec128,
-		                                      body2.internalGetDeltaAngularVelocity().mVec128);
+			body2.internalGetDeltaAngularVelocity().mVec128);
 
 		__m256 contactNormal = pack256(c.m_contactNormal1.mVec128, c.m_contactNormal2.mVec128);
 		__m256 relposCrossNormal = pack256(c.m_relpos1CrossNormal.mVec128, c.m_relpos2CrossNormal.mVec128);
 		__m256 deltaVelDotn = _mm256_add_ps(_mm256_dp_ps(contactNormal, deltaLinearVelocity, 0x7f),
-		                                    _mm256_dp_ps(relposCrossNormal, deltaAngularVelocity, 0x7f));
+			_mm256_dp_ps(relposCrossNormal, deltaAngularVelocity, 0x7f));
 		deltaImpulse = FMNADD(_mm256_castps256_ps128(deltaVelDotn), tmp, deltaImpulse);
 		deltaImpulse = FMNADD(_mm256_extractf128_ps(deltaVelDotn, 1), tmp, deltaImpulse);
 		//const __m128 deltaVel1Dotn = _mm_add_ps(DOT_PRODUCT(c.m_contactNormal1.mVec128, body1.internalGetDeltaLinearVelocity().mVec128), DOT_PRODUCT(c.m_relpos1CrossNormal.mVec128, body1.internalGetDeltaAngularVelocity().mVec128));
@@ -170,7 +170,7 @@ namespace hdt
 	}
 
 	NonContactSolverTask::NonContactSolverTask(SolverBodyMt* A, SolverBodyMt* B, btSolverConstraint** begin,
-	                                           btSolverConstraint** end, btSingleConstraintRowSolver s)
+		btSolverConstraint** end, btSingleConstraintRowSolver s)
 		: SolverTask(A, B), m_begin(begin), m_end(end), m_solver(s)
 	{
 		std::random_device rng;
@@ -188,8 +188,8 @@ namespace hdt
 	}
 
 	ContactSolverTask::ContactSolverTask(SolverBodyMt* A, SolverBodyMt* B, btSolverConstraint* c,
-	                                     btSolverConstraint* f0, btSolverConstraint* f1, btSingleConstraintRowSolver sl,
-	                                     btSingleConstraintRowSolver s)
+		btSolverConstraint* f0, btSolverConstraint* f1, btSingleConstraintRowSolver sl,
+		btSingleConstraintRowSolver s)
 		: SolverTask(A, B), m_contact(c), m_friction0(f0), m_friction1(f1), m_solver(s), m_solverLowerLimit(sl)
 	{
 	}
@@ -233,13 +233,13 @@ namespace hdt
 	}
 
 	btScalar GroupConstraintSolver::solveGroupCacheFriendlySetup(btCollisionObject** bodies, int numBodies,
-	                                                             btPersistentManifold** manifoldPtr, int numManifolds,
-	                                                             btTypedConstraint** constraints, int numConstraints,
-	                                                             const btContactSolverInfo& infoGlobal,
-	                                                             btIDebugDraw* debugDrawer)
+		btPersistentManifold** manifoldPtr, int numManifolds,
+		btTypedConstraint** constraints, int numConstraints,
+		const btContactSolverInfo& infoGlobal,
+		btIDebugDraw* debugDrawer)
 	{
 		auto ret = Base::solveGroupCacheFriendlySetup(bodies, numBodies, manifoldPtr, numManifolds, constraints,
-		                                              numConstraints, infoGlobal, debugDrawer);
+			numConstraints, infoGlobal, debugDrawer);
 
 		concurrency::parallel_for_each(m_groups.begin(), m_groups.end(), [&](ConstraintGroup* i)
 		{
@@ -273,11 +273,11 @@ namespace hdt
 					m_nonContactConstraintRowPtrs.push_back(i);
 
 				std::sort(m_nonContactConstraintRowPtrs.begin(), m_nonContactConstraintRowPtrs.end(),
-				          [](btSolverConstraint* a, btSolverConstraint* b)
-				          {
-					          return ((static_cast<uint64_t>(a->m_solverBodyIdA) << 32) | a->m_solverBodyIdB) < ((
-						          static_cast<uint64_t>(b->m_solverBodyIdA) << 32) | b->m_solverBodyIdB);
-				          });
+					[](btSolverConstraint* a, btSolverConstraint* b)
+					{
+						return ((static_cast<uint64_t>(a->m_solverBodyIdA) << 32) | a->m_solverBodyIdB) < ((
+							static_cast<uint64_t>(b->m_solverBodyIdA) << 32) | b->m_solverBodyIdB);
+					});
 			}
 
 			SolverBodyMt* lastA = nullptr;
@@ -295,7 +295,7 @@ namespace hdt
 					{
 						auto task = std::static_pointer_cast<SolverTask>(
 							std::make_shared<NonContactSolverTask>(lastA, lastB, lastBegin, curr,
-							                                       getActiveConstraintRowSolverGeneric()));
+								getActiveConstraintRowSolverGeneric()));
 						m_tasks.push_back(task);
 						m_nonContactTasks.push_back(task);
 					}
@@ -344,8 +344,8 @@ namespace hdt
 			auto b = &m_bodiesMt[c->m_solverBodyIdB];
 			auto f0 = &m_tmpSolverContactFrictionConstraintPool[i * multiplier];
 			auto f1 = infoGlobal.m_solverMode & SOLVER_USE_2_FRICTION_DIRECTIONS
-				          ? &m_tmpSolverContactFrictionConstraintPool[i * multiplier + 1]
-				          : nullptr;
+				? &m_tmpSolverContactFrictionConstraintPool[i * multiplier + 1]
+				: nullptr;
 			auto task = std::static_pointer_cast<SolverTask>(std::make_shared<ContactSolverTask>(
 				a, b, c, f0, f1, getActiveConstraintRowSolverLowerLimit(), getActiveConstraintRowSolverGeneric()));
 			m_tasks.push_back(task);
@@ -359,7 +359,7 @@ namespace hdt
 	}
 
 	btScalar GroupConstraintSolver::solveGroupCacheFriendlyFinish(btCollisionObject** bodies, int numBodies,
-	                                                              const btContactSolverInfo& infoGlobal)
+		const btContactSolverInfo& infoGlobal)
 	{
 		auto ret = Base::solveGroupCacheFriendlyFinish(bodies, numBodies, infoGlobal);
 		m_tasks.clear();
@@ -392,14 +392,14 @@ namespace hdt
 	}
 
 	btScalar GroupConstraintSolver::solveSingleIteration(int iteration, btCollisionObject** bodies, int numBodies,
-	                                                     btPersistentManifold** manifoldPtr, int numManifolds,
-	                                                     btTypedConstraint** constraints, int numConstraints,
-	                                                     const btContactSolverInfo& infoGlobal,
-	                                                     btIDebugDraw* debugDrawer)
+		btPersistentManifold** manifoldPtr, int numManifolds,
+		btTypedConstraint** constraints, int numConstraints,
+		const btContactSolverInfo& infoGlobal,
+		btIDebugDraw* debugDrawer)
 	{
 		int maxIterations = m_maxOverrideNumSolverIterations > infoGlobal.m_numIterations
-			                    ? m_maxOverrideNumSolverIterations
-			                    : infoGlobal.m_numIterations;
+			? m_maxOverrideNumSolverIterations
+			: infoGlobal.m_numIterations;
 		if (iteration <= (maxIterations * 3 + 3) / 4)
 		{
 			concurrency::parallel_for_each(m_tasks.begin(), m_tasks.end(),

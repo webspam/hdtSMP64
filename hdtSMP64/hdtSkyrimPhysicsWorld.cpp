@@ -206,11 +206,11 @@ namespace hdt
 				else if (j.second.size())
 				{
 					std::sort(j.second.begin(), j.second.end(), [](SkyrimBody* a, SkyrimBody* b)
-					{
-						if (a->m_disablePriority != b->m_disablePriority)
-							return a->m_disablePriority > b->m_disablePriority;
-						return a < b;
-					});
+						{
+							if (a->m_disablePriority != b->m_disablePriority)
+								return a->m_disablePriority > b->m_disablePriority;
+							return a < b;
+						});
 
 					for (auto& k : j.second)
 						k->m_disabled = true;

@@ -153,23 +153,23 @@ namespace hdt
 			if (doRemap)
 			{
 				auto start = std::find_if(remap.entries.rbegin(), remap.entries.rend(), [&](const RemapEntry& e)
-				{ return nameMap.find(e.second) != nameMap.end(); });
+					{ return nameMap.find(e.second) != nameMap.end(); });
 				auto end = std::find_if(start, remap.entries.rend(), [&](const RemapEntry& e)
-				{ return e.first != start->first; });
+					{ return e.first != start->first; });
 				if (start != remap.entries.rend())
 				{
 					auto& s = nameMap.insert({ remap.name, { } }).first;
 					std::for_each(start, end, [&](const RemapEntry& e)
-					{
-						auto it = nameMap.find(e.second);
-						if (it != nameMap.end())
 						{
-							std::for_each(it->second.begin(), it->second.end(), [&](const std::string& name)
+							auto it = nameMap.find(e.second);
+							if (it != nameMap.end())
 							{
-								s->second.insert(name);
-							});
-						}
-					});
+								std::for_each(it->second.begin(), it->second.end(), [&](const std::string& name)
+									{
+										s->second.insert(name);
+									});
+							}
+						});
 				}
 			}
 		}

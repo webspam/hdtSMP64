@@ -3,7 +3,7 @@
 Fork of [https://github.com/Karonar1/hdtSMP64] by Karonar1, of fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
-## Changes 
+## Changes
 
 + Managed AE version, and corresponding SKSE (currently 1.6.353 and 2.1.5).
 + Added maximum angle in ActorManager. A max angle can be used to specify physics on NPCs within a field of view.
@@ -158,7 +158,7 @@ You will need:
 + Visual Studio 2019 (any edition)
 + Git
 + CMake
-+ CUDA 10.2
++ CUDA 11.6
 
 Open a VS2019 command prompt ("x64 Native Tools Command Prompt for VS2019"). Download and build Detours and
 Bullet:
@@ -181,7 +181,7 @@ supports it.
 + Note that AVX support in Bullet and the HDT-SMP plugin itself are independent configuration options. Enable
   it in both for maximum performance; disable it in both for maximum compatibility.
 
-Open D:\Dev-noAVX\bullet3\BULLET_PHYSICS.sln in Visual Studio, select the Release configuration, then 
+Open D:\Dev-noAVX\bullet3\BULLET_PHYSICS.sln in Visual Studio, select the Release configuration, then
 Build -> Build solution.
 
 Download skse64_2_00_19.7z and unpack into Dev-noAVX (source code is included in the official distribution),

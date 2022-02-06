@@ -15,7 +15,7 @@ namespace hdt {
 
 		bool RegisterAllFunctions(SKSEPapyrusInterface* a_papy_intfc);
 
-		bool ReloadPhysicsFile(StaticFunctionTag *base, Actor* on_actor, TESObjectARMA* on_item, BSFixedString physics_file_path, bool persist, bool debug);
+		bool ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, TESObjectARMA* on_item, BSFixedString physics_file_path, bool persist, bool debug);
 
 		bool SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSFixedString old_physics_file_path, BSFixedString new_physics_file_path, bool persist, bool verbose_log);
 

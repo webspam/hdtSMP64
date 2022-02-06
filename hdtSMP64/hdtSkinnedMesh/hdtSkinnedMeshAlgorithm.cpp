@@ -21,7 +21,7 @@ namespace hdt
 	{
 		e_CPU,
 		e_CPURefactored,
-// Remove if useless
+		// Remove if useless
 #ifndef CUDA
 		e_CUDA
 #endif // !CUDA
@@ -362,13 +362,13 @@ namespace hdt
 		}
 	};
 
-// [31/12/2021 DaydreamingDay] TODO See if the block can be removed with the enum.
+	// [31/12/2021 DaydreamingDay] TODO See if the block can be removed with the enum.
 #ifndef CUDA
 	// Dispatcher specialization for sphere-triangle collisions on CUDA. Sphere-sphere collisions will
 	// continue to use the CPU dispatcher. Doesn't actually do anything yet (and will fail to compile).
 	template <bool SwapResults>
 	struct CollisionCheckDispatcher<PerTriangleShape, SwapResults, e_CUDA>
-	: public CollisionCheckBase2<PerTriangleShape, SwapResults>
+		: public CollisionCheckBase2<PerTriangleShape, SwapResults>
 	{};
 #endif
 
@@ -584,7 +584,7 @@ namespace hdt
 	}
 
 	void SkinnedMeshAlgorithm::MergeBuffer::doMerge(SkinnedMeshShape* a, SkinnedMeshShape* b,
-	                                                CollisionResult* collision, int count)
+		CollisionResult* collision, int count)
 	{
 		for (int i = 0; i < count; ++i)
 		{
@@ -631,7 +631,7 @@ namespace hdt
 	}
 
 	void SkinnedMeshAlgorithm::MergeBuffer::apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
-	                                              CollisionDispatcher* dispatcher)
+		CollisionDispatcher* dispatcher)
 	{
 		for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
 		{
@@ -762,7 +762,7 @@ namespace hdt
 #endif
 
 	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
-	                                            CollisionDispatcher* dispatcher)
+		CollisionDispatcher* dispatcher)
 	{
 		MergeBuffer merge;
 		merge.alloc(body0->m_skinnedBones.size(), body1->m_skinnedBones.size());
@@ -771,16 +771,16 @@ namespace hdt
 		if (body0->m_shape->asPerTriangleShape() && body1->m_shape->asPerTriangleShape())
 		{
 			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge,
-			                 collision);
+				collision);
 			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge,
-			                 collision);
+				collision);
 		}
 		else if (body0->m_shape->asPerTriangleShape())
 			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge,
-			                 collision);
+				collision);
 		else if (body1->m_shape->asPerTriangleShape())
 			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge,
-			                 collision);
+				collision);
 		else processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), merge, collision);
 
 		delete[] collision;
