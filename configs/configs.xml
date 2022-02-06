@@ -2,6 +2,13 @@
 
 <configs>
   <smp>
+    <!-- logLevel: level of logs
+              kLevel_FatalError = 0,
+              kLevel_Error,
+              kLevel_Warning,
+              kLevel_Message,
+              kLevel_VerboseMessage,
+              kLevel_DebugMessage = 5  -->
     <logLevel>3</logLevel>
     <!-- enableNPCFaceParts: enable physics for NPC face parts -->
     <enableNPCFaceParts>true</enableNPCFaceParts>
@@ -14,14 +21,35 @@
     <unclampedResets>true</unclampedResets>
     <!-- unclampedResetAngle: angle to reset at. you'll probably want to tweak this until you're happy. -->
     <unclampedResetAngle>130.0</unclampedResetAngle>
-    <!-- maxDistance: maximum distance to apply physics to an actor. A few cell transitions (notably Blue Palace -> Solitude streets)
+    <!-- maxmaximumDistanceDistance: maximum distance from player to apply physics to an actor. A few cell transitions (notably Blue Palace -> Solitude streets)
 						leave NPCs loaded and technically active, but extremely distant, and this makes collision checking extremely
 						slow. The default value of 10000 should disable those NPCs, while having no effect on NPCs in view range.
 						Set lower values for more performance - around 2000 is good. -->
     <maximumDistance>10000.0</maximumDistance>
-    <!-- maximumAngle: maximum angle to apply physics to an actor. 0 degrees is straight ahead. Values over 180 would disable this check
+    <!-- maximumAngle: maximum angle in field of view to apply physics to an actor. 0 degrees is straight ahead. Values over 180 would disable this check
 						Set lower values for more performance - default is 45 degrees. -->
     <maximumAngle>45.0</maximumAngle>
+    <!-- maximumActiveSkeletons: maximum number of active skeletons/actors for physics. This is a hard limit to autoAdjustMaxSkeletons.
+						Set lower values for more performance - default is 20. -->
+    <maximumActiveSkeletons>20</maximumActiveSkeletons>
+    <!-- autoAdjustMaxSkeletons: enable lowering of maxActiveSkeletons to maintain min-fps (see solver/min-fps) between 1 and maximumActiveSkeletons.
+            This can result in skeletons going inactive with heavy load to try to preserve fps. The algorithm will prioritize closer skeletons within
+            the center of your field of view. If disabled, fps may drop with many active Skeletons.
+						Default is true. -->
+    <autoAdjustMaxSkeletons>true</autoAdjustMaxSkeletons>
+    <!-- percentageOfFrameTime: percentage of cpu time per frame doing hdt (integers 1 to 100). Profiler shows 30% is reasonable.
+            Match this to how much frame time is used to calculate physics. This is used for autoAdjustMaxSkeletons to calcualte how many
+            activeSkeletons to allow.
+            Setting higher than your actual percentage will result in poor performance because the adjuster will assume you have more
+            time than available to calculate physics.
+            Setting lower may set maximumActiveSkeletons too low and leave cpu time unused.
+            Default is 30.-->
+    <percentageOfFrameTime>30</percentageOfFrameTime>
+    <!-- sampleSize: how many samples (sample taken every min_fps frames/every second) for determining average ms per activeSkeleton.
+            This is used to log performance statistics and also used with autoAdjustMaxSkeletons to calculate the running average which is used to
+            calculate the maximumActiveSkeletons. Increasing sample size will flatten outliers but can slow adjustment responsiveness.
+						Default is 5. -->
+    <sampleSize>5</sampleSize>
     <!-- enableCuda: experimental GPU collision algorithm, disabled by default. Try this if you have a slow CPU and fast GPU -->
     <enableCuda>false</enableCuda>
   </smp>

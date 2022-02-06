@@ -79,11 +79,13 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->m_unclampedResets = reader.readBool();
 				else if (reader.GetLocalName() == "unclampedResetAngle")
 					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
+				else if (reader.GetLocalName() == "percentageOfFrameTime")
+					SkyrimPhysicsWorld::get()->m_percentageOfFrameTime = std::clamp(reader.readInt() * 10, 1, 1000);
 				else if (reader.GetLocalName() == "maximumDistance")
 				{
 					auto f = reader.readFloat();
 					ActorManager::instance()->m_maxDistance = f;
-					ActorManager::instance()->m_maxDistance2 = f*f;
+					ActorManager::instance()->m_maxDistance2 = f * f;
 				}
 #ifdef CUDA
 				else if (reader.GetLocalName() == "enableCuda")
@@ -104,6 +106,16 @@ namespace hdt
 						ActorManager::instance()->m_cosMaxAngle2 = cosf(f / MATH_PI * 180.0f) * cosf(f / MATH_PI * 180.0f);
 					}
 				}
+				else if (reader.GetLocalName() == "maximumActiveSkeletons")
+				{
+					ActorManager::instance()->m_maxActiveSkeletons = reader.readInt();
+				}
+				else if (reader.GetLocalName() == "autoAdjustMaxSkeletons")
+				{
+					ActorManager::instance()->m_autoAdjustMaxSkeletons = reader.readBool();
+				}
+				else if (reader.GetLocalName() == "sampleSize")
+					ActorManager::instance()->m_sampleSize = std::max(reader.readInt(), 1);
 				else
 				{
 					_WARNING("Unknown config : %s", reader.GetLocalName());
