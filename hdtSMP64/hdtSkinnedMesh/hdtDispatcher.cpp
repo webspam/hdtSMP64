@@ -8,13 +8,13 @@
 
 #include <LinearMath/btPoolAllocator.h>
 
-// #ifdef CUDA
+#ifdef CUDA
 // If defined, triangle-vertex and vertex-vertex collision results aren't applied until the next frame. This
 // allows GPU collision detection to run concurrently with the rest of the game engine, instead of leaving
 // the CPU idle waiting for the results. Triangle-triangle collisions are assumed to require the higher
 // accuracy, and are always applied in the current frame.
-//#define CUDA_DELAYED_COLLISIONS
-// #endif
+#define CUDA_DELAYED_COLLISIONS
+#endif
 
 namespace hdt
 {
