@@ -1,10 +1,14 @@
 #pragma once
 #include "DynamicHDT.h"
-
+#ifndef SKYRIMVR
 #include <skse64/skse64/GameReferences.h>
-
 #include <skse64/skse64/PapyrusVM.h>
 #include <skse64/skse64/PapyrusNativeFunctions.h>
+#else
+#include <sksevr/skse64/GameReferences.h>
+#include <sksevr/skse64/PapyrusVM.h>
+#include <sksevr/skse64/PapyrusNativeFunctions.h>
+#endif
 
 namespace hdt {
 	namespace papyrus {

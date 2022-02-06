@@ -132,9 +132,18 @@ namespace hdt
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
 		// We get the camera, its position and orientation.
+#ifndef SKYRIMVR
 		auto camera = PlayerCamera::GetSingleton()->cameraNode->m_worldTransform;
 		auto cameraPosition = camera.pos;
 		auto cameraOrientation = camera.rot * NiPoint3(0., 1., 0.); // The camera matrix is relative to the world.
+#else
+		//camera info taken from Shizof's cpbc under MIT. https://www.nexusmods.com/skyrimspecialedition/mods/21224?tab=files
+		//commented out translations were to put the camera behind the player to widen fov and aren't needed
+		if (!(*g_thePlayer)->loadedState)
+			return;
+		auto cameraPosition = (*g_thePlayer)->loadedState->node->m_worldTransform.pos;// +((*g_thePlayer)->loadedState->node->m_worldTransform.rot * NiPoint3(0, -200.0f, 0));
+		auto cameraOrientation = /*cameraPosition +*/ ((*g_thePlayer)->loadedState->node->m_worldTransform.rot * NiPoint3(0, 1.0f, 0));
+#endif
 
 		for (auto& i : m_skeletons)
 		{

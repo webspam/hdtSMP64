@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="hdtSkinnedMesh">
@@ -844,10 +844,10 @@
     <ClInclude Include="dhdtOverrideManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dhdtPapyrusFunctions.h">
+    <ClInclude Include="DynamicHDT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DynamicHDT.h">
+    <ClInclude Include="dhdtPapyrusFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1416,10 +1416,10 @@
     <ClCompile Include="dhdtOverrideManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dhdtPapyrusFunctions.cpp">
+    <ClCompile Include="DynamicHDT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DynamicHDT.cpp">
+    <ClCompile Include="dhdtPapyrusFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
