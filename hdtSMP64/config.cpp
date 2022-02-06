@@ -31,7 +31,7 @@ namespace hdt
 				}
 				else
 				{
-					_WARNING("Unknown config : ", reader.GetLocalName());
+					_WARNING("Unknown config : %s", reader.GetLocalName());
 					reader.skipCurrentElement();
 				}
 				break;
@@ -106,7 +106,7 @@ namespace hdt
 				}
 				else
 				{
-					_WARNING("Unknown config : ", reader.GetLocalName());
+					_WARNING("Unknown config : %s", reader.GetLocalName());
 					reader.skipCurrentElement();
 				}
 				break;
@@ -131,7 +131,7 @@ namespace hdt
 					smp(reader);
 				else
 				{
-					_WARNING("Unknown config : ", reader.GetLocalName());
+					_WARNING("Unknown config : %s", reader.GetLocalName());
 					reader.skipCurrentElement();
 				}
 				break;
@@ -163,7 +163,7 @@ namespace hdt
 					config(reader);
 				else
 				{
-					_WARNING("Unknown config : ", reader.GetLocalName());
+					_WARNING("Unknown config : %s", reader.GetLocalName());
 					reader.skipCurrentElement();
 				}
 			}
