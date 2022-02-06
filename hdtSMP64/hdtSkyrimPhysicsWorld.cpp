@@ -81,11 +81,14 @@ namespace hdt
 		// This magic value directly impacts the number of computations and the time cost of the mod...
 		if (m_accumulatedInterval * 2.0f > tick)
 		{
-			// We limit the interval to 3 substeps.
-			// Additional substeps happens when there is a very sudden slowdown, we have to compute for the passed time we haven't computed.
+			// We limit the interval to 4 substeps.
+			// Additional substeps happens when there is a very sudden slowdown, or when fps is lower than min-fps,
+			// we have to compute for the passed time we haven't computed.
 			// n substeps means that when instant fps is n times lower than usual current fps, we stop computing.
-			// This value impacts directly the performance when very sudden slowdown.
-			const auto maxSubSteps = 3;
+			// So, we guarantee no jitter for fps greater than min-fps / maxSubsteps.
+			// For example, if min-fps = 60 and maxSubsteps = 4, we guarantee no jitter for 15+ fps,
+			// at the cost of additional simulations.
+			const auto maxSubSteps = 4;
 			auto remainingTimeStep = std::min(m_accumulatedInterval, tick * maxSubSteps);
 
 			readTransform(remainingTimeStep);
