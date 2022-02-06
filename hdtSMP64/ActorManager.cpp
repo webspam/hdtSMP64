@@ -75,6 +75,21 @@ namespace hdt
 		auto& skeleton = getSkeletonData(e.skeleton);
 		if (e.hasAttached)
 		{
+			// Check override data for current armoraddon
+			if (e.skeleton->m_owner)
+			{
+				auto actor_formID = e.skeleton->m_owner->formID;
+				if (actor_formID) {
+					auto old_physics_file = skeleton.getArmors().back().physicsFile.first;
+					std::string physics_file_path_override = hdt::Override::OverrideManager::GetSingleton()->checkOverride(actor_formID, old_physics_file);
+					if (!physics_file_path_override.empty()) {
+						//Console_Print("[DynamicHDT] -- ArmorAddon %s is overridden ", e.attachedNode->m_name);
+						skeleton.getArmors().back().physicsFile.first = physics_file_path_override;
+					}
+				}
+			}
+
+
 			skeleton.attachArmor(e.armorModel, e.attachedNode);
 		}
 		else
@@ -280,7 +295,7 @@ namespace hdt
 		}
 	}
 
-	std::vector<ActorManager::Skeleton> ActorManager::getSkeletons() const
+	std::vector<ActorManager::Skeleton>& ActorManager::getSkeletons()
 	{
 		return m_skeletons;
 	}
@@ -707,18 +722,18 @@ namespace hdt
 
 	void ActorManager::Skeleton::scanHead()
 	{
-		if (!this->head.headNode)
-		{
-#ifdef _DEBUG
-			_DMESSAGE("actor has no head node");
-#endif // _DEBUG
-			return;
-		}
-
 		if (isFirstPersonSkeleton(this->skeleton))
 		{
 #ifdef _DEBUG
 			_DMESSAGE("not scanning head of first person skeleton");
+#endif // _DEBUG
+			return;
+		}
+
+		if (!this->head.headNode)
+		{
+#ifdef _DEBUG
+			_DMESSAGE("actor has no head node");
 #endif // _DEBUG
 			return;
 		}

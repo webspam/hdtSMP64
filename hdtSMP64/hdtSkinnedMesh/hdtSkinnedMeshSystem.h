@@ -15,7 +15,6 @@ namespace hdt
 	class SkinnedMeshSystem : public RefObject
 	{
 		friend class hdt::SkinnedMeshWorld;
-
 	public:
 
 		virtual void resetTransformsToOriginal();
@@ -30,6 +29,9 @@ namespace hdt
 
 		std::vector<std::shared_ptr<btCollisionShape>> m_shapeRefs;
 		SkinnedMeshWorld* m_world = nullptr;
+
+		bool block_resetting = false;
+		std::vector<Ref<SkinnedMeshBone>>& getBones() { return m_bones; };
 
 	protected:
 		std::vector<Ref<SkinnedMeshBone>> m_bones;

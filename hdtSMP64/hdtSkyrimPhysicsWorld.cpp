@@ -116,6 +116,13 @@ namespace hdt
 		*/
 	}
 
+	void SkyrimPhysicsWorld::suspendSimulationUntilFinished(std::function<void(void)> process)
+	{
+		this->m_isStasis = true;
+		process();
+		this->m_isStasis = false;
+	}
+
 	btVector3 SkyrimPhysicsWorld::applyTranslationOffset()
 	{
 		btVector3 center;
@@ -271,11 +278,11 @@ namespace hdt
 
 		float interval = *(float*)(RelocationManager::s_baseAddr + offset::GameStepTimer_SlowTime);
 
-		if (interval > FLT_EPSILON && !m_suspended && !m_systems.empty())
+		if (interval > FLT_EPSILON && !m_suspended && !m_isStasis && !m_systems.empty())
 		{
 			doUpdate(interval);
 		}
-		else if (m_suspended && !m_loading)
+		else if (m_isStasis || (m_suspended && !m_loading))
 		{
 			writeTransform();
 		}

@@ -425,6 +425,11 @@ namespace hdt
 			return true;
 		}
 
+		if (_strnicmp(buffer, "QueryOverride", MAX_PATH) == 0) {
+			Console_Print(hdt::Override::OverrideManager::GetSingleton()->queryOverrideData().c_str());
+			return true;
+		}
+
 		auto skeletons = ActorManager::instance()->getSkeletons();
 
 		size_t activeSkeletons = 0;
@@ -593,6 +598,18 @@ extern "C" {
 						GetEventDispatcherList()->unk840.AddEventSink(&hdt::g_eventDebugLogger);
 #endif
 					}
+
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame) {
+						auto OM = hdt::Override::OverrideManager::GetSingleton();
+						std::string save_name = reinterpret_cast<char*>(msg->data);
+						OM->saveOverrideData(save_name);
+					}
+
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_PreLoadGame) {
+						auto OM = hdt::Override::OverrideManager::GetSingleton();
+						std::string save_name = reinterpret_cast<char*>(msg->data);
+						OM->loadOverrideData(save_name);
+					}
 				});
 		}
 
@@ -625,6 +642,8 @@ extern "C" {
 			cmd.flags = 0;
 			SafeWriteBuf(reinterpret_cast<uintptr_t>(hijackedCommand), &cmd, sizeof(cmd));
 		}
+
+		hdt::papyrus::RegisterAllFunctions(reinterpret_cast<SKSEPapyrusInterface*>(skse->QueryInterface(kInterface_Papyrus)));
 
 		return true;
 	}
