@@ -253,20 +253,13 @@ namespace hdt
 				auto& pair = m_pairs[i];
 				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
 				{
-					if (pair.first->m_shape->asPerTriangleShape() && pair.second->m_shape->asPerTriangleShape())
-					{
-						m_immediateFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
-					}
-				}
-			}
-			for (int i = 0; i < m_pairs.size(); ++i)
-			{
-				auto& pair = m_pairs[i];
-				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
-				{
 					if (!pair.first->m_shape->asPerTriangleShape() || !pair.second->m_shape->asPerTriangleShape())
 					{
 						m_delayedFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
+					}
+					else if (pair.first->m_shape->asPerTriangleShape() && pair.second->m_shape->asPerTriangleShape())
+					{
+						m_immediateFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
 					}
 				}
 			}
