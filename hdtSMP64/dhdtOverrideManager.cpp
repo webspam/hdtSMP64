@@ -2,18 +2,33 @@
 
 using namespace hdt::Override;
 
+bool g_hasPapyrusExtension = false;
+
 OverrideManager* hdt::Override::OverrideManager::GetSingleton() 
 {
 	static OverrideManager g_overrideManager;
 	return &g_overrideManager;
 }
 
+bool checkPapyrusExtension() {
+	std::ofstream ifs("Data/Scripts/DynamicHDT.pex", std::ios::in | std::ios::_Nocreate);
+	if (!ifs || !ifs.is_open()) {
+		g_hasPapyrusExtension = false;
+		return false;
+	}
+	ifs.close();
+	g_hasPapyrusExtension = true;
+	return true;
+}
+
 void hdt::Override::OverrideManager::saveOverrideData(std::string save_name)
 {
+	if (!g_hasPapyrusExtension)return;
+
 	Console_Print("[DynamicHDT] -- Saving override data to \"%s\".", (OVERRIDE_SAVE_PATH + save_name + ".dhdt").c_str());
 	std::ofstream ofs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::out);
 	if (!ofs) {
-		Console_Print("[DynamicHDT] ERROR! -- Failed writing override file. File \"%s\" is not accessable.", (OVERRIDE_SAVE_PATH + save_name + ".dhdt").c_str());
+		Console_Print("[DynamicHDT] Warning! -- Failed writing override file. File \"%s\" is not accessable.", (OVERRIDE_SAVE_PATH + save_name + ".dhdt").c_str());
 		return;
 	}
 	for (auto& e : m_ActorPhysicsFileSwapList) {
@@ -30,11 +45,14 @@ void hdt::Override::OverrideManager::saveOverrideData(std::string save_name)
 
 void hdt::Override::OverrideManager::loadOverrideData(std::string save_name)
 {
+
+	if (!checkPapyrusExtension())return;
+
 	save_name = save_name.substr(0, save_name.find_last_of("."));
 
 	std::ifstream ifs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::in | std::ios::_Nocreate);
 	if (!ifs) {
-		Console_Print("[DynamicHDT] ERROR! -- Failed reading override file. File \"%s\" doesn't exist or is not accessable.", (OVERRIDE_SAVE_PATH + save_name + ".dhdt").c_str());
+		Console_Print("[DynamicHDT] Warning! -- Failed reading override file. File \"%s\" doesn't exist or is not accessable.", (OVERRIDE_SAVE_PATH + save_name + ".dhdt").c_str());
 		return;
 	}
 	try {
