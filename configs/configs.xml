@@ -21,7 +21,7 @@
     <unclampedResets>true</unclampedResets>
     <!-- unclampedResetAngle: angle to reset at. you'll probably want to tweak this until you're happy. -->
     <unclampedResetAngle>130.0</unclampedResetAngle>
-    <!-- maxmaximumDistanceDistance: maximum distance from player to apply physics to an actor. A few cell transitions (notably Blue Palace -> Solitude streets)
+    <!-- maximumDistance: maximum distance from player to apply physics to an actor. A few cell transitions (notably Blue Palace -> Solitude streets)
 						leave NPCs loaded and technically active, but extremely distant, and this makes collision checking extremely
 						slow. The default value of 10000 should disable those NPCs, while having no effect on NPCs in view range.
 						Set lower values for more performance - around 2000 is good. -->
