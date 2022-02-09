@@ -98,10 +98,18 @@ namespace hdt
 	{
 		applyGravity();
 
-		while (maxSubSteps--)
+		while (remainingTimeStep > fixedTimeStep)
+		{
 			internalSingleStepSimulation(fixedTimeStep);
-
+			remainingTimeStep -= fixedTimeStep;
+		}
+		// For the sake of the bullet library, we don't manage a step that would be lower than a 300Hz frame.
+		// Review this when (screens / Skyrim) will allow 300Hz+.
+		const auto minPossiblePeriod = 1.0f / 300.0f;
+		if (remainingTimeStep > minPossiblePeriod)
+			internalSingleStepSimulation(remainingTimeStep);
 		clearForces();
+
 		_bodies.clear();
 		_shapes.clear();
 
