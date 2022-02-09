@@ -14,7 +14,7 @@ namespace hdt
 	constexpr float RESET_PHYSICS = -10.0f;
 
 	class SkyrimPhysicsWorld : protected SkinnedMeshWorld, public IEventListener<FrameEvent>,
-	                           public IEventListener<ShutdownEvent>, public BSTEventSink<SKSECameraEvent>
+		public IEventListener<ShutdownEvent>, public BSTEventSink<SKSECameraEvent>
 	{
 	public:
 
@@ -60,11 +60,15 @@ namespace hdt
 		void restoreTranslationOffset(const btVector3&);
 
 		btContactSolverInfo& getSolverInfo() { return btDiscreteDynamicsWorld::getSolverInfo(); }
-		
+
+		int min_fps = 60;
+		int m_percentageOfFrameTime = 300; // percentage of time per frame doing hdt. Profiler shows 30% is reasonable. Out of 1000.
 		float m_timeTick = 1 / 60.f;
 		bool m_clampRotations = true;
 		bool m_unclampedResets = true;
 		float m_unclampedResetAngle = 120.0f;
+		float m_averageProcessingTime = 0;
+		bool disabled = false;
 		uint8_t m_resetPc;
 
 	private:

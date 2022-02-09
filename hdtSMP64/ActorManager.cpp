@@ -8,6 +8,7 @@
 #include <cinttypes>
 #include "Offsets.h"
 #include "skse64/GameStreams.h"
+#include "skse64/GameData.h"
 
 namespace hdt
 {
@@ -54,7 +55,7 @@ namespace hdt
 		{
 			auto npcForm = DYNAMIC_CAST(skeleton->m_owner->baseForm, TESForm, TESNPC);
 			if (npcForm && npcForm->race.race
-				&&!strcmp(npcForm->race.race->models[0].GetModelName(), "Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
+				&& !strcmp(npcForm->race.race->models[0].GetModelName(), "Actors\\DLC02\\BenthicLurker\\Character Assets\\skeleton.nif"))
 				shouldFix = true;
 		}
 		return findNode(skeleton, shouldFix ? "NPC Root [Root]" : "NPC");
@@ -64,7 +65,10 @@ namespace hdt
 	void ActorManager::onEvent(const ArmorAttachEvent& e)
 	{
 		// No armor is ever attached to a lurker skeleton, thus we don't need to test.
-		if (!findNode(e.skeleton, "NPC")) return;
+		if (e.skeleton == nullptr || !findNode(e.skeleton, "NPC"))
+		{
+			return;
+		}
 
 		std::lock_guard<decltype(m_lock)> l(m_lock);
 		if (m_shutdown) return;
@@ -129,10 +133,37 @@ namespace hdt
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
 		// We get the camera, its position and orientation.
+#ifndef SKYRIMVR
 		auto camera = PlayerCamera::GetSingleton()->cameraNode->m_worldTransform;
 		auto cameraPosition = camera.pos;
 		auto cameraOrientation = camera.rot * NiPoint3(0., 1., 0.); // The camera matrix is relative to the world.
+#else
+		//camera info taken from Shizof's cpbc under MIT. https://www.nexusmods.com/skyrimspecialedition/mods/21224?tab=files
+		//commented out translations were to put the camera behind the player to widen fov and aren't needed
+		if (!(*g_thePlayer)->loadedState)
+			return;
+		auto cameraPosition = (*g_thePlayer)->loadedState->node->m_worldTransform.pos;// +((*g_thePlayer)->loadedState->node->m_worldTransform.rot * NiPoint3(0, -200.0f, 0));
+		auto cameraOrientation = /*cameraPosition +*/ ((*g_thePlayer)->loadedState->node->m_worldTransform.rot * NiPoint3(0, 1.0f, 0));
+#endif
+		activeSkeletons = 0;
+		std::for_each(m_skeletons.begin(), m_skeletons.end(), [&](Skeleton& skel)
+			{
+				skel.calculateDistanceFromSource(cameraPosition);
+				float heading = 0.f;
+				float attitude = 0.f;
+				skel.GetAttitudeAndHeadingFromSource(cameraPosition, attitude, heading);
+				/*if (skel.isInPlayerView(cameraPosition, cameraOrientation, m_cosMaxAngle2))
+					_MESSAGE("actor %s heading %f", skel.name(), heading);*/
+				skel.percentFromCameraCenter = std::max(abs(heading) > m_maxAngle ? 1 : 1 - ((m_maxAngle - abs(heading)) / m_maxAngle), .001f); // avoid 0 percent which would collapse all actors in center of view regardles of distance
 
+			});
+		// sort by the distance weighted by the percentage from the center.
+		std::sort(
+			m_skeletons.begin(),
+			m_skeletons.end(),
+			[](auto&& a_lhs, auto&& a_rhs) {
+				return (a_lhs.distanceFromPlayerSqd * a_lhs.percentFromCameraCenter) < (a_rhs.distanceFromPlayerSqd * a_rhs.percentFromCameraCenter);
+			});
 		for (auto& i : m_skeletons)
 		{
 			if (i.skeleton->m_uiRefCount == 1)
@@ -140,9 +171,11 @@ namespace hdt
 				i.clear();
 				i.skeleton = nullptr;
 			}
-			else if (i.hasPhysics)
+			else if (i.hasPhysics) {
 				// TODO Ease of configuration: maxAngle could be autocalculated depending on the FOV.
-				i.updateAttachedState(cameraPosition, m_maxDistance2, playerCell, cameraOrientation, m_cosMaxAngle2);
+				if (i.updateAttachedState(cameraPosition, m_maxDistance2, playerCell, cameraOrientation, m_cosMaxAngle2, activeSkeletons >= maxActiveSkeletons))
+					activeSkeletons++;
+			}
 		}
 
 		m_skeletons.erase(
@@ -153,6 +186,28 @@ namespace hdt
 		{
 			i.cleanArmor();
 			i.cleanHead();
+		}
+		if (!SkyrimPhysicsWorld::get()->isSuspended() && // do not do metrics while paused
+			frameCount++ % SkyrimPhysicsWorld::get()->min_fps == 0) // check every 1 second (i.e., 60 fps should wait for 60th frames)
+		{
+			auto processing_time = SkyrimPhysicsWorld::get()->m_averageProcessingTime;
+			auto target_time = SkyrimPhysicsWorld::get()->m_timeTick * SkyrimPhysicsWorld::get()->m_percentageOfFrameTime; // 30% of processing time is in hdt per profiling; setting higher provides more time for hdt processing and can activate more skeletons
+			auto averageTimePerSkeleton = 0.f;
+			if (activeSkeletons > 0) {
+				averageTimePerSkeleton = processing_time / activeSkeletons;
+				//calculate rolling average
+				rollingAverage -= (rollingAverage / m_sampleSize);
+				rollingAverage += (averageTimePerSkeleton / m_sampleSize);
+			}
+			_MESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
+			if (m_autoAdjustMaxSkeletons) {
+				if (processing_time > target_time)
+					maxActiveSkeletons = activeSkeletons - 2;
+				else
+					maxActiveSkeletons = static_cast<int>(target_time / rollingAverage);
+				maxActiveSkeletons = std::clamp(maxActiveSkeletons, 1, m_maxActiveSkeletons); // clamp the value to the m_maxActiveSkeletons value
+				frameCount = 1;
+			}
 		}
 	}
 
@@ -179,10 +234,10 @@ namespace hdt
 		skeleton.processGeometry(e.headNode, e.geometry);
 
 		auto headPartIter = std::find_if(skeleton.head.headParts.begin(), skeleton.head.headParts.end(),
-		                                 [e](const Head::HeadPart& p)
-		                                 {
-			                                 return p.headPart == e.geometry;
-		                                 });
+			[e](const Head::HeadPart& p)
+			{
+				return p.headPart == e.geometry;
+			});
 
 		if (headPartIter != skeleton.head.headParts.end())
 		{
@@ -292,7 +347,7 @@ namespace hdt
 	}
 
 #ifdef ANNIVERSARY_EDITION
-	bool ActorManager::skeletonNeedsParts(NiNode * skeleton)
+	bool ActorManager::skeletonNeedsParts(NiNode* skeleton)
 	{
 		return !isFirstPersonSkeleton(skeleton);
 		/*
@@ -310,9 +365,9 @@ namespace hdt
 	ActorManager::Skeleton& ActorManager::getSkeletonData(NiNode* skeleton)
 	{
 		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
-		{
-			return i.skeleton == skeleton;
-		});
+			{
+				return i.skeleton == skeleton;
+			});
 		if (iter != m_skeletons.end())
 		{
 			return *iter;
@@ -320,10 +375,10 @@ namespace hdt
 		if (!isFirstPersonSkeleton(skeleton))
 		{
 			auto ownerIter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
-			{
-				return !isFirstPersonSkeleton(i.skeleton) && i.skeletonOwner && skeleton->m_owner && i.skeletonOwner ==
-					skeleton->m_owner;
-			});
+				{
+					return !isFirstPersonSkeleton(i.skeleton) && i.skeletonOwner && skeleton->m_owner && i.skeletonOwner ==
+						skeleton->m_owner;
+				});
 			if (ownerIter != m_skeletons.end())
 			{
 #ifdef _DEBUG
@@ -338,7 +393,7 @@ namespace hdt
 	}
 
 	void ActorManager::Skeleton::doSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
-	                                             std::unordered_map<IDStr, IDStr>& map)
+		std::unordered_map<IDStr, IDStr>& map)
 	{
 		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
 		{
@@ -561,7 +616,7 @@ namespace hdt
 		}
 
 		head.headParts.erase(std::remove_if(head.headParts.begin(), head.headParts.end(),
-		                                    [](Head::HeadPart& i) { return !i.headPart; }), head.headParts.end());
+			[](Head::HeadPart& i) { return !i.headPart; }), head.headParts.end());
 	}
 
 	void ActorManager::Skeleton::clear()
@@ -573,6 +628,58 @@ namespace hdt
 		head.headNode = nullptr;
 		armors.clear();
 	}
+	/* calculate distance from skeleton to player; this is distance squared for performance reasons*/
+	void ActorManager::Skeleton::calculateDistanceFromSource(NiPoint3 source)
+	{
+		if (isPlayerCharacter())
+		{
+			distanceFromPlayerSqd = 0.f;
+		}
+		else
+		{
+			auto pos = position();
+			if (pos.has_value())
+			{
+				// We calculate the vector between camera and the skeleton feets.
+				auto camera2SkeletonVector = pos.value() - source;
+				// This is the distance (squared) between the camera and the skeleton feets.
+				distanceFromPlayerSqd = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
+			}
+			else
+			{
+				distanceFromPlayerSqd = std::numeric_limits<float>::max();
+			}
+		}
+	}
+	//GetAttitudeAndHeadingFromSource modified from Shizof's cpbc under MIT. https://www.nexusmods.com/skyrimspecialedition/mods/21224?tab=files
+	void ActorManager::Skeleton::GetAttitudeAndHeadingFromSource(NiPoint3 source, float& attitude, float& heading)
+	{
+		auto pos = position();
+		if (!pos.has_value())
+			return;
+
+		auto target = pos.value();
+		//target.z = source.z; //cpbpc merged camera data into the target; not sure if necessary
+		NiPoint3 vector = target - source;
+
+		const float sqr = vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
+		if (sqr != 0)
+		{
+			vector = vector * (1.0f / sqrtf(sqr));
+
+			attitude = (float)atan2(vector.z, sqrtf(vector.y * vector.y + vector.x * vector.x)) * -1;
+
+			heading = (float)atan2(vector.x, vector.y);
+			heading = heading * 57.295776f + 140;
+			if (heading > 180) heading -= 360;
+		}
+		else
+		{
+			attitude = 0;
+			heading = 0;
+		}
+	}
+
 
 	// Is called to print messages only
 	bool ActorManager::Skeleton::checkPhysics()
@@ -606,18 +713,62 @@ namespace hdt
 		return skeletonOwner == *g_thePlayer.GetPtr() || (skeleton->m_owner && skeleton->m_owner->formID == 0x14);
 	}
 
+	bool ActorManager::Skeleton::isInPlayerView(NiPoint3 cameraPosition, NiPoint3 cameraOrientation, float maxAngleCosinus2)
+	{
+		if (isPlayerCharacter())
+		{
+			return true;
+		}
+		else
+		{
+			auto pos = position();
+			if (pos.has_value())
+			{
+				// We calculate the vector between camera and the skeleton feets.
+				auto camera2SkeletonVector = pos.value() - cameraPosition;
+				// This is the distance (squared) between the camera and the skeleton feets.
+				auto c2SVMagnitude2 = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
+				/* We calculate the angle between the camera direction and the camera2SkeletonVector.
+					* Demonstration leading to our check, based on scalar product of vectors (sometimes called inner product):
+					* 1/ dot(v1->, v2->) = |v1->| * |v2->| * cos(a) with a the angle between v1-> and v2->
+					* 2/ dot(v1->, v2->) = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+					* => cos(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z) / (|v1->| * |v2->|)
+					* => cos^2(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2) * (v2.x^2 + v2.y^2 + v2.z^2))
+					* In our case, we have:
+					* 1/ a < maxAngle (our test)
+					* 2/ |cameraOrientation| = 1 (because I built it by applying the rotational matrix to (0,1,0) which length is 1.)
+					* => cos(a) > cos(maxAngle)
+					* => cos^2(a) > cos^2(maxAngle) && cos(a) > 0
+					* => (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2)) > cos^2(maxAngle)
+					*    with v1-> = camera2SkeletonVector and v2-> = cameraOrientation
+					*    && dot(v1->, v2->) > 0
+					* => a^2 / c2SVMagnitude2 > cos^2(maxAngle)
+					*	  && a > 0
+					*    with a = dot(camera2SkeletonVector, cameraOrientation)
+					*           = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
+					* => a > 0 && a^2 > cos^2(maxAngle) * c2SVMagnitude2
+					*    with a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
+					*/
+				auto a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z;
+				UINT8 unk1 = 0;
+				return (HasLOS((*g_thePlayer), skeleton->m_owner, &unk1) && a > 0 && a * a > maxAngleCosinus2 * c2SVMagnitude2);
+			}
+		}
+		return false;
+	}
+
 	std::optional<NiPoint3> ActorManager::Skeleton::position() const
 	{
 		if (npc)
 		{
 			// This works for lurker skeletons.
 			auto rootNode = findNode(npc, "NPC Root [Root]");
-			if (rootNode) return rootNode->m_worldTransform.pos;
+			if (rootNode) return std::optional<NiPoint3>(rootNode->m_worldTransform.pos);
 		}
 		return std::optional<NiPoint3>();
 	}
 
-	void ActorManager::Skeleton::updateAttachedState(NiPoint3 cameraPosition, float maxDistance2, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2)
+	bool ActorManager::Skeleton::updateAttachedState(NiPoint3 cameraPosition, float maxDistance2, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2, bool deactivate = false)
 	{
 		// 1- Skeletons that aren't active in any scene are always detached, unless they are in the
 		// same cell as the player character (workaround for issue in Ancestor Glade).
@@ -628,7 +779,7 @@ namespace hdt
 		isActive = false;
 		state = SkeletonState::e_InactiveNotInScene;
 
-		if (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell)
+		if (!deactivate && (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell))
 		{
 			if (isPlayerCharacter())
 			{
@@ -638,48 +789,13 @@ namespace hdt
 			else
 			{
 				state = SkeletonState::e_InactiveTooFar;
-				auto pos = position();
-				if (pos.has_value())
+				/* If the distance is greater than the max distance, we let the skeleton inactive.
+				 * We compare their squares rather than the distances themselves to avoid costly sqrt() operations. */
+				if (distanceFromPlayerSqd < maxDistance2 && isInPlayerView(cameraPosition, cameraOrientation, maxAngleCosinus2))
 				{
-					// We calculate the vector between camera and the skeleton feets.
-					auto camera2SkeletonVector = pos.value() - cameraPosition;
-					// This is the distance (squared) between the camera and the skeleton feets.
-					auto c2SVMagnitude2 = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
-
-					/* If the distance is greater than the max distance, we let the skeleton inactive.
-					 * We compare their squares rather than the distances themselves to avoid costly sqrt() operations. */
-					if (c2SVMagnitude2 < maxDistance2)
-					{
-						// TODO Precision: rather than working with the position of the skeleton feets, we could work with the skeleton size.
-						/* We calculate the angle between the camera direction and the camera2SkeletonVector.
-						 * If the angle is lower than the max angle, we make the skeleton active.
-						 * Demonstration leading to our check, based on scalar product of vectors (sometimes called inner product):
-						 * 1/ dot(v1->, v2->) = |v1->| * |v2->| * cos(a) with a the angle between v1-> and v2->
-						 * 2/ dot(v1->, v2->) = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
-						 * => cos(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z) / (|v1->| * |v2->|)
-						 * => cos^2(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2) * (v2.x^2 + v2.y^2 + v2.z^2))
-						 * In our case, we have:
-						 * 1/ a < maxAngle (our test)
-						 * 2/ |cameraOrientation| = 1 (because I built it by applying the rotational matrix to (0,1,0) which length is 1.)
-						 * => cos(a) > cos(maxAngle)
-						 * => cos^2(a) > cos^2(maxAngle) && cos(a) > 0
-						 * => (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2)) > cos^2(maxAngle)
-						 *    with v1-> = camera2SkeletonVector and v2-> = cameraOrientation
-						 *    && dot(v1->, v2->) > 0
-						 * => a^2 / c2SVMagnitude2 > cos^2(maxAngle)
-						 *	  && a > 0
-						 *    with a = dot(camera2SkeletonVector, cameraOrientation)
-						 *           = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
-						 * => a > 0 && a^2 > cos^2(maxAngle) * c2SVMagnitude2
-						 *    with a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
-						 */
-						auto a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z;
-						if (a > 0 && a * a > maxAngleCosinus2 * c2SVMagnitude2)
-						{
-							isActive = true;
-							state = SkeletonState::e_ActiveNearPlayer;
-						}
-					}
+					isActive = true;
+					state = SkeletonState::e_ActiveNearPlayer;
+					//Tint(skeleton->m_owner, green);
 				}
 			}
 		}
@@ -687,6 +803,7 @@ namespace hdt
 		// We update the active state of armors and head parts.
 		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.updateActive(isActive); });
 		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.updateActive(isActive); });
+		return isActive;
 	}
 
 	void ActorManager::Skeleton::reloadMeshes()
@@ -748,7 +865,7 @@ namespace hdt
 			{
 #ifdef _DEBUG
 				_DMESSAGE("previous head part generated physics system for file %s, skipping",
-				          headPart.physicsFile.first.c_str());
+					headPart.physicsFile.first.c_str());
 #endif // _DEBUG
 				continue;
 			}
@@ -757,11 +874,11 @@ namespace hdt
 
 #ifdef _DEBUG
 			_DMESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name,
-			          headPart.physicsFile.first.c_str());
+				headPart.physicsFile.first.c_str());
 #endif // _DEBUG
 			physicsDupes.insert(headPart.physicsFile.first);
 			auto system = SkyrimSystemCreator().createSystem(npc, this->head.headNode, headPart.physicsFile,
-			                                            std::move(renameMap));
+				std::move(renameMap));
 
 			if (system)
 			{
@@ -810,10 +927,10 @@ namespace hdt
 		this->head.prefix = headPrefix(this->head.id);
 
 		auto it = std::find_if(this->head.headParts.begin(), this->head.headParts.end(),
-		                       [geometry](const Head::HeadPart& p)
-		                       {
-			                       return p.headPart == geometry;
-		                       });
+			[geometry](const Head::HeadPart& p)
+			{
+				return p.headPart == geometry;
+			});
 
 		if (it != this->head.headParts.end())
 		{
@@ -830,7 +947,7 @@ namespace hdt
 
 		// Skinning
 #ifdef _DEBUG
-		_DMESSAGE("skinning geometry to skeleton");		
+		_DMESSAGE("skinning geometry to skeleton");
 #endif // _DEBUG
 
 		if (!geometry->m_spSkinInstance || !geometry->m_spSkinInstance->m_spSkinData)
@@ -843,7 +960,7 @@ namespace hdt
 
 		BSGeometry* origGeom = nullptr;
 		NiGeometry* origNiGeom = nullptr;
-		
+
 		if (fmd && fmd->m_model && fmd->m_model->unk10 && fmd->m_model->unk10->unk08)
 		{
 #ifdef _DEBUG
@@ -864,9 +981,9 @@ namespace hdt
 						break;
 					}
 				}
-			}			
+			}
 		}
-		else 
+		else
 		{
 #ifdef _DEBUG
 			_DMESSAGE("no fmd available, loading original facegeom");
@@ -907,7 +1024,7 @@ namespace hdt
 #ifdef _DEBUG
 										_DMESSAGE("npc root fadenode found");
 #endif // _DEBUG
-										head.npcFaceGeomNode = rootFadeNode;							
+										head.npcFaceGeomNode = rootFadeNode;
 									}
 #ifdef _DEBUG
 									else
@@ -947,11 +1064,11 @@ namespace hdt
 
 		bool hasMerged = false;
 		bool hasRenames = false;
-		
+
 		for (int boneIdx = 0; boneIdx < geometry->m_spSkinInstance->m_spSkinData->m_uiBones; boneIdx++)
 		{
 			BSFixedString boneName("");
-			
+
 			// skin the way the game does via FMD
 			if (boneIdx <= 7)
 			{
@@ -981,8 +1098,7 @@ namespace hdt
 				boneName = renameIt->second->cstr();
 				hasRenames = true;
 			}
-			
-			// TODO check it's not a lurker skeleton
+
 			auto boneNode = findNode(this->npc, boneName);
 
 			if (!boneNode && !hasMerged)
@@ -1019,7 +1135,7 @@ namespace hdt
 					doSkeletonMerge(npc, this->head.npcFaceGeomNode, head.prefix, head.renameMap);
 				}
 				hasMerged = true;
-				
+
 				auto postMergeRenameIt = this->head.renameMap.find(boneName.c_str());
 
 				if (postMergeRenameIt != this->head.renameMap.end())
@@ -1031,8 +1147,7 @@ namespace hdt
 					hasRenames = true;
 				}
 
-				// TODO check it's not a lurker skeleton
-				boneNode = findNode(this->npc, boneName);		
+				boneNode = findNode(this->npc, boneName);
 			}
 
 			if (!boneNode)
@@ -1070,7 +1185,7 @@ namespace hdt
 #endif // _DEBUG
 					}
 					head.headParts.back().renamedBonesInUse.insert(entry.first);
-				}				
+				}
 			}
 		}
 

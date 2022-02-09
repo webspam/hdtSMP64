@@ -17,10 +17,10 @@ namespace hdt
 {
 	class ActorManager
 		: public IEventListener<ArmorAttachEvent>
-		  , public IEventListener<SkinSingleHeadGeometryEvent>
-		  , public IEventListener<SkinAllHeadGeometryEvent>
-		  , public IEventListener<FrameEvent>
-		  , public IEventListener<ShutdownEvent>
+		, public IEventListener<SkinSingleHeadGeometryEvent>
+		, public IEventListener<SkinAllHeadGeometryEvent>
+		, public IEventListener<FrameEvent>
+		, public IEventListener<ShutdownEvent>
 	{
 		using IDType = UInt32;
 
@@ -43,8 +43,12 @@ namespace hdt
 			e_ActiveNearPlayer,
 			e_ActiveIsPlayer
 		};
+		int activeSkeletons = 0;
 
 	private:
+		int maxActiveSkeletons = 10;
+		int frameCount = 0;
+		float rollingAverage = 0;
 		struct Skeleton;
 
 		struct PhysicsItem
@@ -59,7 +63,7 @@ namespace hdt
 			const std::vector<Ref<SkinnedMeshBody>>& meshes() const;
 
 			void updateActive(bool active);
-		
+
 			Ref<SkyrimSystem> m_physics;
 		};
 
@@ -105,24 +109,36 @@ namespace hdt
 			void cleanArmor();
 			void cleanHead(bool cleanAll = false);
 			void clear();
+			void calculateDistanceFromSource(NiPoint3 cameraPosition);
+			/// @brief Get attitude and heading of skeleton given source. 0 is in front; 180 is behind
+			/// @param source source position to measure heading from
+			/// @param attitude attitude pointer
+			/// @param heading heading pointer
+			void GetAttitudeAndHeadingFromSource(NiPoint3 source, float& attitude, float& heading);
 
 			bool isPlayerCharacter() const;
+			bool isInPlayerView(NiPoint3 cameraPosition, NiPoint3 cameraOrientation, float maxAngleCosinus2);
 			bool hasPhysics = false;
 			std::optional<NiPoint3> position() const;
 
-			void updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2);
+			/* Updates isActive, state, armors.isActive and	headParts.isActive. */
+			bool updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2, bool deactivate);
+			bool deactivate();
 			void reloadMeshes();
 
 			void scanHead();
 			void processGeometry(BSFaceGenNiNode* head, BSGeometry* geometry);
 
 			static void doSkeletonMerge(NiNode* dst, NiNode* src, IString* prefix,
-			                            std::unordered_map<IDStr, IDStr>& map);
+				std::unordered_map<IDStr, IDStr>& map);
 			static void doSkeletonClean(NiNode* dst, IString* prefix);
 			static NiNode* cloneNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static void renameTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 
 			std::vector<Armor>& getArmors() { return armors; }
+
+			float distanceFromPlayerSqd = std::numeric_limits<float>::max();
+			float percentFromCameraCenter = 1; //directly in front should be 0; max angle should be 1
 
 		private:
 			bool isActiveInScene() const;
@@ -157,11 +173,14 @@ namespace hdt
 
 		void reloadMeshes();
 #ifdef ANNIVERSARY_EDITION
-		bool skeletonNeedsParts(NiNode * skeleton);
+		bool skeletonNeedsParts(NiNode* skeleton);
 #endif
 		std::vector<Skeleton>& getSkeletons();//Altered by Dynamic HDT
 
 		bool m_skinNPCFaceParts = true;
+		bool m_autoAdjustMaxSkeletons = true; // Whether to dynamically change the maxActive skeletons to maintain min_fps
+		int m_maxActiveSkeletons = 20; // The maximum active skeletons; hard limit
+		int m_sampleSize = 5; // how many samples (each sample taken every second) for determining average time per activeSkeleton.
 		float m_maxDistance = 1e4f;
 		float m_maxDistance2 = 1e8f; // The maxDistance value needs to be transformed to be useful, this is the useful value.
 		float m_maxAngle = 45.0f;

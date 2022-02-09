@@ -21,7 +21,7 @@ namespace hdt
 	{
 		e_CPU,
 		e_CPURefactored,
-// Remove if useless
+		// Remove if useless
 #ifndef CUDA
 		e_CUDA
 #endif // !CUDA
@@ -267,6 +267,7 @@ namespace hdt
 			aa = _mm_cmpgt_ps(aa, len);
 #endif
 			auto pointInTriangle = _mm_test_all_zeros(_mm_set_epi32(0, -1, -1, -1), _mm_castps_si128(aa));
+			//auto pointInTriangle = _mm_testz_ps(_mm_set_ps(0, -1, -1, -1), aa);
 
 			res.colliderA = a;
 			res.colliderB = b;
@@ -312,7 +313,7 @@ namespace hdt
 			res.colliderB = b;
 			return ret;
 		}
-	}; 
+	};
 #endif
 
 	// CollisionCheckDispatcher provides a dispatch method to process two lists of colliders. It is needed for
@@ -361,13 +362,13 @@ namespace hdt
 		}
 	};
 
-// [31/12/2021 DaydreamingDay] TODO See if the block can be removed with the enum.
+	// [31/12/2021 DaydreamingDay] TODO See if the block can be removed with the enum.
 #ifndef CUDA
 	// Dispatcher specialization for sphere-triangle collisions on CUDA. Sphere-sphere collisions will
 	// continue to use the CPU dispatcher. Doesn't actually do anything yet (and will fail to compile).
 	template <bool SwapResults>
 	struct CollisionCheckDispatcher<PerTriangleShape, SwapResults, e_CUDA>
-	: public CollisionCheckBase2<PerTriangleShape, SwapResults>
+		: public CollisionCheckBase2<PerTriangleShape, SwapResults>
 	{};
 #endif
 
@@ -379,7 +380,7 @@ namespace hdt
 		CollisionCheckAlgorithm(Ts&&... ts)
 			: CollisionCheckDispatcher(std::forward<Ts>(ts)...)
 		{}
-		
+
 		int operator()()
 		{
 			static_assert(Algorithm != e_CPU, "Old CPU algorithm specialization missing");
@@ -527,7 +528,7 @@ namespace hdt
 					}
 				}
 				else
-				{     
+				{
 					list.reserve(std::max<size_t>(bsize, list.capacity()));
 					for (auto i = abeg; i < aend; ++i)
 					{
@@ -583,7 +584,7 @@ namespace hdt
 	}
 
 	void SkinnedMeshAlgorithm::MergeBuffer::doMerge(SkinnedMeshShape* a, SkinnedMeshShape* b,
-	                                                CollisionResult* collision, int count)
+		CollisionResult* collision, int count)
 	{
 		for (int i = 0; i < count; ++i)
 		{
@@ -630,7 +631,7 @@ namespace hdt
 	}
 
 	void SkinnedMeshAlgorithm::MergeBuffer::apply(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
-	                                              CollisionDispatcher* dispatcher)
+		CollisionDispatcher* dispatcher)
 	{
 		for (int i = 0; i < body0->m_skinnedBones.size(); ++i)
 		{
@@ -761,7 +762,7 @@ namespace hdt
 #endif
 
 	void SkinnedMeshAlgorithm::processCollision(SkinnedMeshBody* body0, SkinnedMeshBody* body1,
-	                                            CollisionDispatcher* dispatcher)
+		CollisionDispatcher* dispatcher)
 	{
 		MergeBuffer merge;
 		merge.alloc(body0->m_skinnedBones.size(), body1->m_skinnedBones.size());
@@ -770,16 +771,16 @@ namespace hdt
 		if (body0->m_shape->asPerTriangleShape() && body1->m_shape->asPerTriangleShape())
 		{
 			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge,
-			                 collision);
+				collision);
 			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge,
-			                 collision);
+				collision);
 		}
 		else if (body0->m_shape->asPerTriangleShape())
 			processCollision(body0->m_shape->asPerTriangleShape(), body1->m_shape->asPerVertexShape(), merge,
-			                 collision);
+				collision);
 		else if (body1->m_shape->asPerTriangleShape())
 			processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerTriangleShape(), merge,
-			                 collision);
+				collision);
 		else processCollision(body0->m_shape->asPerVertexShape(), body1->m_shape->asPerVertexShape(), merge, collision);
 
 		delete[] collision;

@@ -1,9 +1,9 @@
-# hdtSMP with CUDA for Skyrim Special Edition
+# hdtSMP with CUDA for Skyrim VR
 
-Fork of [version](https://github.com/aers/hdtSMP64) by aers, from
+Fork of [https://github.com/Karonar1/hdtSMP64] by Karonar1, of fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT
 
-## Changes 
+## Changes
 
 + Managed AE version, and corresponding SKSE (currently 1.6.353 and 2.1.5).
 + Added maximum angle in ActorManager. A max angle can be used to specify physics on NPCs within a field of view.
@@ -151,10 +151,69 @@ The plugin recognizes the following optional parameters:
 
 Here is the [article](https://www.nexusmods.com/skyrimspecialedition/articles/3606) by DayDreamingDay.
 These should be complete instructions to set up and build the plugin, without assuming prior coding
-experience.
+experience. I'm checking everything out into D:\Dev-noAVX and building without AVX support, but of course you
+can use any directory.
+
+You will need:
++ Visual Studio 2019 (any edition)
++ Git
++ CMake
++ CUDA 11.6
+
+Open a VS2019 command prompt ("x64 Native Tools Command Prompt for VS2019"). Download and build Detours and
+Bullet:
+
+```
+d:
+mkdir Dev-noAVX
+cd Dev-noAVX
+git clone https://github.com/microsoft/Detours.git
+git clone https://github.com/bulletphysics/bullet3.git
+cd Detours
+nmake
+cd ..\bullet3
+cmake .
+```
+
+If you want AVX support in Bullet, use `cmake-gui` instead of `cmake`, and check the `USE_MSVC_AVX` box
+before clicking Configure then Generate. This should give a fairly significant performance boost if your CPU
+supports it.
++ Note that AVX support in Bullet and the HDT-SMP plugin itself are independent configuration options. Enable
+  it in both for maximum performance; disable it in both for maximum compatibility.
+
+Open D:\Dev-noAVX\bullet3\BULLET_PHYSICS.sln in Visual Studio, select the Release configuration, then
+Build -> Build solution.
+
+Download skse64_2_00_19.7z and unpack into Dev-noAVX (source code is included in the official distribution),
+then get the HDT-SMP source:
+
+```
+cd D:\Dev-noAVX\skse64_2_00_19\src\skse64
+git init
+git remote add origin https://github/com/Karonar1/hdtSMP64.git
+git fetch
+git checkout master
+```
+
+Open D:\Dev-noAVX\skse64_2_00_19\src\skse64\hdtSMP64.sln in Visual Studio. If you are asked to retarget
+projects, just accept the defaults and click OK.
+
+Open properties for the hdtSMP64 project. Select "All Configurations" at the top, and the C/C++ page. Add the
+following to Additional Include Directories (just delete anything that was there before):
++ D:\Dev-noAVX\Detours\include
++ D:\Dev-noAVX\bullet3\src
++ D:\Dev-noAVX\skse64_2_00_19\src
+
+On the Linker -> General page, add the following to Additional Library Directories:
++ D:\Dev-noAVX\bullet3\lib\Release
++ D:\Dev-noAVX\Detours\lib.X64
+
+Open properties for the skse64 project. Select General, and change Configuration Type from "Dynamic Library
+(.dll)" to "Static Library (.lib)".
 
 ## Credits
 
 + hydrogensaysHDT - Creating this plugin
 + aers - fixes and improvements
 + ousnius - some fixes, and "consulting"
++ karonar1 - bug fixes (the real work), I'm just building it

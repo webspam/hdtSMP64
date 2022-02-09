@@ -58,12 +58,10 @@ namespace hdt
 	{
 		_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 
-		/*
-		// TODO #ifdef DEBUG ?
+
 		LARGE_INTEGER ticks;
 		QueryPerformanceCounter(&ticks);
 		int64_t startTime = ticks.QuadPart;
-		*/
 
 		// Time passed since last computation
 		m_accumulatedInterval += interval;
@@ -79,7 +77,7 @@ namespace hdt
 
 		// No need to calculate physics when too little time has passed (time exceptionally short since last computation).
 		// This magic value directly impacts the number of computations and the time cost of the mod...
-		if (m_accumulatedInterval * 2.0f > tick)
+		if (hdt::ActorManager::instance()->activeSkeletons && m_accumulatedInterval * 2.0f > tick)
 		{
 			// We limit the interval to 4 substeps.
 			// Additional substeps happens when there is a very sudden slowdown, or when fps is lower than min-fps,
@@ -100,15 +98,12 @@ namespace hdt
 			writeTransform();
 		}
 
-		/*
-		// TODO introduce #ifdef DEBUG
 		QueryPerformanceCounter(&ticks);
 		int64_t endTime = ticks.QuadPart;
 		QueryPerformanceFrequency(&ticks);
 		// float ticks_per_ms = static_cast<float>(ticks.QuadPart) * 1e-3;
 		float lastProcessingTime = (endTime - startTime) / static_cast<float>(ticks.QuadPart) * 1e3;
 		m_averageProcessingTime = (m_averageProcessingTime + lastProcessingTime) * 0.5;
-		*/
 	}
 
 	void SkyrimPhysicsWorld::suspendSimulationUntilFinished(std::function<void(void)> process)
@@ -201,11 +196,11 @@ namespace hdt
 				else if (j.second.size())
 				{
 					std::sort(j.second.begin(), j.second.end(), [](SkyrimBody* a, SkyrimBody* b)
-					{
-						if (a->m_disablePriority != b->m_disablePriority)
-							return a->m_disablePriority > b->m_disablePriority;
-						return a < b;
-					});
+						{
+							if (a->m_disablePriority != b->m_disablePriority)
+								return a->m_disablePriority > b->m_disablePriority;
+							return a < b;
+						});
 
 					for (auto& k : j.second)
 						k->m_disabled = true;

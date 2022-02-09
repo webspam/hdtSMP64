@@ -8,13 +8,13 @@
 
 #include <LinearMath/btPoolAllocator.h>
 
-// #ifdef CUDA
+#ifdef CUDA
 // If defined, triangle-vertex and vertex-vertex collision results aren't applied until the next frame. This
 // allows GPU collision detection to run concurrently with the rest of the game engine, instead of leaving
 // the CPU idle waiting for the results. Triangle-triangle collisions are assumed to require the higher
 // accuracy, and are always applied in the current frame.
-//#define CUDA_DELAYED_COLLISIONS
-// #endif
+#define CUDA_DELAYED_COLLISIONS
+#endif
 
 namespace hdt
 {
@@ -66,7 +66,7 @@ namespace hdt
 	}
 
 	void CollisionDispatcher::dispatchAllCollisionPairs(btOverlappingPairCache* pairCache,
-	                                                    const btDispatcherInfo& dispatchInfo, btDispatcher* dispatcher)
+		const btDispatcherInfo& dispatchInfo, btDispatcher* dispatcher)
 	{
 		auto size = pairCache->getNumOverlappingPairs();
 		if (!size) return;
@@ -84,7 +84,7 @@ namespace hdt
 		std::unordered_set<SkinnedMeshBody*> bodies;
 		std::unordered_set<PerVertexShape*> vertex_shapes;
 		std::unordered_set<PerTriangleShape*> triangle_shapes;
-		
+
 		concurrency::parallel_for(0, size, [&](int i)
 #endif
 			{
@@ -253,20 +253,13 @@ namespace hdt
 				auto& pair = m_pairs[i];
 				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
 				{
-					if (pair.first->m_shape->asPerTriangleShape() && pair.second->m_shape->asPerTriangleShape())
-					{
-						m_immediateFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
-					}
-				}
-			}
-			for (int i = 0; i < m_pairs.size(); ++i)
-			{
-				auto& pair = m_pairs[i];
-				if (pair.first->m_shape->m_tree.collapseCollideL(&pair.second->m_shape->m_tree))
-				{
 					if (!pair.first->m_shape->asPerTriangleShape() || !pair.second->m_shape->asPerTriangleShape())
 					{
 						m_delayedFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
+					}
+					else if (pair.first->m_shape->asPerTriangleShape() && pair.second->m_shape->asPerTriangleShape())
+					{
+						m_immediateFuncs.push_back(SkinnedMeshAlgorithm::queueCollision(pair.first, pair.second, this));
 					}
 				}
 			}
@@ -327,7 +320,7 @@ namespace hdt
 		{
 			if (i.first->m_shape->m_tree.collapseCollideL(&i.second->m_shape->m_tree))
 				SkinnedMeshAlgorithm::processCollision(i.first, i.second, this);
-		});	
+		});
 		m_pairs.clear();
 	}
 #endif

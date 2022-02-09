@@ -408,6 +408,22 @@ namespace hdt
 			SMPDebug_PrintDetailed(false);
 			return true;
 		}
+		if (_strnicmp(buffer, "on", MAX_PATH) == 0)
+		{
+			SkyrimPhysicsWorld::get()->disabled = false;
+			{
+				Console_Print("HDT-SMP enabled");
+			}
+			return true;
+		}
+		if (_strnicmp(buffer, "off", MAX_PATH) == 0)
+		{
+			SkyrimPhysicsWorld::get()->disabled = true;
+			{
+				Console_Print("HDT-SMP disabled");
+			}
+			return true;
+		}
 
 		if (_strnicmp(buffer, "QueryOverride", MAX_PATH) == 0) {
 			Console_Print(hdt::Override::OverrideManager::GetSingleton()->queryOverrideData().c_str());
@@ -489,7 +505,14 @@ extern "C" {
 		info->name = "hdtSSEPhysics";
 		info->version = 1;
 
-		hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log");
+		hdt::gLog.OpenRelative(CSIDL_MYDOCUMENTS,
+#ifndef SKYRIMVR
+			"\\My Games\\Skyrim Special Edition\\SKSE\\hdtSMP64.log"
+
+#else
+			"\\My Games\\Skyrim VR\\SKSE\\hdtSMP64.log"
+#endif
+		);
 		hdt::gLog.SetLogLevel(IDebugLog::LogLevel::kLevel_Message);
 
 		_MESSAGE("hdtSMP64 2.0");
