@@ -1,6 +1,6 @@
 #include "hdtSkyrimBone.h"
 #include "hdtSkyrimPhysicsWorld.h"
-
+#include "hdtForceUpdateList.h"
 namespace hdt
 {
 	SkyrimBone::SkyrimBone(IDStr name, NiNode* node, NiNode* skeleton, btRigidBody::btRigidBodyConstructionInfo& ci)
@@ -13,6 +13,8 @@ namespace hdt
 		m_depth = 0;
 		for (auto i = node; i; i = i->m_parent)
 			++m_depth;
+
+		m_forceUpdateType = hdt::ForceUpdateList::GetSingleton()->isAmong(this->m_name);
 	}
 
 	void SkyrimBone::resetTransformToOriginal()
@@ -107,6 +109,18 @@ namespace hdt
 		m_node->m_worldTransform.rot = convertBt(transform.getBasis());
 		m_node->m_worldTransform.pos = convertBt(transform.getOrigin());
 		m_node->m_worldTransform = m_node->m_worldTransform;
+
+		if (m_forceUpdateType == 1) {
+			NiAVObject::ControllerUpdateContext ctx{ 0,0 };
+			m_node->UpdateDownwardPass(&ctx, 0x0);
+		}
+		else if (m_forceUpdateType == 2) {
+			for (int j = 0; j < m_node->m_children.m_size; j++) {
+				auto m_weapon_node = m_node->m_children.m_data[j];
+				NiAVObject::ControllerUpdateContext ctx{ 0,0 };
+				m_weapon_node->UpdateDownwardPass(&ctx, 0x0);
+			}
+		}
 
 		//_MESSAGE("wrote transforms bone %s [%f, %f, %f]", m_node->m_name, m_node->m_worldTransform.pos.x, m_node->m_worldTransform.pos.y, m_node->m_worldTransform.pos.z);
 
