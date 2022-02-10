@@ -3199,7 +3199,6 @@
     <ClInclude Include="EventDispatcherImpl.h" />
     <ClInclude Include="hdtConvertNi.h" />
     <ClInclude Include="hdtDefaultBBP.h" />
-    <ClInclude Include="hdtForceUpdateList.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtAABB.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtBone.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtBoneScaleConstraint.h" />
@@ -3438,7 +3437,6 @@
     <ClCompile Include="EventDispatcherImpl.cpp" />
     <ClCompile Include="hdtConvertNi.cpp" />
     <ClCompile Include="hdtDefaultBBP.cpp" />
-    <ClCompile Include="hdtForceUpdateList.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtBoneScaleConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtCollider.cpp" />

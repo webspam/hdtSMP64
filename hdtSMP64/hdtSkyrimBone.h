@@ -18,7 +18,5 @@ namespace hdt
 		int m_depth;
 		NiNode* m_node;
 		NiNode* m_skeleton;
-
-		int m_forceUpdateType;
 	};
 }
