@@ -27,6 +27,7 @@ namespace hdt
 {
 	IDebugLog gLog;
 	EventDebugLogger g_eventDebugLogger;
+	PluginHandle g_PluginHandle;
 
 	class FreezeEventHandler : public BSTEventSink<MenuOpenCloseEvent>
 	{
@@ -517,6 +518,8 @@ extern "C" {
 			return false;
 		}
 
+		hdt::g_PluginHandle = skse->GetPluginHandle();
+
 		return true;
 	}
 #endif
@@ -560,7 +563,7 @@ extern "C" {
 			if (cameraDispatcher)
 				cameraDispatcher->AddEventSink(hdt::SkyrimPhysicsWorld::get());
 
-			messageInterface->RegisterListener(skse->GetPluginHandle(), "SKSE", [](SKSEMessagingInterface::Message* msg)
+			messageInterface->RegisterListener(hdt::g_PluginHandle, "SKSE", [](SKSEMessagingInterface::Message* msg)
 				{
 					if (msg && msg->type == SKSEMessagingInterface::kMessage_InputLoaded)
 					{
@@ -576,18 +579,17 @@ extern "C" {
 #endif
 					}
 
-					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame) {
-						auto OM = hdt::Override::OverrideManager::GetSingleton();
-						std::string save_name = reinterpret_cast<char*>(msg->data);
-						OM->saveOverrideData(save_name);
-					}
-
-					if (msg && msg->type == SKSEMessagingInterface::kMessage_PreLoadGame) {
-						auto OM = hdt::Override::OverrideManager::GetSingleton();
-						std::string save_name = reinterpret_cast<char*>(msg->data);
-						OM->loadOverrideData(save_name);
-					}
 				});
+		}
+
+		const SKSESerializationInterface* srlz_intfc = reinterpret_cast<SKSESerializationInterface*>(skse->QueryInterface(kInterface_Serialization));
+		if (srlz_intfc) {
+			//Initialize all Serializer Module
+			hdt::Override::OverrideManager::GetSingleton();
+
+			srlz_intfc->SetSaveCallback(hdt::g_PluginHandle, hdt::SerializerBase::Save);
+
+			srlz_intfc->SetLoadCallback(hdt::g_PluginHandle, hdt::SerializerBase::Load);
 		}
 
 		ObScriptCommand* hijackedCommand = nullptr;

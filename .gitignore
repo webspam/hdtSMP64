@@ -50,3 +50,6 @@ skse64
 skse64_common
 xbyak
 tracy
+*.vcxproj
+*.vcxproj
+*.filters

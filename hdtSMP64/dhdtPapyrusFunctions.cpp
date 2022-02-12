@@ -31,7 +31,7 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), on_item(ptr: %016X).", reinterpret_cast<UInt64>(on_actor), reinterpret_cast<UInt64>(on_item));
 		return false;
 	}
-
+	
 	const auto& AM = hdt::ActorManager::instance();
 
 	auto& skeletons = AM->getSkeletons();
@@ -87,16 +87,25 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 
 					SkyrimPhysicsWorld::get()->suspendSimulationUntilFinished([&]() {
 
-						system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						if (armor.hasPhysics())
+							system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						else
+							system = SkyrimSystemCreator().createSystem(skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
 
-						system->block_resetting = true;
+						if (!system) {
+							if(armor.hasPhysics())
+								armor.clearPhysics();
+						}
+						else {
+							system->block_resetting = true;
 
-						util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
+							if (armor.hasPhysics())
+								util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
 
-						armor.setPhysics(system, true);
+							armor.setPhysics(system, true);
 
-						system->block_resetting = false;
-
+							system->block_resetting = false;
+						}
 						}
 					);
 
@@ -189,16 +198,25 @@ bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSF
 
 					SkyrimPhysicsWorld::get()->suspendSimulationUntilFinished([&]() {
 
-						system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						if (armor.hasPhysics())
+							system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						else
+							system = SkyrimSystemCreator().createSystem(skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
 
-						system->block_resetting = true;
+						if (!system) {
+							if (armor.hasPhysics())
+								armor.clearPhysics();
+						}
+						else {
+							system->block_resetting = true;
 
-						util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
+							if(armor.hasPhysics())
+								util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
 
-						armor.setPhysics(system, true);
+							armor.setPhysics(system, true);
 
-						system->block_resetting = false;
-
+							system->block_resetting = false;
+						}
 						}
 					);
 
@@ -292,6 +310,36 @@ BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Act
 		);
 
 	return physics_file_path.c_str();
+}
+
+UInt32 hdt::papyrus::FindOrCreateAnonymousSystem(StaticFunctionTag* base, TESObjectARMA* system_model, bool verbose_log)
+{
+	
+	return UInt32();
+}
+
+UInt32 hdt::papyrus::AttachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
+{
+	if (!on_actor || !system_handle) {
+		if (verbose_log)
+			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
+		return false;
+	}
+
+
+
+	return UInt32();
+}
+
+UInt32 hdt::papyrus::DetachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
+{
+	if (!on_actor || !system_handle) {
+		if (verbose_log)
+			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
+		return false;
+	}
+
+	return UInt32();
 }
 
 

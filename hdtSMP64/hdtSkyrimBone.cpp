@@ -111,14 +111,16 @@ namespace hdt
 		m_node->m_worldTransform = m_node->m_worldTransform;
 
 		if (m_forceUpdateType == 1) {
-			NiAVObject::ControllerUpdateContext ctx{ 0,0 };
-			m_node->UpdateDownwardPass(&ctx, 0x0);
+			updateTransformUpDown(m_node, false);
 		}
 		else if (m_forceUpdateType == 2) {
-			for (int j = 0; j < m_node->m_children.m_size; j++) {
+			for (int j = 0; j < m_node->m_children.m_size; ++j) {
 				auto m_weapon_node = m_node->m_children.m_data[j];
-				NiAVObject::ControllerUpdateContext ctx{ 0,0 };
-				m_weapon_node->UpdateDownwardPass(&ctx, 0x0);
+				//Why when re-equipping things some nodes turn into nullptr?
+				//Equipment skeleton renamed weapon bones which were romoved when the equipment was disattahced.
+				if (!m_weapon_node)continue;
+				m_weapon_node->m_worldTransform = m_node->m_worldTransform;
+				updateTransformUpDown(m_weapon_node,false);
 			}
 		}
 
@@ -131,4 +133,15 @@ namespace hdt
 
 		//updateTransformUpDown(m_node->GetAsNiNode());
 	}
+
+
+	//void SkyrimBone::debugPrint(std::string name) {
+	//	if (this->m_name == name && SkyrimPhysicsWorld::get()->isSuspended() == false) {
+	//		auto tf0 = m_rig.getWorldTransform().getOrigin();
+	//		auto tf = (convertNi(m_skeleton->m_worldTransform).inverse() * convertNi(m_node->m_worldTransform)).getOrigin();
+	//		auto tf1 = (convertNi(m_node->m_parent->m_parent->m_worldTransform).inverse() * convertNi(m_node->m_worldTransform)).getOrigin();
+
+	//		Console_Print("wrote transforms bone %s [%.3f, %.3f, %.3f] | [%.3f, %.3f, %.3f] | [%.3f, %.3f, %.3f], %d, Kinematic: %s", m_node->m_name, tf0.x(), tf0.y(), tf0.z(), tf.x(), tf.y(), tf.z(), tf1.x(), tf1.y(), tf1.z(), clock(), m_rig.isStaticOrKinematicObject() ? "true" : "false");
+	//	}
+	//}
 }
