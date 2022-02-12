@@ -1,5 +1,6 @@
 #include "hdtSkyrimBone.h"
 #include "hdtSkyrimPhysicsWorld.h"
+#include "hdtForceUpdateList.h"
 
 namespace hdt
 {
