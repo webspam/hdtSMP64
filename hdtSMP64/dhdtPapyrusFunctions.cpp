@@ -311,35 +311,35 @@ BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Act
 
 	return physics_file_path.c_str();
 }
-
-UInt32 hdt::papyrus::FindOrCreateAnonymousSystem(StaticFunctionTag* base, TESObjectARMA* system_model, bool verbose_log)
-{
-	
-	return UInt32();
-}
-
-UInt32 hdt::papyrus::AttachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
-{
-	if (!on_actor || !system_handle) {
-		if (verbose_log)
-			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
-		return false;
-	}
-
-
-
-	return UInt32();
-}
-
-UInt32 hdt::papyrus::DetachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
-{
-	if (!on_actor || !system_handle) {
-		if (verbose_log)
-			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
-		return false;
-	}
-
-	return UInt32();
-}
+//
+//UInt32 hdt::papyrus::FindOrCreateAnonymousSystem(StaticFunctionTag* base, TESObjectARMA* system_model, bool verbose_log)
+//{
+//	
+//	return UInt32();
+//}
+//
+//UInt32 hdt::papyrus::AttachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
+//{
+//	if (!on_actor || !system_handle) {
+//		if (verbose_log)
+//			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
+//		return false;
+//	}
+//
+//
+//
+//	return UInt32();
+//}
+//
+//UInt32 hdt::papyrus::DetachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
+//{
+//	if (!on_actor || !system_handle) {
+//		if (verbose_log)
+//			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
+//		return false;
+//	}
+//
+//	return UInt32();
+//}
 
 
