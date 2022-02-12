@@ -14,7 +14,7 @@ namespace hdt
 		for (auto i = node; i; i = i->m_parent)
 			++m_depth;
 
-		m_forceUpdateType = hdt::ForceUpdateList::GetSingleton()->isAmong(this->m_name);
+		this->m_forceUpdateType = hdt::ForceUpdateList::GetSingleton()->isAmong(this->m_name);
 	}
 
 	void SkyrimBone::resetTransformToOriginal()

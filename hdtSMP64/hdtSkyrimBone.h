@@ -19,6 +19,7 @@ namespace hdt
 		NiNode* m_node;
 		NiNode* m_skeleton;
 
+	private:
 		int m_forceUpdateType;
 	};
 }
