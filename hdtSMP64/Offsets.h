@@ -46,9 +46,6 @@ namespace hdt
 		constexpr std::uintptr_t BSFaceGenNiNode_SkinAllGeometry = 0x003D87B0;
 		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry = 0x003D8840;
 #endif
-		// .text:00000001403D88D4                 cmp     ebx, 8
-		// patch 8 -> 7
-		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry_bug = BSFaceGenNiNode_SkinSingleGeometry + 0x96;
 
 		// Hooks.cpp
 		// function responsible for majority of main game thread loop
@@ -88,9 +85,10 @@ namespace hdt
 		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x000372b30;
 		constexpr std::uintptr_t BSFaceGenModelExtraData_BoneLimit = 0x00037ae28;
 #endif
+
 		// .text:00000001403D88D4                 cmp     ebx, 8
 		// patch 8 -> 7
-		//VR is same as SSE
+		// The same for AE/SE/VR.
 		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry_bug = BSFaceGenNiNode_SkinSingleGeometry + 0x96;
 	}
 }
