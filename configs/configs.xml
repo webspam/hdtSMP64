@@ -21,14 +21,6 @@
     <unclampedResets>true</unclampedResets>
     <!-- unclampedResetAngle: angle to reset at. you'll probably want to tweak this until you're happy. -->
     <unclampedResetAngle>130.0</unclampedResetAngle>
-    <!-- maximumDistance: maximum distance from player to apply physics to an actor. A few cell transitions (notably Blue Palace -> Solitude streets)
-						leave NPCs loaded and technically active, but extremely distant, and this makes collision checking extremely
-						slow. The default value of 10000 should disable those NPCs, while having no effect on NPCs in view range.
-						Set lower values for more performance - around 2000 is good. -->
-    <maximumDistance>10000.0</maximumDistance>
-    <!-- maximumAngle: maximum angle in field of view to apply physics to an actor. 0 degrees is straight ahead. Values over 180 would disable this check
-						Set lower values for more performance - default is 45 degrees. -->
-    <maximumAngle>45.0</maximumAngle>
     <!-- maximumActiveSkeletons: maximum number of active skeletons/actors for physics. This is a hard limit to autoAdjustMaxSkeletons.
 						Set lower values for more performance - default is 20. -->
     <maximumActiveSkeletons>20</maximumActiveSkeletons>

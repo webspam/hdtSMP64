@@ -195,9 +195,8 @@ namespace hdt
 				// calculate rolling average
 				rollingAverage += (averageTimePerSkeleton - rollingAverage) / m_sampleSize;
 			}
-#ifdef _DEBUG
+
 			_MESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
-#endif // _DEBUG
 
 			if (m_autoAdjustMaxSkeletons) {
 				maxActiveSkeletons = processing_time > target_time ? activeSkeletons - 2 : static_cast<int>(target_time / rollingAverage);
