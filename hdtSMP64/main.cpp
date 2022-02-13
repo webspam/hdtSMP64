@@ -263,7 +263,7 @@ namespace hdt
 		static std::map<ActorManager::SkeletonState, char*> stateStrings =
 		{ { ActorManager::SkeletonState::e_InactiveNotInScene, "Not in scene"},
 			{ActorManager::SkeletonState::e_InactiveUnseenByPlayer, "Unseen by player"},
-			{ActorManager::SkeletonState::e_InactiveTooFar, "Too far for our CPU"},
+			{ActorManager::SkeletonState::e_InactiveTooFar, "Deactivated for performance"},
 			{ActorManager::SkeletonState::e_ActiveIsPlayer, "Is player character"},
 			{ActorManager::SkeletonState::e_ActiveNearPlayer, "Is near player"} };
 
