@@ -33,6 +33,7 @@ namespace hdt {
 
 		static void Load(SKSESerializationInterface* intfc) {
 			UInt32 type, version, length;
+			//auto load_begin = clock();
 			while (intfc->GetNextRecordInfo(&type, &version, &length)) {
 				auto record = std::find_if(g_SerializerList.begin(), g_SerializerList.end(), [type, version](SerializerBase* a_srlzr) {
 					return type == a_srlzr->StorageName() && version == a_srlzr->FormatVersion();
@@ -42,6 +43,8 @@ namespace hdt {
 
 				(*record)->ReadData(intfc, length);
 			}
+			//Less than a microsecond
+			//Console_Print("[HDT-SMP] Serializer loading cost: %.3f sec.", (clock() - load_begin) / 1000.0f);
 		};
 	};
 
