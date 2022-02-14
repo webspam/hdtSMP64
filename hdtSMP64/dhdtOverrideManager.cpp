@@ -63,7 +63,7 @@ std::string hdt::Override::OverrideManager::checkOverride(UInt32 actor_formID, s
 std::stringstream hdt::Override::OverrideManager::Serialize()
 {
 	std::stringstream data_stream;
-	if (!g_hasPapyrusExtension)return data_stream;
+	if (!checkPapyrusExtension())return data_stream;
 
 	for (auto& e : m_ActorPhysicsFileSwapList) {
 		char buff[16];
@@ -74,12 +74,14 @@ std::stringstream hdt::Override::OverrideManager::Serialize()
 			data_stream << e1.first << "\t" << e1.second << std::endl;
 		}
 	}
+	Console_Print("Content: %s", data_stream.str().c_str());
 	return data_stream;
 }
 
 void hdt::Override::OverrideManager::Deserialize(std::stringstream& data_stream)
 {
 	if (!checkPapyrusExtension())return;
+	m_ActorPhysicsFileSwapList.clear();
 	try {
 		while (!data_stream.eof()) {
 			UInt32 actor_formID, override_size = 0;
@@ -87,7 +89,8 @@ void hdt::Override::OverrideManager::Deserialize(std::stringstream& data_stream)
 			for (int i = 0; i < override_size; ++i) {
 				std::string orig_physics_file, override_physics_file;
 				data_stream >> orig_physics_file >> override_physics_file;
-				this->registerOverride(actor_formID, orig_physics_file, override_physics_file);
+				//this->registerOverride(actor_formID, orig_physics_file, override_physics_file);
+				hdt::papyrus::impl::SwapPhysicsFileImpl(actor_formID, orig_physics_file, override_physics_file, true, false);
 			}
 		}
 	}

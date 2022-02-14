@@ -610,6 +610,8 @@ extern "C" {
 			//Initialize all Serializer Module
 			hdt::Override::OverrideManager::GetSingleton();
 
+			srlz_intfc->SetUniqueID(hdt::g_PluginHandle, 'FHDT');
+
 			srlz_intfc->SetSaveCallback(hdt::g_PluginHandle, hdt::SerializerBase::Save);
 
 			srlz_intfc->SetLoadCallback(hdt::g_PluginHandle, hdt::SerializerBase::Load);

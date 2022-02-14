@@ -12,6 +12,20 @@ namespace hdt {
 
 	extern std::vector<SerializerBase*> g_SerializerList;
 
+	struct _uint32_to_str_t {
+		union _uin32_cstr {
+			UInt32 _number;
+			char _buffer[4];
+		};
+		std::string operator()(UInt32 number) {
+			_uin32_cstr _union{};
+			_union._number = number;
+			auto str = std::string(_union._buffer, 4);
+			return std::string(str.rbegin(), str.rend());
+		}
+	};
+	extern _uint32_to_str_t UInt32toStr;
+
 	class SerializerBase {
 	public:
 		SerializerBase() {};
@@ -27,6 +41,7 @@ namespace hdt {
 
 		static void Save(SKSESerializationInterface* intfc) {
 			for (auto data_block : g_SerializerList) {
+				//Console_Print("[HDT-SMP] Saving data, type: %s version: %08X", UInt32toStr(data_block->StorageName()).c_str(), data_block->FormatVersion());
 				data_block->SaveData(intfc);
 			}
 		};
@@ -40,7 +55,7 @@ namespace hdt {
 					}
 				);
 				if (record == g_SerializerList.end())continue;
-
+				//_MESSAGE("[HDT-SMP] Reading data, type: %s version: %08X length: %d", UInt32toStr(type).c_str(), version, length);
 				(*record)->ReadData(intfc, length);
 			}
 			//Less than a microsecond
@@ -75,16 +90,17 @@ namespace hdt {
 	{
 		_Stream_t s_data_block = this->Serialize();
 		intfc->OpenRecord(this->StorageName(), this->FormatVersion());
-		intfc->WriteRecordData(_toString(s_data_block).c_str(), _toString(s_data_block).length());
+		auto success = intfc->WriteRecordData(_toString(s_data_block).c_str(), _toString(s_data_block).length());
+		//Console_Print("Writing Data: \"%s\" \nStatus: %s", _toString(s_data_block).c_str(), success?"Succeeded":"Failed");
 	}
 
 	template<class _Storage_t, class _Stream_t>
 	inline void Serializer<_Storage_t, _Stream_t>::ReadData(SKSESerializationInterface* intfc, UInt32 length)
 	{
-		char* data_block = nullptr;
+		char* data_block = new char[length];
 		intfc->ReadRecordData(data_block, length);
-
 		std::string s_data(data_block, length);
+		//_MESSAGE("Reading Data: %s", s_data.c_str());
 		_Stream_t _stream; _stream << s_data;
 		this->Deserialize(_stream);
 	}
