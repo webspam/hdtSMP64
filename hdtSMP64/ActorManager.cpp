@@ -158,7 +158,9 @@ namespace hdt
 				auto cl = a_lhs.m_cosAngleFromCameraDirectionTimesSkeletonDistance;
 				auto dr = a_rhs.m_distanceFromCamera2;
 				auto dl = a_lhs.m_distanceFromCamera2;
-				/* If one is exacly on the side of the camera (product of cos = 0)
+				/* If one is at distance zero (1st person player) from the camera
+				   then it is first.
+				   If one is exacly on the side of the camera (product of cos = 0)
 				   then the one equal to zero is last.
 				   If one is behind the camera and the other in front of the camera (product of cos < 0)
 				   then the one behind the camera is last (the one with cos(angle) < 0).
@@ -167,7 +169,7 @@ namespace hdt
 				   so we want the smallest distance / cosinus.
 				   cl = cosinus * distance, dl = distance² => distance / cosinus = dl/cl
 				   So we want dl/cl < dr/cr. */
-				return (cl * cr == 0) ? (cl != 0) : (cl * cr < 0) ? (cl > cr) : (dl * cr < dr * cl);
+				return (dl * dr == 0) ? (dl == 0) : (cl * cr == 0) ? (cl != 0) : (cl * cr < 0) ? (cl > cr) : (dl * cr < dr * cl);
 			});
 
 		// We set which skeletons are active and we count them.
