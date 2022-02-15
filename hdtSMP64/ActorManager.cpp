@@ -196,7 +196,7 @@ namespace hdt
 				rollingAverage += (averageTimePerSkeleton - rollingAverage) / m_sampleSize;
 			}
 
-			_MESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
+			_DMESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
 
 			if (m_autoAdjustMaxSkeletons) {
 				maxActiveSkeletons = processing_time > target_time ? activeSkeletons - 2 : static_cast<int>(target_time / rollingAverage);
