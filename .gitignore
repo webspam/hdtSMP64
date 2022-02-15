@@ -54,3 +54,6 @@ skse64_loader_common
 xbyak
 tracy
 sksevr.sln
+*.vcxproj
+*.vcxproj
+*.filters

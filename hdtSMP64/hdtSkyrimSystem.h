@@ -167,7 +167,7 @@ namespace hdt
 		const ConeTwistConstraintTemplate& getConeTwistConstraintTemplate(const IDStr& name);
 
 		void readBone();
-		void readBone2(SkyrimSystem* old_system);
+		void updateBone(SkyrimSystem* old_system);
 		Ref<SkyrimBody> readPerVertexShape(DefaultBBP::NameMap meshNameMap);
 		Ref<SkyrimBody> readPerTriangleShape(DefaultBBP::NameMap meshNameMap);
 		Ref<Generic6DofConstraint> readGenericConstraint();

@@ -362,7 +362,6 @@ namespace hdt
 		m_model = model;
 		m_filePath = path;
 		//updateTransformUpDown(m_skeleton, true);
-
 		XMLReader reader((uint8_t*)loaded.data(), loaded.size());
 		m_reader = &reader;
 
@@ -389,7 +388,7 @@ namespace hdt
 					auto name = m_reader->GetName();
 					if (name == "bone")
 					{
-						readBone2(old_system);
+						updateBone(old_system);
 					}
 					else if (name == "bone-default")
 					{
@@ -864,7 +863,7 @@ namespace hdt
 		m_mesh->m_bones.push_back(b);
 	}
 
-	void SkyrimSystemCreator::readBone2(SkyrimSystem* old_system)
+	void SkyrimSystemCreator::updateBone(SkyrimSystem* old_system)
 	{
 		IDStr name = getRenamedBone(m_reader->getAttribute("name"));
 		IDStr cls = m_reader->getAttribute("template", "");
@@ -892,24 +891,27 @@ namespace hdt
 		b->m_gravityFactor = cinfo.m_gravityFactor;
 		//b->m_collisionFilter = cinfo.m_collisionFilter;
 
-		//b->readTransform(RESET_PHYSICS);
 		auto old_b = old_system->findBone(name);
 
-		b->m_currentTransform = convertNi(b->m_skeleton->m_worldTransform) * old_b->m_origToSkeletonTransform;
-		
-		auto dest = b->m_currentTransform.asTransform() * b->m_localToRig;
-		
-		b->m_origToSkeletonTransform = old_b->m_origToSkeletonTransform;
-		b->m_origTransform = old_b->m_origTransform;
-		b->m_rig.setWorldTransform(dest);
-		b->m_rig.setInterpolationWorldTransform(dest);
-		b->m_rig.setLinearVelocity(btVector3(0, 0, 0));
-		b->m_rig.setAngularVelocity(btVector3(0, 0, 0));
-		b->m_rig.setInterpolationLinearVelocity(btVector3(0, 0, 0));
-		b->m_rig.setInterpolationAngularVelocity(btVector3(0, 0, 0));
-		b->m_rig.updateInertiaTensor();
+		if (!old_b) {
+			b->readTransform(RESET_PHYSICS);
+		}
+		else {
+			b->m_currentTransform = convertNi(b->m_skeleton->m_worldTransform) * old_b->m_origToSkeletonTransform;
 
+			auto dest = b->m_currentTransform.asTransform() * b->m_localToRig;
 
+			b->m_origToSkeletonTransform = old_b->m_origToSkeletonTransform;
+			b->m_origTransform = old_b->m_origTransform;
+			b->m_rig.setWorldTransform(dest);
+			b->m_rig.setInterpolationWorldTransform(dest);
+			b->m_rig.setLinearVelocity(btVector3(0, 0, 0));
+			b->m_rig.setAngularVelocity(btVector3(0, 0, 0));
+			b->m_rig.setInterpolationLinearVelocity(btVector3(0, 0, 0));
+			b->m_rig.setInterpolationAngularVelocity(btVector3(0, 0, 0));
+			b->m_rig.updateInertiaTensor();
+
+		}
 		m_mesh->m_bones.push_back(b);
 	}
 
