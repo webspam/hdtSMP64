@@ -379,7 +379,6 @@ namespace hdt
 		// Set locale to en_US
 		std::setlocale(LC_NUMERIC, "en_US");
 
-		_MESSAGE("updateSystem() checkpoint 4");
 		try
 		{
 			while (m_reader->Inspect())
@@ -487,7 +486,6 @@ namespace hdt
 			return nullptr;
 		}
 
-		_MESSAGE("updateSystem() checkpoint 5");
 		// Restore original locale
 		std::setlocale(LC_NUMERIC, saved_locale);
 
@@ -894,6 +892,7 @@ namespace hdt
 		//b->m_collisionFilter = cinfo.m_collisionFilter;
 
 		auto old_b = old_system->findBone(name);
+
 		if (!old_b) {
 			b->readTransform(RESET_PHYSICS);
 		}
