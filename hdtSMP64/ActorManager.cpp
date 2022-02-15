@@ -151,11 +151,23 @@ namespace hdt
 				skel.calculateDistanceAndOrientationDifferenceFromSource(cameraPosition, cameraOrientation);
 			});
 
-		// We sort by the cos(angle from the center) / distance.
+		// We sort the skeletons depending on the angle and distance.
 		std::sort(m_skeletons.begin(), m_skeletons.end(),
 			[](auto&& a_lhs, auto&& a_rhs) {
-				return (a_rhs.m_cosAngleFromCameraDirectionTimesSkeletonDistance * a_lhs.m_distanceFromCamera2)
-					 < (a_lhs.m_cosAngleFromCameraDirectionTimesSkeletonDistance * a_rhs.m_distanceFromCamera2);
+				auto cr = a_rhs.m_cosAngleFromCameraDirectionTimesSkeletonDistance;
+				auto cl = a_lhs.m_cosAngleFromCameraDirectionTimesSkeletonDistance;
+				auto dr = a_rhs.m_distanceFromCamera2;
+				auto dl = a_lhs.m_distanceFromCamera2;
+				/* If one is exacly on the side of the camera (product of cos = 0)
+				   then the one equal to zero is last.
+				   If one is behind the camera and the other in front of the camera (product of cos < 0)
+				   then the one behind the camera is last (the one with cos(angle) < 0).
+				   If both are on the same side of the camera (product of cos > 0):
+				   we want first the smallest angle (so the highest cosinus), and the smallest distance,
+				   so we want the smallest distance / cosinus.
+				   cl = cosinus * distance, dl = distance² => distance / cosinus = dl/cl
+				   So we want dl/cl < dr/cr. */
+				return (cl * cr == 0) ? (cl != 0) : (cl * cr < 0) ? (cl > cr) : (dl * cr < dr * cl);
 			});
 
 		// We set which skeletons are active and we count them.
@@ -682,11 +694,13 @@ namespace hdt
 
 	bool ActorManager::Skeleton::isInPlayerView()
 	{
-		if (isPlayerCharacter())
-			return true;
+		// This function is called only when the skeleton isn't the player character.
+		// This might change in the future; in that case this test will have to be enabled.
+		//if (isPlayerCharacter())
+		//	return true;
 
-		// We don't enable the skeletons behind the camera.
-		if (m_cosAngleFromCameraDirectionTimesSkeletonDistance < 0)
+		// We don't enable the skeletons behind the camera or on its side.
+		if (m_cosAngleFromCameraDirectionTimesSkeletonDistance <= 0)
 			return false;
 
 		// We enable only the skeletons that the PC sees.
