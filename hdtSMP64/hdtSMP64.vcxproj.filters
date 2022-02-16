@@ -850,6 +850,12 @@
     <ClInclude Include="dhdtPapyrusFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="hdtForceUpdateList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hdtSerialization.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
@@ -1420,6 +1426,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="dhdtPapyrusFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hdtForceUpdateList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hdtSerialization.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
