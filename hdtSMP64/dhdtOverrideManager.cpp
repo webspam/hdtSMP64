@@ -74,7 +74,7 @@ std::stringstream hdt::Override::OverrideManager::Serialize()
 			data_stream << e1.first << "\t" << e1.second << std::endl;
 		}
 	}
-	Console_Print("Content: %s", data_stream.str().c_str());
+	
 	return data_stream;
 }
 
