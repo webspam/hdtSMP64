@@ -38,6 +38,7 @@ namespace hdt
 		{
 			// Note order: inactive states must come before e_SkeletonActive, and active states after
 			e_InactiveNotInScene,
+			e_InactiveUnseenByPlayer,
 			e_InactiveTooFar,
 			e_SkeletonActive,
 			e_ActiveNearPlayer,
@@ -109,21 +110,26 @@ namespace hdt
 			void cleanArmor();
 			void cleanHead(bool cleanAll = false);
 			void clear();
-			void calculateDistanceFromSource(NiPoint3 cameraPosition);
-			/// @brief Get attitude and heading of skeleton given source. 0 is in front; 180 is behind
-			/// @param source source position to measure heading from
-			/// @param attitude attitude pointer
-			/// @param heading heading pointer
-			void GetAttitudeAndHeadingFromSource(NiPoint3 source, float& attitude, float& heading);
+
+			// @brief This calculates and sets the distance from skeleton to player, and a value that is the cosinus
+			// between the camera orientation vector and the camera to skeleton vector, multiplied by the length
+			// of the camera to skeleton vector; that value is very fast to compute as it is a dot product, and it
+			// can be directly used for our needs later; the distance is provided squared for performance reasons.
+			// @param sourcePosition the position of the camera
+			// @param sourceOrientation the orientation of the camera
+			void calculateDistanceAndOrientationDifferenceFromSource(NiPoint3 sourcePosition, NiPoint3 sourceOrientation);
 
 			bool isPlayerCharacter() const;
-			bool isInPlayerView(NiPoint3 cameraPosition, NiPoint3 cameraOrientation, float maxAngleCosinus2);
+			bool isInPlayerView();
 			bool hasPhysics = false;
 			std::optional<NiPoint3> position() const;
 
-			/* Updates isActive, state, armors.isActive and	headParts.isActive. */
-			bool updateAttachedState(NiPoint3 cameraPosition, float maxDistance, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2, bool deactivate);
-			bool deactivate();
+			// @brief Updates the states and activity of skeletons, their heads parts and armors.
+			// @param playerCell The skeletons not in the player cell are automatically inactive.
+			// @param deactivate If set to true, the concerned skeleton will be inactive, regardless of other elements.
+			bool updateAttachedState(const NiNode* playerCell, bool deactivate);
+
+			// bool deactivate(); // FIXME useless?
 			void reloadMeshes();
 
 			void scanHead();
@@ -137,8 +143,11 @@ namespace hdt
 
 			std::vector<Armor>& getArmors() { return armors; }
 
-			float distanceFromPlayerSqd = std::numeric_limits<float>::max();
-			float percentFromCameraCenter = 1; //directly in front should be 0; max angle should be 1
+			// @brief This is the squared distance between the skeleton and the camera.
+			float m_distanceFromCamera2 = std::numeric_limits<float>::max();
+
+			// @brief This is |camera2SkeletonVector|*cos(angle between that vector and the camera direction).
+			float m_cosAngleFromCameraDirectionTimesSkeletonDistance = -1.;
 
 		private:
 			bool isActiveInScene() const;
@@ -166,7 +175,10 @@ namespace hdt
 		static IDStr headPrefix(IDType id);
 
 		void onEvent(const ArmorAttachEvent& e) override;
+
+		// @brief On this event, we decide which skeletons will be active for physics this frame.
 		void onEvent(const FrameEvent& e) override;
+
 		void onEvent(const ShutdownEvent&) override;
 		void onEvent(const SkinSingleHeadGeometryEvent&) override;
 		void onEvent(const SkinAllHeadGeometryEvent&) override;

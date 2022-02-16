@@ -58,7 +58,6 @@ namespace hdt
 	{
 		_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 
-
 		LARGE_INTEGER ticks;
 		QueryPerformanceCounter(&ticks);
 		int64_t startTime = ticks.QuadPart;
@@ -67,35 +66,39 @@ namespace hdt
 		m_accumulatedInterval += interval;
 
 		// Exponential average - becomes the tick; the tick equals the average interval when the interval is stable.
-		m_averageInterval = m_averageInterval * 0.875f + interval * 0.125f;
+		m_averageInterval += (interval - m_averageInterval) * .125f;
 
-		// The tick is the given time for each computation substep. We set it to the average fps
-		// to have one average computation each frame when everything is usual.
-		// In case of poor fps, we set it to the configured minimum engine value (60 Hz),
-		// to still allow a physics with max increments of 1/60s.
-		auto tick = std::min(m_averageInterval, m_timeTick);
-
-		// No need to calculate physics when too little time has passed (time exceptionally short since last computation).
-		// This magic value directly impacts the number of computations and the time cost of the mod...
-		if (hdt::ActorManager::instance()->activeSkeletons && m_accumulatedInterval * 2.0f > tick)
+		// No need to calculate physics if there is no active skeleton.
+		if (hdt::ActorManager::instance()->activeSkeletons)
 		{
-			// We limit the interval to 4 substeps.
-			// Additional substeps happens when there is a very sudden slowdown, or when fps is lower than min-fps,
-			// we have to compute for the passed time we haven't computed.
-			// n substeps means that when instant fps is n times lower than usual current fps, we stop computing.
-			// So, we guarantee no jitter for fps greater than min-fps / maxSubsteps.
-			// For example, if min-fps = 60 and maxSubsteps = 4, we guarantee no jitter for 15+ fps,
-			// at the cost of additional simulations.
-			const auto maxSubSteps = 4;
-			auto remainingTimeStep = std::min(m_accumulatedInterval, tick * maxSubSteps);
+			// The tick is the given time for each computation substep. We set it to the average fps
+			// to have one average computation each frame when everything is usual.
+			// In case of poor fps, we set it to the configured minimum engine value (60 Hz),
+			// to still allow a physics with max increments of 1/60s.
+			const auto tick = std::min(m_averageInterval, m_timeTick);
 
-			readTransform(remainingTimeStep);
-			updateActiveState();
-			auto offset = applyTranslationOffset();
-			stepSimulation(remainingTimeStep, 0/*=maxSubSteps, ignored*/, tick);
-			restoreTranslationOffset(offset);
-			m_accumulatedInterval = 0;
-			writeTransform();
+			// No need to calculate physics when too little time has passed (time exceptionally short since last computation).
+			// This magic value directly impacts the number of computations and the time cost of the mod...
+			if (m_accumulatedInterval * 2.0f > tick)
+			{
+				// We limit the interval to 4 substeps.
+				// Additional substeps happens when there is a very sudden slowdown, or when fps is lower than min-fps,
+				// we have to compute for the passed time we haven't computed.
+				// n substeps means that when instant fps is n times lower than usual current fps, we stop computing.
+				// So, we guarantee no jitter for fps greater than min-fps / maxSubsteps.
+				// For example, if min-fps = 60 and maxSubsteps = 4, we guarantee no jitter for 15+ fps,
+				// at the cost of additional simulations.
+				const auto maxSubSteps = 4;
+				const auto remainingTimeStep = std::min(m_accumulatedInterval, tick * maxSubSteps);
+
+				readTransform(remainingTimeStep);
+				updateActiveState();
+				auto offset = applyTranslationOffset();
+				stepSimulation(remainingTimeStep, 0/*=maxSubSteps, ignored*/, tick);
+				restoreTranslationOffset(offset);
+				m_accumulatedInterval = 0;
+				writeTransform();
+			}
 		}
 
 		QueryPerformanceCounter(&ticks);

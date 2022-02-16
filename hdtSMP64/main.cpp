@@ -263,7 +263,8 @@ namespace hdt
 	{
 		static std::map<ActorManager::SkeletonState, char*> stateStrings =
 		{ { ActorManager::SkeletonState::e_InactiveNotInScene, "Not in scene"},
-			{ActorManager::SkeletonState::e_InactiveTooFar, "Too far from player"},
+			{ActorManager::SkeletonState::e_InactiveUnseenByPlayer, "Unseen by player"},
+			{ActorManager::SkeletonState::e_InactiveTooFar, "Deactivated for performance"},
 			{ActorManager::SkeletonState::e_ActiveIsPlayer, "Is player character"},
 			{ActorManager::SkeletonState::e_ActiveNearPlayer, "Is near player"} };
 
@@ -473,7 +474,6 @@ namespace hdt
 			}
 		}
 
-		// TODO debug for these messages?
 		Console_Print("[HDT-SMP] tracked skeletons: %d", skeletons.size());
 		Console_Print("[HDT-SMP] active skeletons: %d", activeSkeletons);
 		Console_Print("[HDT-SMP] tracked armor addons: %d", armors);
