@@ -42,8 +42,8 @@
             calculate the maximumActiveSkeletons. Increasing sample size will flatten outliers but can slow adjustment responsiveness.
 						Default is 5. -->
     <sampleSize>5</sampleSize>
-    <!-- enableCuda: experimental GPU collision algorithm, disabled by default. Try this if you have a slow CPU and fast GPU -->
-    <enableCuda>false</enableCuda>
+    <!-- enableCuda: experimental GPU collision algorithm. Try this if you have a slow CPU and fast GPU -->
+    <enableCuda>true</enableCuda>
   </smp>
   <solver>
     <numIterations>16</numIterations>
