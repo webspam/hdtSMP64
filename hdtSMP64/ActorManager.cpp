@@ -242,6 +242,7 @@ namespace hdt
 	void ActorManager::onEvent(const SkinSingleHeadGeometryEvent& e)
 	{
 		// This case never happens to a lurker skeleton, thus we don't need to test.
+		// If we don't find a "NPC" node in the skeleton, we do nothing.
 		auto npc = findNode(e.skeleton, "NPC");
 		if (!npc) return;
 
@@ -249,16 +250,20 @@ namespace hdt
 		if (m_shutdown) return;
 
 		auto& skeleton = getSkeletonData(e.skeleton);
+		// FIXME we should reuse directly the local variable npc here.
 		skeleton.npc = getNpcNode(e.skeleton);
 
+		// We attach the head to the skeleton.
 		skeleton.processGeometry(e.headNode, e.geometry);
 
+		// We find the headpart in the skeleton that is equal to ... the geometry of the event (?).
 		auto headPartIter = std::find_if(skeleton.head.headParts.begin(), skeleton.head.headParts.end(),
 			[e](const Head::HeadPart& p)
 			{
 				return p.headPart == e.geometry;
 			});
 
+		// If we find it, and there is a original part root node (what is it?), then...
 		if (headPartIter != skeleton.head.headParts.end())
 		{
 			if (headPartIter->origPartRootNode)
@@ -418,8 +423,11 @@ namespace hdt
 		for (int i = 0; i < src->m_children.m_arrayBufLen; ++i)
 		{
 			auto srcChild = castNiNode(src->m_children.m_data[i]);
+			// We're only working on NiNodes.
 			if (!srcChild) continue;
 
+			// If the child isn't named, we merge it into our destination.
+			// TODO sorry? And if there's no name in its children, we do nothing??
 			if (!srcChild->m_name)
 			{
 				doSkeletonMerge(dst, srcChild, prefix, map);
@@ -428,6 +436,7 @@ namespace hdt
 
 			// FIXME: This was previously only in doHeadSkeletonMerge.
 			// But surely non-head skeletons wouldn't have this anyway?
+			// If the name of the child is BSFaceGenNiNodeSkinned, we do nothing.
 			if (!strcmp(srcChild->m_name, "BSFaceGenNiNodeSkinned"))
 			{
 #ifdef _DEBUG
@@ -437,11 +446,14 @@ namespace hdt
 			}
 
 			// TODO check it's not a lurker skeleton
+			// We look for a NiNode in dst with the name of the child.
 			auto dstChild = findNode(dst, srcChild->m_name);
+			// If we find it, we merge both.
 			if (dstChild)
 			{
 				doSkeletonMerge(dstChild, srcChild, prefix, map);
 			}
+			// If we don't find it, we attach a clone of the child into our destination. We rename lots of things while cloning.
 			else
 			{
 				dst->AttachChild(cloneNodeTree(srcChild, prefix, map), false);
@@ -456,6 +468,7 @@ namespace hdt
 		src->ProcessClone(&c);
 
 		// FIXME: cloneHeadNodeTree just did this for ret, not both. Don't know if that matters. Armor parts need it on both.
+		// FIXME strange that both are renamed... Strange that armors parts need it on both...
 		renameTree(src, prefix, map);
 		renameTree(ret, prefix, map);
 

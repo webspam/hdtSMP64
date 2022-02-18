@@ -180,7 +180,10 @@ namespace hdt
 		void onEvent(const FrameEvent& e) override;
 
 		void onEvent(const ShutdownEvent&) override;
+
+		// @brief On this event, we set a new head to a skeleton.
 		void onEvent(const SkinSingleHeadGeometryEvent&) override;
+
 		void onEvent(const SkinAllHeadGeometryEvent&) override;
 
 		void reloadMeshes();
