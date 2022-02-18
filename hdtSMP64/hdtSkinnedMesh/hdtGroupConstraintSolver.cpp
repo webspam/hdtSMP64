@@ -206,15 +206,17 @@ namespace hdt
 		{
 			if (m_friction0)
 			{
-				m_friction0->m_lowerLimit = -(m_friction0->m_friction * totalImpulse);
-				m_friction0->m_upperLimit = m_friction0->m_friction * totalImpulse;
+				auto tmp = m_friction0->m_friction * totalImpulse;
+				m_friction0->m_lowerLimit = -tmp;
+				m_friction0->m_upperLimit = tmp;
 				m_solver(*m_bodyA->m_body, *m_bodyB->m_body, *m_friction0);
 			}
 
 			if (m_friction1)
 			{
-				m_friction1->m_lowerLimit = -(m_friction1->m_friction * totalImpulse);
-				m_friction1->m_upperLimit = m_friction1->m_friction * totalImpulse;
+				auto tmp = m_friction1->m_friction * totalImpulse;
+				m_friction1->m_lowerLimit = -tmp;
+				m_friction1->m_upperLimit = tmp;
 				m_solver(*m_bodyA->m_body, *m_bodyB->m_body, *m_friction1);
 			}
 		}

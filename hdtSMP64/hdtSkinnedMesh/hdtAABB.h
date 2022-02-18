@@ -8,6 +8,7 @@
 
 namespace hdt
 {
+	// Axis-Aligned Bounding Box
 	struct Aabb
 	{
 		Aabb() { invalidate(); }
@@ -108,7 +109,8 @@ namespace hdt
 			btVector3 cb = rhs.m_centerRadius;
 			float ra = m_centerRadius.w();
 			float rb = rhs.m_centerRadius.w();
-			return (ca - cb).length2() < (ra + rb) * (ra + rb);
+			float rsum = ra + rb;
+			return (ca - cb).length2() < rsum * rsum;
 		}
 
 		btVector3 center() const { return m_centerRadius; }
