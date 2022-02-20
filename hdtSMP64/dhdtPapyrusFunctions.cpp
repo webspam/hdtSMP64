@@ -107,6 +107,7 @@ bool hdt::papyrus::impl::ReloadPhysicsFileImpl(UInt32 on_actor_formID, UInt32 on
 
 			auto& armors = skeleton.getArmors();
 
+			// FIXME If one thread modifies the armors vector, while this one iterates on it, this might lead to a CTD.
 			for (auto& armor : armors) {
 				if (succeeded) break;
 				if (!armor.armorWorn)continue;
@@ -119,6 +120,7 @@ bool hdt::papyrus::impl::ReloadPhysicsFileImpl(UInt32 on_actor_formID, UInt32 on
 				if (armorName.find(buffer) != std::string::npos) {
 					armor_addon_found = true;
 					//Force replacing and reloading. This could lead to assess violation
+					// FIXME exactly.
 					try {
 						if (armor.physicsFile.first == std::string(physics_file_path)) {
 							if (verbose_log)Console_Print("[DynamicHDT] -- Physics file paths are identical, skipping replacing.");
@@ -126,6 +128,7 @@ bool hdt::papyrus::impl::ReloadPhysicsFileImpl(UInt32 on_actor_formID, UInt32 on
 							continue;
 						}
 						old_physics_file_path = armor.physicsFile.first;
+						// FIXME And here we modify the vector.
 						armor.physicsFile.first = std::string(physics_file_path);
 					}
 					catch (std::exception& e) {
@@ -143,6 +146,8 @@ bool hdt::papyrus::impl::ReloadPhysicsFileImpl(UInt32 on_actor_formID, UInt32 on
 
 					SkyrimPhysicsWorld::get()->suspendSimulationUntilFinished([&]() {
 
+						// FIXME The isStatis lock system is in SkyrimPhysicsworld, not in ActorManager.
+						// The armor lifecycle is managed by ActorManager.
 						if (armor.hasPhysics())
 							system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
 						else
@@ -214,6 +219,7 @@ bool hdt::papyrus::impl::SwapPhysicsFileImpl(UInt32 on_actor_formID, std::string
 
 			auto& armors = skeleton.getArmors();
 
+			// FIXME
 			for (auto& armor : armors) {
 				if (succeeded) break;
 
@@ -221,12 +227,17 @@ bool hdt::papyrus::impl::SwapPhysicsFileImpl(UInt32 on_actor_formID, std::string
 					armor_addon_found = true;
 
 					//Force replacing and reloading. This could lead to assess violation
+					// FIXME Exactly. To be correctly done, encapsulation: the modification should be asked to ActorManager,
+					// which would either manage the lock, or add the action to be done later.
+					// The loop needs to be protected too. If we get a copy, the thing we ask to change may have changed in the meantime;
+					// so we need to encapsulate the whole algo, probably by moving it to ActorManager.cpp and protectig with the lock.
 					try {
 						if (armor.physicsFile.first == std::string(new_physics_file_path)) {
 							if (verbose_log)Console_Print("[DynamicHDT] -- Physics file paths are identical, skipping replacing.");
 							succeeded = true;
 							continue;
 						}
+						// FIXME and we write!
 						armor.physicsFile.first = std::string(new_physics_file_path);
 					}
 					catch (std::exception& e) {
@@ -303,6 +314,7 @@ std::string hdt::papyrus::impl::QueryCurrentPhysicsFileImpl(UInt32 on_actor_form
 {
 	const auto& AM = hdt::ActorManager::instance();
 
+	// FIXME Here, a simple copy of the Skeleton would be enough to protect, as we don't care with having data some milliseconds late.
 	auto& skeletons = AM->getSkeletons();
 
 	bool character_found = false, armor_addon_found = false, succeeded = false;
@@ -320,6 +332,7 @@ std::string hdt::papyrus::impl::QueryCurrentPhysicsFileImpl(UInt32 on_actor_form
 
 			auto& armors = skeleton.getArmors();
 
+			// FIXME
 			for (auto& armor : armors) {
 				if (succeeded)break;
 				if (!armor.armorWorn)continue;

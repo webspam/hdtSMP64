@@ -264,6 +264,8 @@ namespace hdt
 			{ActorManager::SkeletonState::e_ActiveIsPlayer, "Is player character"},
 			{ActorManager::SkeletonState::e_ActiveNearPlayer, "Is near player"} };
 
+		// FIXME not protected by a lock, might CTD during loops on skeletons, and armors.
+		// A copy of m_skeletons might be enough to protect against this risk.
 		auto skeletons = ActorManager::instance()->getSkeletons();
 		std::vector<int>order(skeletons.size());
 		std::iota(order.begin(), order.end(), 0);
@@ -429,6 +431,8 @@ namespace hdt
 			return true;
 		}
 
+		// FIXME not protected by a lock, might CTD during loops on skeletons, and armors.
+		// A copy of m_skeletons might be enough to protect against this risk.
 		auto skeletons = ActorManager::instance()->getSkeletons();
 
 		size_t activeSkeletons = 0;

@@ -141,6 +141,8 @@ namespace hdt
 			static NiNode* cloneNodeTree(NiNode* src, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 			static void renameTree(NiNode* root, IString* prefix, std::unordered_map<IDStr, IDStr>& map);
 
+			// FIXME we expose through a public fonction the address to a vector, in a multi-thread environment.
+			// If one thread modifies the vector, while another iterates on it, this might lead to a CTD.
 			std::vector<Armor>& getArmors() { return armors; }
 
 			// @brief This is the squared distance between the skeleton and the camera.
@@ -159,9 +161,9 @@ namespace hdt
 
 		bool m_shutdown = false;
 		std::recursive_mutex m_lock;
+		// FIXME we expose publically the address to a vector, in a multi-thread environment.
+		// If one thread modifies the vector, while another iterates on it, this might lead to a CTD.
 		std::vector<Skeleton> m_skeletons;
-
-
 
 		Skeleton& getSkeletonData(NiNode* skeleton);
 
@@ -187,6 +189,8 @@ namespace hdt
 #ifdef ANNIVERSARY_EDITION
 		bool skeletonNeedsParts(NiNode* skeleton);
 #endif
+		// FIXME we expose through a public fonction the address to a vector, in a multi-thread environment.
+		// If one thread modifies the vector, while another iterates on it, this might lead to a CTD.
 		std::vector<Skeleton>& getSkeletons();//Altered by Dynamic HDT
 
 		bool m_skinNPCFaceParts = true;
