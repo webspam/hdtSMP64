@@ -116,7 +116,7 @@ namespace hdt
 			if (!b1) continue;
 			for (auto& b2 : dst->getBones()) {
 				if (!b2) continue;
-				if (_match_name(b1->m_name, b2->m_name)) {
+				if (util::_match_name(b1->m_name, b2->m_name)) {
 					b2->m_rig.setWorldTransform(b1->m_rig.getWorldTransform());
 					b2->m_rig.setAngularVelocity(b1->m_rig.getAngularVelocity());
 					b2->m_rig.setLinearVelocity(b1->m_rig.getLinearVelocity());
@@ -124,19 +124,6 @@ namespace hdt
 				}
 			}
 		}
-	}
-
-	bool ActorManager::_match_name(hdt::IDStr& a, hdt::IDStr& b) {
-		if (!a || !b) return false;
-		return _deprefix(a->cstr()) == _deprefix(b->cstr());
-	}
-
-	std::string ActorManager::_deprefix(std::string str_with_prefix) {
-		std::string str_no_prefix = str_with_prefix;
-		if (str_with_prefix.find("hdtSSEPhysics_AutoRename_") == 0) {
-			str_no_prefix = str_with_prefix.substr(str_with_prefix.find(' ') + 1);
-		}
-		return str_no_prefix;
 	}
 
 	std::pair<ActorManager::Armor*, ActorManager::Skeleton*> ActorManager::findArmor(UInt32 on_actor_formID, UInt32 on_item_formID, std::string old_physics_file_path)

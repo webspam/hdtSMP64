@@ -185,10 +185,6 @@ namespace hdt
 
 		void transferCurrentPosesBetweenSystems(hdt::SkyrimSystem* src, hdt::SkyrimSystem* dst);
 
-		static bool _match_name(hdt::IDStr& a, hdt::IDStr& b);
-
-		static std::string _deprefix(std::string str_with_prefix);
-
 		// @brief We loop through the skeletons to find those which owner is on_actor_formID;
 		// for those, if on_item_formID is defined, then we look for the worn armor with that formID;
 		// then if the old_physics_file_path is set, we check that the armor has this path;
@@ -228,4 +224,17 @@ namespace hdt
 		void setSkeletonsActive();
 		std::vector<Skeleton>& getSkeletons();
 	};
+
+	namespace util {
+		inline static std::string _deprefix(std::string str_with_prefix) {
+			return str_with_prefix.find("hdtSSEPhysics_AutoRename_") == 0
+				? str_with_prefix.substr(str_with_prefix.find(' ') + 1)
+				: str_with_prefix;
+		}
+
+		inline static bool _match_name(IDStr& a, IDStr& b) {
+			if (!a || !b) return false;
+			return _deprefix(a->cstr()) == _deprefix(b->cstr());
+		}
+	}
 }
