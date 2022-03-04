@@ -592,6 +592,8 @@ extern "C" {
 							mm->MenuOpenCloseEventDispatcher()->AddEventSink(&hdt::g_freezeEventHandler);
 						hdt::checkOldPlugins();
 						hdt::loadConfig();
+
+// I think we only have _DEBUG now...
 #ifdef DEBUG
 						hdt::g_armorAttachEventDispatcher.addListener(&hdt::g_eventDebugLogger);
 						GetEventDispatcherList()->unk1B8.AddEventSink(&hdt::g_eventDebugLogger);
@@ -599,19 +601,23 @@ extern "C" {
 #endif
 					}
 
+					// If we receive a SaveGame message, we serialize our data and save it in our dedicated save files.
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame) {
+						std::string save_name = reinterpret_cast<char*>(msg->data);
+						std::ofstream ofs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::out);
+						auto data = hdt::Override::OverrideManager::GetSingleton()->Serialize();
+						ofs << data.str();
+					}
+
+					// If we receive a PreLoadGame message, we take our data in our dedicated save files and deserialize it.
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_PreLoadGame) {
+						std::string save_name = reinterpret_cast<char*>(msg->data);
+						std::ifstream ifs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::in);
+						std::stringstream data;
+						data << ifs.rdbuf();
+						hdt::Override::OverrideManager::GetSingleton()->Deserialize(data);
+					}
 				});
-		}
-
-		const SKSESerializationInterface* srlz_intfc = reinterpret_cast<SKSESerializationInterface*>(skse->QueryInterface(kInterface_Serialization));
-		if (srlz_intfc) {
-			//Initialize all Serializer Module
-			hdt::Override::OverrideManager::GetSingleton();
-
-			srlz_intfc->SetUniqueID(hdt::g_PluginHandle, 'FHDT');
-
-			srlz_intfc->SetSaveCallback(hdt::g_PluginHandle, hdt::SerializerBase::Save);
-
-			srlz_intfc->SetLoadCallback(hdt::g_PluginHandle, hdt::SerializerBase::Load);
 		}
 
 		ObScriptCommand* hijackedCommand = nullptr;
