@@ -602,20 +602,30 @@ extern "C" {
 					}
 
 					// If we receive a SaveGame message, we serialize our data and save it in our dedicated save files.
-					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame) {
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame)
+					{
 						std::string save_name = reinterpret_cast<char*>(msg->data);
 						std::ofstream ofs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::out);
-						auto data = hdt::Override::OverrideManager::GetSingleton()->Serialize();
-						ofs << data.str();
+						if (ofs && ofs.is_open())
+						{
+							auto data = hdt::Override::OverrideManager::GetSingleton()->Serialize();
+							ofs << data.str();
+						}
 					}
 
 					// If we receive a PreLoadGame message, we take our data in our dedicated save files and deserialize it.
-					if (msg && msg->type == SKSEMessagingInterface::kMessage_PreLoadGame) {
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_PreLoadGame)
+					{
 						std::string save_name = reinterpret_cast<char*>(msg->data);
+						save_name = save_name.substr(0, save_name.find_last_of("."));
+
 						std::ifstream ifs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::in);
-						std::stringstream data;
-						data << ifs.rdbuf();
-						hdt::Override::OverrideManager::GetSingleton()->Deserialize(data);
+						if (ifs && ifs.is_open())
+						{
+							std::stringstream data;
+							data << ifs.rdbuf();
+							hdt::Override::OverrideManager::GetSingleton()->Deserialize(data);
+						}
 					}
 				});
 		}
