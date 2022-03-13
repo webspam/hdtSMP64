@@ -3,6 +3,7 @@
 #include "ActorManager.h"
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
+#include "hdtLog.h"
 #include "skse64/GameRTTI.h"
 #include "skse64/NiSerialization.h"
 #include <cinttypes>
@@ -224,7 +225,7 @@ namespace hdt
 				rollingAverage += (averageTimePerSkeleton - rollingAverage) / m_sampleSize;
 			}
 
-			_DMESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
+			_VMESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
 
 			if (m_autoAdjustMaxSkeletons) {
 				maxActiveSkeletons = processing_time > target_time ? activeSkeletons - 2 : static_cast<int>(target_time / rollingAverage);
@@ -267,10 +268,7 @@ namespace hdt
 		{
 			if (headPartIter->origPartRootNode)
 			{
-
-#ifdef _DEBUG
 				_DMESSAGE("renaming nodes in original part %s back", headPartIter->origPartRootNode->m_name);
-#endif // _DEBUG
 
 				for (auto& entry : skeleton.head.renameMap)
 				{
@@ -278,9 +276,7 @@ namespace hdt
 					auto node = findNode(headPartIter->origPartRootNode, entry.second->cstr());
 					if (node)
 					{
-#ifdef _DEBUG
 						_DMESSAGE("rename node %s -> %s", entry.second->cstr(), entry.first->cstr());
-#endif // _DEBUG
 						setNiNodeName(node, entry.first->cstr());
 					}
 				}
@@ -312,9 +308,7 @@ namespace hdt
 			skeleton.head.isFullSkinning = false;
 			if (skeleton.head.npcFaceGeomNode)
 			{
-#ifdef _DEBUG
 				_DMESSAGE("npc face geom no longer needed, clearing ref");
-#endif // _DEBUG
 				skeleton.head.npcFaceGeomNode = nullptr;
 			}
 		}
@@ -405,9 +399,7 @@ namespace hdt
 				});
 			if (ownerIter != m_skeletons.end())
 			{
-#ifdef _DEBUG
 				_DMESSAGE("new skeleton found for formid %08x", skeleton->m_owner->formID);
-#endif // _DEBUG
 				ownerIter->cleanHead(true);
 			}
 		}
@@ -434,9 +426,7 @@ namespace hdt
 			// But surely non-head skeletons wouldn't have this anyway?
 			if (!strcmp(srcChild->m_name, "BSFaceGenNiNodeSkinned"))
 			{
-#ifdef _DEBUG
 				_DMESSAGE("skipping facegen ninode in skeleton merge");
-#endif // _DEBUG
 				continue;
 			}
 
@@ -472,13 +462,8 @@ namespace hdt
 		{
 			std::string newName(prefix->cstr(), prefix->size());
 			newName += root->m_name;
-#ifdef _DEBUG
 			if (map.insert(std::make_pair<IDStr, IDStr>(root->m_name, newName)).second)
 				_DMESSAGE("Rename Bone %s -> %s", root->m_name, newName.c_str());
-#else
-			map.insert(std::make_pair<IDStr, IDStr>(root->m_name, newName));
-#endif // _DEBUG
-
 			setNiNodeName(root, newName.c_str());
 		}
 
@@ -537,10 +522,8 @@ namespace hdt
 
 	void ActorManager::Skeleton::attachArmor(NiNode* armorModel, NiAVObject* attachedNode)
 	{
-#ifdef _DEBUG
 		if (armors.size() == 0 || armors.back().hasPhysics())
 			_MESSAGE("Not attaching armor - no record or physics already exists");
-#endif // _DEBUG
 
 		Armor& armor = armors.back();
 		armor.armorWorn = attachedNode;
@@ -580,12 +563,10 @@ namespace hdt
 		{
 			if (!headPart.headPart->m_parent || cleanAll)
 			{
-#ifdef _DEBUG
 				if (cleanAll)
 					_DMESSAGE("cleaning headpart %s due to clean all", headPart.headPart->m_name);
 				else
 					_DMESSAGE("headpart %s disconnected", headPart.headPart->m_name);
-#endif // _DEBUG
 
 				auto renameIt = this->head.renameMap.begin();
 
@@ -599,20 +580,14 @@ namespace hdt
 						if (findNode != this->head.nodeUseCount.end())
 						{
 							findNode->second -= 1;
-#ifdef _DEBUG
 							_DMESSAGE("decrementing use count by 1, it is now %d", findNode->second);
-#endif // _DEBUG
 							if (findNode->second <= 0)
 							{
-#ifdef _DEBUG
 								_DMESSAGE("node no longer in use, cleaning from skeleton");
-#endif // _DEBUG
 								auto removeObj = findObject(npc, renameIt->second->cstr());
 								if (removeObj)
 								{
-#ifdef _DEBUG
 									_DMESSAGE("found node %s, removing", removeObj->m_name);
-#endif // _DEBUG
 									auto parent = removeObj->m_parent;
 									if (parent)
 									{
@@ -802,17 +777,13 @@ namespace hdt
 	{
 		if (isFirstPersonSkeleton(this->skeleton))
 		{
-#ifdef _DEBUG
 			_DMESSAGE("not scanning head of first person skeleton");
-#endif // _DEBUG
 			return;
 		}
 
 		if (!this->head.headNode)
 		{
-#ifdef _DEBUG
 			_DMESSAGE("actor has no head node");
-#endif // _DEBUG
 			return;
 		}
 
@@ -825,36 +796,28 @@ namespace hdt
 
 			if (headPart.physicsFile.first.empty())
 			{
-#ifdef _DEBUG
 				_DMESSAGE("no physics file for headpart %s", headPart.headPart->m_name);
-#endif // _DEBUG
 				continue;
 			}
 
 			if (physicsDupes.count(headPart.physicsFile.first))
 			{
-#ifdef _DEBUG
 				_DMESSAGE("previous head part generated physics system for file %s, skipping",
 					headPart.physicsFile.first.c_str());
-#endif // _DEBUG
 				continue;
 			}
 
 			std::unordered_map<IDStr, IDStr> renameMap = this->head.renameMap;
 
-#ifdef _DEBUG
 			_DMESSAGE("try create system for headpart %s physics file %s", headPart.headPart->m_name,
 				headPart.physicsFile.first.c_str());
-#endif // _DEBUG
 			physicsDupes.insert(headPart.physicsFile.first);
 			auto system = SkyrimSystemCreator().createSystem(npc, this->head.headNode, headPart.physicsFile,
 				std::move(renameMap));
 
 			if (system)
 			{
-#ifdef _DEBUG
 				_DMESSAGE("success");
-#endif // _DEBUG
 				headPart.setPhysics(system, isActive);
 				hasPhysics = true;
 			}
@@ -868,9 +831,7 @@ namespace hdt
 	{
 		if (this->head.headNode && this->head.headNode != headNode)
 		{
-#ifdef _DEBUG
 			_DMESSAGE("completely new head attached to skeleton, clearing tracking");
-#endif // _DEBUG
 			for (auto& headPart : this->head.headParts)
 			{
 				headPart.clearPhysics();
@@ -904,9 +865,7 @@ namespace hdt
 
 		if (it != this->head.headParts.end())
 		{
-#ifdef _DEBUG
 			_DMESSAGE("geometry is already added as head part");
-#endif // _DEBUG
 			return;
 		}
 
@@ -916,9 +875,7 @@ namespace hdt
 		head.headParts.back().clearPhysics();
 
 		// Skinning
-#ifdef _DEBUG
 		_DMESSAGE("skinning geometry to skeleton");
-#endif // _DEBUG
 
 		if (!geometry->m_spSkinInstance || !geometry->m_spSkinInstance->m_spSkinData)
 		{
@@ -933,9 +890,7 @@ namespace hdt
 
 		if (fmd && fmd->m_model && fmd->m_model->unk10 && fmd->m_model->unk10->unk08)
 		{
-#ifdef _DEBUG
 			_DMESSAGE("orig part node found via fmd");
-#endif // _DEBUG
 			auto origRootNode = fmd->m_model->unk10->unk08->GetAsNiNode();
 			head.headParts.back().physicsFile = DefaultBBP::instance()->scanBBP(origRootNode);
 			head.headParts.back().origPartRootNode = origRootNode;
@@ -955,9 +910,7 @@ namespace hdt
 		}
 		else
 		{
-#ifdef _DEBUG
 			_DMESSAGE("no fmd available, loading original facegeom");
-#endif // _DEBUG
 			if (!head.npcFaceGeomNode)
 			{
 				if (skeleton->m_owner && skeleton->m_owner->baseForm)
@@ -968,9 +921,7 @@ namespace hdt
 						char filePath[MAX_PATH];
 						if (TESNPC_GetFaceGeomPath(npc, filePath))
 						{
-#ifdef _DEBUG
 							_DMESSAGE("loading facegeom from path %s", filePath);
-#endif // _DEBUG
 							static const int MAX_SIZE = sizeof(NiStream) + 0x200;
 							UInt8 niStreamMemory[MAX_SIZE];
 							memset(niStreamMemory, 0, MAX_SIZE);
@@ -991,17 +942,13 @@ namespace hdt
 									auto rootFadeNode = niStream->m_rootObjects.m_data[0]->GetAsBSFadeNode();
 									if (rootFadeNode)
 									{
-#ifdef _DEBUG
 										_DMESSAGE("npc root fadenode found");
-#endif // _DEBUG
 										head.npcFaceGeomNode = rootFadeNode;
 									}
-#ifdef _DEBUG
 									else
 									{
 										_DMESSAGE("npc facegeom root wasn't fadenode as expected");
 									}
-#endif // _DEBUG
 
 								}
 								CALL_MEMBER_FN(niStream, dtor)();
@@ -1010,12 +957,10 @@ namespace hdt
 					}
 				}
 			}
-#ifdef _DEBUG
 			else
 			{
 				_DMESSAGE("using cached facegeom");
 			}
-#endif // _DEBUG
 			if (head.npcFaceGeomNode)
 			{
 				head.headParts.back().physicsFile = DefaultBBP::instance()->scanBBP(head.npcFaceGeomNode);
@@ -1062,9 +1007,7 @@ namespace hdt
 
 			if (renameIt != this->head.renameMap.end())
 			{
-#ifdef _DEBUG
-				_DMESSAGE("found renamed bone %s -> %s", boneName, renameIt->second->cstr());
-#endif // _DEBUG
+				hdt::_DMESSAGE("found renamed bone %s -> %s", boneName, renameIt->second->cstr());
 				boneName = renameIt->second->cstr();
 				hasRenames = true;
 			}
@@ -1073,9 +1016,7 @@ namespace hdt
 
 			if (!boneNode && !hasMerged)
 			{
-#ifdef _DEBUG
 				_DMESSAGE("bone not found on skeleton, trying skeleton merge");
-#endif // _DEBUG
 				if (this->head.headParts.back().origPartRootNode)
 				{
 					doSkeletonMerge(npc, head.headParts.back().origPartRootNode, head.prefix, head.renameMap);
@@ -1110,9 +1051,7 @@ namespace hdt
 
 				if (postMergeRenameIt != this->head.renameMap.end())
 				{
-#ifdef _DEBUG
-					_DMESSAGE("found renamed bone %s -> %s", boneName, postMergeRenameIt->second->cstr());
-#endif // _DEBUG
+					hdt::_DMESSAGE("found renamed bone %s -> %s", boneName, postMergeRenameIt->second->cstr());
 					boneName = postMergeRenameIt->second->cstr();
 					hasRenames = true;
 				}
@@ -1122,7 +1061,7 @@ namespace hdt
 
 			if (!boneNode)
 			{
-				_ERROR("bone %s not found after skeleton merge, geometry cannot be fully skinned", boneName);
+				hdt::_ERROR("bone %s not found after skeleton merge, geometry cannot be fully skinned", boneName);
 				continue;
 			}
 
@@ -1143,24 +1082,18 @@ namespace hdt
 					if (findNode != this->head.nodeUseCount.end())
 					{
 						findNode->second += 1;
-#ifdef _DEBUG
 						_DMESSAGE("incrementing use count by 1, it is now %d", findNode->second);
-#endif // _DEBUG
 					}
 					else
 					{
 						this->head.nodeUseCount.insert(std::make_pair(entry.first, 1));
-#ifdef _DEBUG
 						_DMESSAGE("first use of bone, count 1");
-#endif // _DEBUG
 					}
 					head.headParts.back().renamedBonesInUse.insert(entry.first);
 				}
 			}
 		}
 
-#ifdef _DEBUG
 		_DMESSAGE("done skinning part");
-#endif // _DEBUG
 	}
 }
