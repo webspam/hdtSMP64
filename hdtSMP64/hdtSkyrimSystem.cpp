@@ -849,6 +849,7 @@ namespace hdt
 		if (!node)
 		{
 			Warning("Bone %s doesn't exist in the skeleton, skipped", name->cstr());
+			m_reader->skipCurrentElement();
 			return;
 		}
 
