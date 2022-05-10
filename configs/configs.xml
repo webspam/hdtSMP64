@@ -53,6 +53,16 @@
     <groupIterations>16</groupIterations>
     <groupEnableMLCP>false</groupEnableMLCP>
     <erp>0.2</erp>
+	<!-- min-fps is the main frequency at which physics simulation will advance; in fact, it defines the main period of time at which the physics simulation will advance; (p=1/f).
+         min-fps should never be configured under 60, or the bullet physics engine will badly bug.
+		 The higher it is, the better your physics simulation will be and the more costly for your CPU/GPU. 120 costs twice as much cpu as 60. -->
     <min-fps>60</min-fps>
+	  <!-- This setting allows you to choose between fps and physics simulation quality, at low fps.
+	       maxSubSteps is the maximum number of physics calculus steps, each frame. Slowdowns are experienced when fps are below min-fps/maxSubSteps.
+	       With the default value, slowdowns are experienced below 60/4 = 15 fps.
+		   The higher it is, the more costly your physics simulation will be at low fps. 2 substeps cost twice as 1 substep.
+		   When fps are above min-fps, one substep is enough; when fps are between min-fps/n and min-fps/(n+1), n+1 substeps are necessary.
+		   The max value is 60, which allows for slowdowns below 5 fps when min-fps is at 300 (max value). -->
+	  <maxSubSteps>4</maxSubSteps>
   </solver>
 </configs>

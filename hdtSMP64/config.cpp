@@ -29,6 +29,8 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->min_fps = (btClamped(reader.readInt(), 1, 300));
 					SkyrimPhysicsWorld::get()->m_timeTick = 1.0f / SkyrimPhysicsWorld::get()->min_fps;
 				}
+				else if (reader.GetLocalName() == "maxSubSteps")
+					SkyrimPhysicsWorld::get()->m_maxSubSteps = btClamped(reader.readInt(), 1, 60);
 				else
 				{
 					_WARNING("Unknown config : %s", reader.GetLocalName());
