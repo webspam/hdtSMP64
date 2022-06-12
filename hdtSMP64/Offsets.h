@@ -4,6 +4,7 @@
 
 //function			                 1.5.97        1.6.318 	     id        1.6.323      1.6.342      1.6.353
 //GameStepTimer_SlowTime             0x02F6B948    0x030064C8    410199    0x030064c8   0x03007708   0x03007708
+//GameStepTimer_RealTime             0x02F6B94C                                                      0x0300770C
 //ArmorAttachFunction                0x001CAFB0    0x001D6740    15712     0x001d66b0   0x001d66a0   0x001d66a0
 //BSFaceGenNiNode_SkinAllGeometry    0x003D87B0    0x003F08C0    26986     0x003f0830   0x003f09c0   0x003f0830
 //BSFaceGenNiNode_SkinSingleGeometry 0x003D8840    0x003F0A50    26987     0x003f09c0   0x003f0b50   0x003f09c0
@@ -25,8 +26,10 @@ namespace hdt
 		// 74 35 45 33 C0 33 D2
 #ifdef ANNIVERSARY_EDITION
 		constexpr std::uintptr_t GameStepTimer_SlowTime = 0x03007708;
+		constexpr std::uintptr_t GameStepTimer_RealTime = 0x0300770C;
 #else
 		constexpr std::uintptr_t GameStepTimer_SlowTime = 0x02F6B948;
+		constexpr std::uintptr_t GameStepTimer_RealTime = 0x02F6B94C;
 #endif
 
 		// Hooks.cpp
@@ -77,6 +80,7 @@ namespace hdt
 
 #else
 		constexpr std::uintptr_t GameStepTimer_SlowTime = 0x030C3A08;
+		constexpr std::uintptr_t GameStepTimer_RealTime = 0x030C3A0C;
 		constexpr std::uintptr_t ArmorAttachFunction = 0x001DB9E0;
 		constexpr std::uintptr_t BSFaceGenNiNode_SkinAllGeometry = 0x003e8120;
 		constexpr std::uintptr_t BSFaceGenNiNode_SkinSingleGeometry = 0x003e81b0;
