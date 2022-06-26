@@ -28,7 +28,6 @@ namespace hdt
 		DEFINE_MEMBER_FN_HOOK(SkinSingleGeometry, void, offset::BSFaceGenNiNode_SkinSingleGeometry, NiNode* a_skeleton,
 		                      BSGeometry* a_geometry, char a_unk);
 
-#ifdef ANNIVERSARY_EDITION
 		void ProcessHeadPart(BGSHeadPart* headPart, NiNode* a_skeleton)
 		{
 			if (headPart)
@@ -72,7 +71,6 @@ namespace hdt
 			if (needRegularCall)
 				CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
 		}
-#endif
 
 		void SkinSingleGeometry(NiNode* a_skeleton, BSGeometry* a_geometry, char a_unk)
 		{
@@ -138,11 +136,7 @@ namespace hdt
 				e.skeleton = a_skeleton;
 				e.headNode = this;
 				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
-#ifdef ANNIVERSARY_EDITION
 				SkinAllGeometryCalls(a_skeleton, a_unk);
-#else
-				CALL_MEMBER_FN(this, SkinAllGeometry)(a_skeleton, a_unk);
-#endif
 				e.hasSkinned = true;
 				g_skinAllHeadGeometryEventDispatcher.dispatch(e);
 			}

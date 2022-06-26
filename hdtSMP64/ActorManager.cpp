@@ -367,7 +367,6 @@ namespace hdt
 		return m_skeletons;
 	}
 
-#ifdef ANNIVERSARY_EDITION
 	bool ActorManager::skeletonNeedsParts(NiNode* skeleton)
 	{
 		return !isFirstPersonSkeleton(skeleton);
@@ -382,7 +381,7 @@ namespace hdt
 		}
 		*/
 	}
-#endif
+
 	ActorManager::Skeleton& ActorManager::getSkeletonData(NiNode* skeleton)
 	{
 		auto iter = std::find_if(m_skeletons.begin(), m_skeletons.end(), [=](Skeleton& i)
