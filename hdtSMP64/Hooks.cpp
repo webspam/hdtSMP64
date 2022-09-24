@@ -215,10 +215,11 @@ namespace hdt
 
 			auto ret = CALL_MEMBER_FN(this, unk001CB0E0)(armor, skeleton, unk3, unk4, unk5, unk6);
 
+			if (ret) {
 			event.attachedNode = ret;
 			event.hasAttached = true;
 			g_armorAttachEventDispatcher.dispatch(event);
-
+			}
 			return ret;
 		}
 	};
