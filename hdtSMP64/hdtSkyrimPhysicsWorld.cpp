@@ -77,30 +77,25 @@ namespace hdt
 
 		// No need to calculate physics when too little time has passed (time exceptionally short since last computation).
 		// This magic value directly impacts the number of computations and the time cost of the mod...
-		if (hdt::ActorManager::instance()->activeSkeletons && m_accumulatedInterval > tick)
+		if (hdt::ActorManager::instance()->activeSkeletons && m_accumulatedInterval * 2.0f > tick)
 		{
-			// We limit the interval to 3 substeps.
-			// Additional substeps happens when there is a very sudden slowdown, we have to compute for the passed time we haven't computed.
+			// We limit the interval to 4 substeps.
+			// Additional substeps happens when there is a very sudden slowdown, or when fps is lower than min-fps,
+			// we have to compute for the passed time we haven't computed.
 			// n substeps means that when instant fps is n times lower than usual current fps, we stop computing.
-			// This value impacts directly the performance when very sudden slowdown.
-			const auto maxSubSteps = 3;
-			auto nbSteps = 0;
-			while (nbSteps < maxSubSteps && m_accumulatedInterval > tick)
-			{
-				m_accumulatedInterval -= tick;
-				nbSteps++;
-			}
+			// So, we guarantee no jitter for fps greater than min-fps / maxSubsteps.
+			// For example, if min-fps = 60 and maxSubsteps = 4, we guarantee no jitter for 15+ fps,
+			// at the cost of additional simulations.
+			const auto maxSubSteps = 4;
+			auto remainingTimeStep = std::min(m_accumulatedInterval, tick * maxSubSteps);
 
-			readTransform(nbSteps * tick);
+			readTransform(remainingTimeStep);
 			updateActiveState();
 			auto offset = applyTranslationOffset();
-			stepSimulation(0, nbSteps, tick);
+			stepSimulation(remainingTimeStep, 0/*=maxSubSteps, ignored*/, tick);
 			restoreTranslationOffset(offset);
+			m_accumulatedInterval = 0;
 			writeTransform();
-			// Let's avoid a value outside bounds for people being routinely under 60 fps.
-			// We reset the accumulated interval when there's too much tardyness.
-			if (m_accumulatedInterval > 1.f)
-				m_accumulatedInterval = 0.f;
 		}
 
 		QueryPerformanceCounter(&ticks);

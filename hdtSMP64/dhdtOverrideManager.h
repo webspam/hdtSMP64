@@ -2,6 +2,8 @@
 #include "DynamicHDT.h"
 #include <fstream>
 
+extern bool g_hasPapyrusExtension;
+
 namespace hdt {
 	namespace Override {
 
