@@ -137,8 +137,60 @@
       <Configuration>VR_CUDA_AVX2</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_CUDA_AVX512_DEBUG|x64">
+      <Configuration>VR_CUDA_AVX512_DEBUG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_CUDA_AVX512|x64">
+      <Configuration>VR_CUDA_AVX512</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_CUDA_AVX_DEBUG|x64">
+      <Configuration>VR_CUDA_AVX_DEBUG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_CUDA_AVX|x64">
+      <Configuration>VR_CUDA_AVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_CUDA_NoAVX_DEBUG|x64">
+      <Configuration>VR_CUDA_NoAVX_DEBUG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_CUDA_NoAVX|x64">
+      <Configuration>VR_CUDA_NoAVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_NOCUDA_AVX2_DEBUG|x64">
+      <Configuration>VR_NOCUDA_AVX2_DEBUG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="VR_NOCUDA_AVX2|x64">
       <Configuration>VR_NOCUDA_AVX2</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_NOCUDA_AVX512_DEBUG|x64">
+      <Configuration>VR_NOCUDA_AVX512_DEBUG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_NOCUDA_AVX512|x64">
+      <Configuration>VR_NOCUDA_AVX512</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_NOCUDA_AVX_DEBUG|x64">
+      <Configuration>VR_NOCUDA_AVX_DEBUG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_NOCUDA_AVX|x64">
+      <Configuration>VR_NOCUDA_AVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_NOCUDA_NoAVX_DEBUG|x64">
+      <Configuration>VR_NOCUDA_NoAVX_DEBUG</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VR_NOCUDA_NoAVX|x64">
+      <Configuration>VR_NOCUDA_NoAVX</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
@@ -149,9 +201,17 @@
     <RootNamespace>hdtSSEPhysics</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>hdtSMP64</ProjectName>
+    <CudaToolkitCustomDir>$(CUDA_PATH_V11_6)</CudaToolkitCustomDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -165,6 +225,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX_DEBUG|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -172,7 +239,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX_DEBUG|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX_DEBUG|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -200,7 +281,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX_DEBUG|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX_DEBUG|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -228,7 +323,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512_DEBUG|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512_DEBUG|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -326,6 +435,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2_DEBUG|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -347,7 +463,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512_DEBUG|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512_DEBUG|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -375,7 +505,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX_DEBUG|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX_DEBUG|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
@@ -405,13 +549,25 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX_DEBUG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX_DEBUG|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX_DEBUG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX_DEBUG|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX|x64'" Label="PropertySheets">
@@ -423,7 +579,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX_DEBUG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX_DEBUG|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX|x64'" Label="PropertySheets">
@@ -435,7 +597,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512_DEBUG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512_DEBUG|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512|x64'" Label="PropertySheets">
@@ -477,6 +645,9 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2_DEBUG|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2_DEBUG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -486,7 +657,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512_DEBUG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512_DEBUG|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512|x64'" Label="PropertySheets">
@@ -498,7 +675,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX_DEBUG|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX_DEBUG|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX|x64'" Label="PropertySheets">
@@ -512,211 +695,337 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX_DEBUG|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX_DEBUG|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_NoAVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX_DEBUG|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_NoAVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX512_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512_DEBUG|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX512_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX2|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX2|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_CUDA_AVX2_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX2_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX2|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_CUDA_AVX2_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2_DEBUG|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512_DEBUG|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX512_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX_DEBUG|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_NoAVX_DEBUG|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir);$(SolutionDir)..;$(SolutionDir)..\..\..\detours\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\..\..\detours\lib.X64;$(LibraryPath)</LibraryPath>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'">
     <ClCompile>
@@ -738,7 +1047,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -759,7 +1068,7 @@
     <CudaCompile>
       <CudaRuntime>Static</CudaRuntime>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <GenerateRelocatableDeviceCode>false</GenerateRelocatableDeviceCode>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
@@ -772,10 +1081,71 @@
       <GPUDebugInfo>true</GPUDebugInfo>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <CudaRuntime>Static</CudaRuntime>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <GenerateRelocatableDeviceCode>false</GenerateRelocatableDeviceCode>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLink>false</PerformDeviceLink>
+      <Optimization>O2</Optimization>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -806,6 +1176,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -824,7 +1195,7 @@
     <CudaCompile>
       <CudaRuntime>Static</CudaRuntime>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <GenerateRelocatableDeviceCode>false</GenerateRelocatableDeviceCode>
       <Runtime>MTd</Runtime>
       <FastMath>true</FastMath>
@@ -832,7 +1203,7 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -841,10 +1212,78 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX_DEBUG|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <CudaRuntime>Static</CudaRuntime>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <GenerateRelocatableDeviceCode>false</GenerateRelocatableDeviceCode>
+      <Runtime>MTd</Runtime>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <HostDebugInfo>true</HostDebugInfo>
+    </CudaCompile>
+    <CudaLink>
+      <PerformDeviceLink>false</PerformDeviceLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -870,7 +1309,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -893,7 +1332,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -907,10 +1346,74 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -941,6 +1444,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -961,14 +1465,87 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <HostDebugInfo>true</HostDebugInfo>
+      <CudaRuntime>Static</CudaRuntime>
+    </CudaCompile>
+    <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX_DEBUG|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MTd</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -978,10 +1555,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -994,7 +1570,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ANNIVERSARY_EDITION;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
@@ -1007,7 +1583,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1030,7 +1606,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -1044,10 +1620,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1078,6 +1653,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1098,14 +1674,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -1115,10 +1691,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1144,7 +1719,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1167,7 +1742,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -1181,10 +1756,74 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1215,6 +1854,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1235,14 +1875,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -1252,10 +1892,80 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_NoAVX_DEBUG|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MTd</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <HostDebugInfo>true</HostDebugInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1281,7 +1991,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1304,7 +2014,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -1318,10 +2028,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -1356,6 +2065,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1376,14 +2086,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -1393,10 +2103,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>
@@ -1426,7 +2135,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1449,7 +2158,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -1463,10 +2172,74 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MT</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1497,6 +2270,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1517,14 +2291,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -1534,10 +2308,80 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_CUDA_AVX512_DEBUG|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;CUDA;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;cudart_static.lib;cudadevrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+    </CudaCompile>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <Runtime>MTd</Runtime>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <HostDebugInfo>true</HostDebugInfo>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1563,7 +2407,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1586,7 +2430,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -1600,10 +2444,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1634,6 +2477,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1654,14 +2498,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -1671,10 +2515,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1700,7 +2543,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1723,7 +2566,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -1737,10 +2580,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1766,7 +2608,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1789,7 +2631,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;compute_60,sm_60;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_87,sm_87</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -1803,10 +2645,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1837,6 +2678,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1857,14 +2699,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -1874,10 +2716,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1908,6 +2749,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1928,14 +2770,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -1945,10 +2787,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -1974,7 +2815,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -1997,7 +2838,7 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MT</Runtime>
@@ -2011,10 +2852,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2045,6 +2885,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2065,14 +2906,14 @@
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_35,sm_35;compute_50,sm_50;</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
       <FastMath>true</FastMath>
       <Optimization>O2</Optimization>
       <Runtime>MTd</Runtime>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
     <CudaLink>
@@ -2082,10 +2923,9 @@
       <Optimization>O2</Optimization>
     </CudaLink>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2111,7 +2951,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -2130,10 +2970,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2144,6 +2983,7 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2175,6 +3015,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2191,10 +3032,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2207,8 +3047,9 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -2235,7 +3076,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -2254,10 +3095,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2268,6 +3108,7 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2281,7 +3122,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;SKYRIMVR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
@@ -2294,7 +3135,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -2313,10 +3154,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2327,6 +3167,7 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2358,6 +3199,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2374,10 +3216,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2390,8 +3231,75 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2_DEBUG|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Runtime>MTd</Runtime>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -2418,7 +3326,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -2437,10 +3345,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2451,6 +3358,7 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2482,6 +3390,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2498,10 +3407,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2514,8 +3422,9 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -2542,7 +3451,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -2561,10 +3470,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2575,6 +3483,66 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+    </CudaCompile>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2606,6 +3574,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2622,10 +3591,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2638,8 +3606,75 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512_DEBUG|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:noexceptTypes- %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Runtime>MTd</Runtime>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -2666,7 +3701,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -2685,10 +3720,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2699,6 +3733,7 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2730,6 +3765,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2746,10 +3782,9 @@
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2762,8 +3797,9 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -2790,7 +3826,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2802,10 +3838,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2816,6 +3851,59 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+    </CudaCompile>
+    <CudaLink>
+      <Optimization>O2</Optimization>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;NDEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2844,6 +3932,7 @@
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2856,10 +3945,9 @@
       <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2872,8 +3960,68 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
+    </CudaCompile>
+    <CudaLink>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <Optimization>O2</Optimization>
+    </CudaLink>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX_DEBUG|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>SKYRIMVR;BT_USE_SSE_IN_API;_DISABLE_EXTENDED_ALIGNED_STORAGE;_DEBUG;HDTSSEPHYSICS_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\..\Detours\include;$(SolutionDir)hdtSMP64;$(SolutionDir)..\common;$(SolutionDir)..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <ModuleDefinitionFile>export.def</ModuleDefinitionFile>
+      <AdditionalDependencies>detours.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>copy "$(ProjectDir)exportSE.def" "$(ProjectDir)export.def" /Y</Command>
+    </PreBuildEvent>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Runtime>MTd</Runtime>
+      <FastMath>true</FastMath>
+      <Optimization>O2</Optimization>
+      <RuntimeChecks>Default</RuntimeChecks>
+      <TypeInfo>false</TypeInfo>
+      <GPUDebugInfo>true</GPUDebugInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
+      <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -2900,7 +4048,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <ControlFlowGuard>false</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2912,10 +4060,9 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\Detours\lib.X64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2926,6 +4073,7 @@
       <Optimization>O2</Optimization>
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <Optimization>O2</Optimization>
@@ -2954,6 +4102,7 @@
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -2966,10 +4115,9 @@
       <IgnoreSpecificDefaultLibraries>library</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
-      <Command>
-        copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-        copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
-      </Command>
+      <Command>copy "$(TargetDir)hdtSMP64.dll" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(TargetDir)hdtSMP64.pdb" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\" /Y
+copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-SMP\$(Configuration)\SKSE\Plugins\hdtSkinnedMeshConfigs\" /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>copy "$(ProjectDir)exportAE.def" "$(ProjectDir)export.def" /Y</Command>
@@ -2982,8 +4130,9 @@
       <RuntimeChecks>Default</RuntimeChecks>
       <TypeInfo>false</TypeInfo>
       <GPUDebugInfo>true</GPUDebugInfo>
-      <GenerateLineInfo>true</GenerateLineInfo>
+      <GenerateLineInfo>false</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_80,sm_80;compute_86,sm_86;compute_87,sm_87</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -3199,6 +4348,8 @@
     <ClInclude Include="EventDispatcherImpl.h" />
     <ClInclude Include="hdtConvertNi.h" />
     <ClInclude Include="hdtDefaultBBP.h" />
+    <ClInclude Include="hdtForceUpdateList.h" />
+    <ClInclude Include="hdtSerialization.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtAABB.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtBone.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtBoneScaleConstraint.h" />
@@ -3209,14 +4360,21 @@
     <ClInclude Include="hdtSkinnedMesh\hdtConstraintGroup.h" />
     <ClInclude Include="hdtSkinnedMesh\hdtCudaCollision.cuh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>
@@ -3437,6 +4595,8 @@
     <ClCompile Include="EventDispatcherImpl.cpp" />
     <ClCompile Include="hdtConvertNi.cpp" />
     <ClCompile Include="hdtDefaultBBP.cpp" />
+    <ClCompile Include="hdtForceUpdateList.cpp" />
+    <ClCompile Include="hdtSerialization.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtBoneScaleConstraint.cpp" />
     <ClCompile Include="hdtSkinnedMesh\hdtCollider.cpp" />
@@ -3490,6 +4650,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="DaymarOn.ruleset" />
     <None Include="export.def" />
     <None Include="hdtSkinnedMesh\clkernel\updateTriShape.cl" />
     <None Include="hdtSkinnedMesh\clkernel\updateTShape.cl" />
@@ -3500,14 +4661,21 @@
   <ItemGroup>
     <CudaCompile Include="hdtSkinnedMesh\hdtCudaCollision.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_NoAVX_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_NoAVX_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX2_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX2_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='SE_NOCUDA_AVX512_DEBUG|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='VR_NOCUDA_AVX512_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX_DEBUG|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AE_NOCUDA_AVX2|x64'">true</ExcludedFromBuild>

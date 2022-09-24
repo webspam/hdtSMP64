@@ -1,4 +1,4 @@
-# hdtSMP with CUDA for Skyrim VR
+# hdtSMP with CUDA for Skyrim SE/AE/VR
 
 Fork of [https://github.com/Karonar1/hdtSMP64] by Karonar1, of fork of [version](https://github.com/aers/hdtSMP64) by aers, from
 [original code](https://github.com/HydrogensaysHDT/hdt-skyrimse-mods) by hydrogensaysHDT

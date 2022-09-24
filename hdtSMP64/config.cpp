@@ -29,6 +29,8 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->min_fps = (btClamped(reader.readInt(), 1, 300));
 					SkyrimPhysicsWorld::get()->m_timeTick = 1.0f / SkyrimPhysicsWorld::get()->min_fps;
 				}
+				else if (reader.GetLocalName() == "maxSubSteps")
+					SkyrimPhysicsWorld::get()->m_maxSubSteps = btClamped(reader.readInt(), 1, 60);
 				else
 				{
 					_WARNING("Unknown config : %s", reader.GetLocalName());
@@ -81,12 +83,6 @@ namespace hdt
 					SkyrimPhysicsWorld::get()->m_unclampedResetAngle = reader.readFloat();
 				else if (reader.GetLocalName() == "percentageOfFrameTime")
 					SkyrimPhysicsWorld::get()->m_percentageOfFrameTime = std::clamp(reader.readInt() * 10, 1, 1000);
-				else if (reader.GetLocalName() == "maximumDistance")
-				{
-					auto f = reader.readFloat();
-					ActorManager::instance()->m_maxDistance = f;
-					ActorManager::instance()->m_maxDistance2 = f * f;
-				}
 #ifdef CUDA
 				else if (reader.GetLocalName() == "enableCuda")
 					CudaInterface::enableCuda = reader.readBool();
@@ -96,16 +92,14 @@ namespace hdt
 					if (device >= 0 && device < CudaInterface::instance()->deviceCount())
 						CudaInterface::currentDevice = device;
 				}
-#endif
-				else if (reader.GetLocalName() == "maximumAngle")
+#else
+				else if (reader.GetLocalName() == "enableCuda")
 				{
-					auto f = reader.readFloat();
-					if (f != 45.0f) // When it's equal, the exact result of cosMaxAngle2 would be 0.5. Let's use the exact value.
-					{
-						ActorManager::instance()->m_maxAngle = f;
-						ActorManager::instance()->m_cosMaxAngle2 = cosf(f / MATH_PI * 180.0f) * cosf(f / MATH_PI * 180.0f);
-					}
+					if (reader.readBool())
+						_MESSAGE("CUDA isn't built into this version.");
 				}
+				else if (reader.GetLocalName() == "cudaDevice") {}
+#endif
 				else if (reader.GetLocalName() == "maximumActiveSkeletons")
 				{
 					ActorManager::instance()->m_maxActiveSkeletons = reader.readInt();
@@ -116,6 +110,8 @@ namespace hdt
 				}
 				else if (reader.GetLocalName() == "sampleSize")
 					ActorManager::instance()->m_sampleSize = std::max(reader.readInt(), 1);
+				else if (reader.GetLocalName() == "disable1stPersonViewPhysics")
+					ActorManager::instance()->m_disable1stPersonViewPhysics = reader.readBool();
 				else
 				{
 					_WARNING("Unknown config : %s", reader.GetLocalName());

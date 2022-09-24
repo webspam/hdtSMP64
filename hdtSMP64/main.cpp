@@ -27,6 +27,7 @@ namespace hdt
 {
 	IDebugLog gLog;
 	EventDebugLogger g_eventDebugLogger;
+	PluginHandle g_PluginHandle;
 
 	class FreezeEventHandler : public BSTEventSink<MenuOpenCloseEvent>
 	{
@@ -42,18 +43,14 @@ namespace hdt
 			if (evn && evn->opening && (!strcmp(evn->menuName.data, "Loading Menu") || !strcmp(
 				evn->menuName.data, "RaceSex Menu")))
 			{
-#ifdef _DEBUG
 				_DMESSAGE("loading menu/racesexmenu detected, scheduling physics reset on world un-suspend");
-#endif // _DEBUG
 				SkyrimPhysicsWorld::get()->suspend(true);
 			}
 
 			if (evn && !evn->opening && !strcmp(evn->menuName.data, "RaceSex Menu"))
 			{
-#ifdef _DEBUG
 				_DMESSAGE("racemenu closed, reloading meshes");
-#endif // _DEBUG
-				ActorManager::instance()->reloadMeshes();
+				ActorManager::instance()->onEvent(*evn);
 			}
 
 			return kEvent_Continue;
@@ -262,7 +259,8 @@ namespace hdt
 	{
 		static std::map<ActorManager::SkeletonState, char*> stateStrings =
 		{ { ActorManager::SkeletonState::e_InactiveNotInScene, "Not in scene"},
-			{ActorManager::SkeletonState::e_InactiveTooFar, "Too far from player"},
+			{ActorManager::SkeletonState::e_InactiveUnseenByPlayer, "Unseen by player"},
+			{ActorManager::SkeletonState::e_InactiveTooFar, "Deactivated for performance"},
 			{ActorManager::SkeletonState::e_ActiveIsPlayer, "Is player character"},
 			{ActorManager::SkeletonState::e_ActiveNearPlayer, "Is near player"} };
 
@@ -359,7 +357,8 @@ namespace hdt
 			Console_Print("running full smp reset");
 			hdt::loadConfig();
 			SkyrimPhysicsWorld::get()->resetTransformsToOriginal();
-			ActorManager::instance()->reloadMeshes();
+			const MenuOpenCloseEvent e { false };
+			ActorManager::instance()->onEvent(e);
 			SkyrimPhysicsWorld::get()->resetSystems();
 			return true;
 		}
@@ -472,7 +471,6 @@ namespace hdt
 			}
 		}
 
-		// TODO debug for these messages?
 		Console_Print("[HDT-SMP] tracked skeletons: %d", skeletons.size());
 		Console_Print("[HDT-SMP] active skeletons: %d", activeSkeletons);
 		Console_Print("[HDT-SMP] tracked armor addons: %d", armors);
@@ -494,7 +492,8 @@ extern "C" {
 		"hydrogensaysHDT",
 		"",
 		0,	// not version independent
-		{ RUNTIME_VERSION_1_6_353, 0 },
+		SKSEPluginVersionData::kVersionIndependent_StructsPost629,
+		{ RUNTIME_VERSION_1_6_640, 0 },
 		0,	// works with any version of the script extender. you probably do not need to put anything here
 	};
 #else
@@ -540,6 +539,8 @@ extern "C" {
 			return false;
 		}
 
+		hdt::g_PluginHandle = skse->GetPluginHandle();
+
 		return true;
 	}
 #endif
@@ -583,7 +584,7 @@ extern "C" {
 			if (cameraDispatcher)
 				cameraDispatcher->AddEventSink(hdt::SkyrimPhysicsWorld::get());
 
-			messageInterface->RegisterListener(skse->GetPluginHandle(), "SKSE", [](SKSEMessagingInterface::Message* msg)
+			messageInterface->RegisterListener(hdt::g_PluginHandle, "SKSE", [](SKSEMessagingInterface::Message* msg)
 				{
 					if (msg && msg->type == SKSEMessagingInterface::kMessage_InputLoaded)
 					{
@@ -592,6 +593,8 @@ extern "C" {
 							mm->MenuOpenCloseEventDispatcher()->AddEventSink(&hdt::g_freezeEventHandler);
 						hdt::checkOldPlugins();
 						hdt::loadConfig();
+
+// I think we only have _DEBUG now...
 #ifdef DEBUG
 						hdt::g_armorAttachEventDispatcher.addListener(&hdt::g_eventDebugLogger);
 						GetEventDispatcherList()->unk1B8.AddEventSink(&hdt::g_eventDebugLogger);
@@ -599,16 +602,31 @@ extern "C" {
 #endif
 					}
 
-					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame) {
-						auto OM = hdt::Override::OverrideManager::GetSingleton();
-						std::string save_name = reinterpret_cast<char*>(msg->data);
-						OM->saveOverrideData(save_name);
+					// If we receive a SaveGame message, we serialize our data and save it in our dedicated save files.
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_SaveGame)
+					{
+						auto data = hdt::Override::OverrideManager::GetSingleton()->Serialize();
+						if (!data.str().empty()) {
+							std::string save_name = reinterpret_cast<char*>(msg->data);
+							std::ofstream ofs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::out);
+							if(ofs && ofs.is_open())
+								ofs << data.str();
+						}
 					}
 
-					if (msg && msg->type == SKSEMessagingInterface::kMessage_PreLoadGame) {
-						auto OM = hdt::Override::OverrideManager::GetSingleton();
+					// If we receive a PreLoadGame message, we take our data in our dedicated save files and deserialize it.
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_PreLoadGame)
+					{
 						std::string save_name = reinterpret_cast<char*>(msg->data);
-						OM->loadOverrideData(save_name);
+						save_name = save_name.substr(0, save_name.find_last_of("."));
+
+						std::ifstream ifs(OVERRIDE_SAVE_PATH + save_name + ".dhdt", std::ios::in);
+						if (ifs && ifs.is_open())
+						{
+							std::stringstream data;
+							data << ifs.rdbuf();
+							hdt::Override::OverrideManager::GetSingleton()->Deserialize(data);
+						}
 					}
 				});
 		}

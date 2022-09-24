@@ -31,7 +31,63 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), on_item(ptr: %016X).", reinterpret_cast<UInt64>(on_actor), reinterpret_cast<UInt64>(on_item));
 		return false;
 	}
+	
+	return impl::ReloadPhysicsFileImpl(on_actor->formID, on_item->formID, physics_file_path.c_str(), persist, verbose_log);
+}
 
+bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSFixedString old_physics_file_path, BSFixedString new_physics_file_path, bool persist, bool verbose_log)
+{
+	if (!on_actor) {
+		if (verbose_log)Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X).", reinterpret_cast<UInt64>(on_actor));
+		return false;
+	}
+
+	return impl::SwapPhysicsFileImpl(on_actor->formID, old_physics_file_path.c_str(), new_physics_file_path.c_str(), persist, verbose_log);
+}
+
+BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Actor* on_actor, TESObjectARMA* on_item, bool verbose_log)
+{
+	if (!(on_actor && on_item)) {
+		if (verbose_log)
+			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), on_item(ptr: %016X).", reinterpret_cast<UInt64>(on_actor), reinterpret_cast<UInt64>(on_item));
+		return false;
+	}
+
+	return impl::QueryCurrentPhysicsFileImpl(on_actor->formID, on_item->formID, verbose_log).c_str();
+}
+//
+//UInt32 hdt::papyrus::FindOrCreateAnonymousSystem(StaticFunctionTag* base, TESObjectARMA* system_model, bool verbose_log)
+//{
+//	
+//	return UInt32();
+//}
+//
+//UInt32 hdt::papyrus::AttachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
+//{
+//	if (!on_actor || !system_handle) {
+//		if (verbose_log)
+//			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
+//		return false;
+//	}
+//
+//
+//
+//	return UInt32();
+//}
+//
+//UInt32 hdt::papyrus::DetachAnonymousSystem(StaticFunctionTag* base, Actor* on_actor, UInt32 system_handle, bool verbose_log)
+//{
+//	if (!on_actor || !system_handle) {
+//		if (verbose_log)
+//			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), system_handle(%08X).", reinterpret_cast<UInt64>(on_actor), system_handle);
+//		return false;
+//	}
+//
+//	return UInt32();
+//}
+
+bool hdt::papyrus::impl::ReloadPhysicsFileImpl(UInt32 on_actor_formID, UInt32 on_item_formID, std::string physics_file_path, bool persist, bool verbose_log)
+{
 	const auto& AM = hdt::ActorManager::instance();
 
 	auto& skeletons = AM->getSkeletons();
@@ -46,7 +102,7 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 
 		auto owner = skeleton.skeleton->m_owner;
 
-		if (owner && owner->formID == on_actor->formID){
+		if (owner && owner->formID == on_actor_formID) {
 			character_found = true;
 
 			auto& armors = skeleton.getArmors();
@@ -58,7 +114,7 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 				std::string armorName(armor.armorWorn->m_name);
 
 				char buffer[16];
-				sprintf_s(buffer, "%08X", on_item->formID);
+				sprintf_s(buffer, "%08X", on_item_formID);
 
 				if (armorName.find(buffer) != std::string::npos) {
 					armor_addon_found = true;
@@ -74,7 +130,7 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 					}
 					catch (std::exception& e) {
 
-						Console_Print("[DynamicHDT] ERROR! -- Replacing physics file for ArmorAddon (%08X) on Character (%08X) failed.", on_item->formID, on_actor->formID);
+						Console_Print("[DynamicHDT] ERROR! -- Replacing physics file for ArmorAddon (%08X) on Character (%08X) failed.", on_item_formID, on_actor_formID);
 
 						Console_Print("[DynamicHDT] Error(): %s\nWhat():\n\t%s", typeid(e).name(), e.what());
 
@@ -87,16 +143,25 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 
 					SkyrimPhysicsWorld::get()->suspendSimulationUntilFinished([&]() {
 
-						system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						if (armor.hasPhysics())
+							system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						else
+							system = SkyrimSystemCreator().createSystem(skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
 
-						system->block_resetting = true;
+						if (!system) {
+							if (armor.hasPhysics())
+								armor.clearPhysics();
+						}
+						else {
+							system->block_resetting = true;
 
-						util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
+							if (armor.hasPhysics())
+								util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
 
-						armor.setPhysics(system, true);
+							armor.setPhysics(system, true);
 
-						system->block_resetting = false;
-
+							system->block_resetting = false;
+						}
 						}
 					);
 
@@ -111,15 +176,15 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 	//Push into global override data
 	if (persist) {
 		auto OM = Override::OverrideManager::GetSingleton();
-		OM->registerOverride(on_actor->formID, old_physics_file_path, std::string(physics_file_path));
+		OM->registerOverride(on_actor_formID, old_physics_file_path, std::string(physics_file_path));
 	}
 
 	if (verbose_log)
 		Console_Print(
 			"[DynamicHDT] -- Character (%08X) %s, ArmorAddon (%08X) %s.",
-			on_actor->formID,
+			on_actor_formID,
 			character_found ? "found" : "not found",
-			on_item->formID,
+			on_item_formID,
 			armor_addon_found ? "found" : "not found"
 		);
 
@@ -127,17 +192,11 @@ bool hdt::papyrus::ReloadPhysicsFile(StaticFunctionTag* base, Actor* on_actor, T
 		Console_Print(
 			"[DynamicHDT] -- ReloadPhysicsFile() succeeded."
 		);
-
 	return succeeded;
 }
 
-bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSFixedString old_physics_file_path, BSFixedString new_physics_file_path, bool persist, bool verbose_log)
+bool hdt::papyrus::impl::SwapPhysicsFileImpl(UInt32 on_actor_formID, std::string old_physics_file_path, std::string new_physics_file_path, bool persist, bool verbose_log)
 {
-	if (!on_actor) {
-		if (verbose_log)Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X).", reinterpret_cast<UInt64>(on_actor));
-		return false;
-	}
-
 	const auto& AM = hdt::ActorManager::instance();
 
 	auto& skeletons = AM->getSkeletons();
@@ -150,7 +209,7 @@ bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSF
 
 		auto owner = skeleton.skeleton->m_owner;
 
-		if (owner && owner->formID == on_actor->formID) {
+		if (owner && owner->formID == on_actor_formID) {
 			character_found = true;
 
 			auto& armors = skeleton.getArmors();
@@ -176,7 +235,7 @@ bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSF
 
 						UInt32 form_ID = util::splitArmorAddonFormID(armorName);
 
-						Console_Print("[DynamicHDT] ERROR! -- Replacing physics file for ArmorAddon (%08X) on Character (%08X) failed.", form_ID, on_actor->formID);
+						Console_Print("[DynamicHDT] ERROR! -- Replacing physics file for ArmorAddon (%08X) on Character (%08X) failed.", form_ID, on_actor_formID);
 
 						Console_Print("[DynamicHDT] Error(): %s\nWhat():\n\t%s", typeid(e).name(), e.what());
 
@@ -189,16 +248,25 @@ bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSF
 
 					SkyrimPhysicsWorld::get()->suspendSimulationUntilFinished([&]() {
 
-						system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						if (armor.hasPhysics())
+							system = SkyrimSystemCreator().updateSystem(armor.m_physics, skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
+						else
+							system = SkyrimSystemCreator().createSystem(skeleton.npc, armor.armorWorn, armor.physicsFile, std::move(renameMap));
 
-						system->block_resetting = true;
+						if (!system) {
+							if (armor.hasPhysics())
+								armor.clearPhysics();
+						}
+						else {
+							system->block_resetting = true;
 
-						util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
+							if (armor.hasPhysics())
+								util::transferCurrentPosesBetweenSystems(armor.m_physics, system);
 
-						armor.setPhysics(system, true);
+							armor.setPhysics(system, true);
 
-						system->block_resetting = false;
-
+							system->block_resetting = false;
+						}
 						}
 					);
 
@@ -213,13 +281,13 @@ bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSF
 
 	if (persist) {
 		auto OM = Override::OverrideManager::GetSingleton();
-		OM->registerOverride(on_actor->formID, old_physics_file_path.c_str(), new_physics_file_path.c_str());
+		OM->registerOverride(on_actor_formID, old_physics_file_path.c_str(), new_physics_file_path.c_str());
 	}
 
 	if (verbose_log)
 		Console_Print(
 			"[DynamicHDT] -- Character (%08X) %s, Physics file path %s.",
-			on_actor->formID,
+			on_actor_formID,
 			character_found ? "found" : "not found",
 			armor_addon_found ? "found" : "not found"
 		);
@@ -228,18 +296,11 @@ bool hdt::papyrus::SwapPhysicsFile(StaticFunctionTag* base, Actor* on_actor, BSF
 		Console_Print(
 			"[DynamicHDT] -- SwapPhysicsFile() succeeded."
 		);
-
 	return succeeded;
 }
 
-BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Actor* on_actor, TESObjectARMA* on_item, bool verbose_log)
+std::string hdt::papyrus::impl::QueryCurrentPhysicsFileImpl(UInt32 on_actor_formID, UInt32 on_item_formID, bool verbose_log)
 {
-	if (!(on_actor && on_item)) {
-		if (verbose_log)
-			Console_Print("[DynamicHDT] -- Couldn't parse parameters: on_actor(ptr: %016X), on_item(ptr: %016X).", reinterpret_cast<UInt64>(on_actor), reinterpret_cast<UInt64>(on_item));
-		return false;
-	}
-
 	const auto& AM = hdt::ActorManager::instance();
 
 	auto& skeletons = AM->getSkeletons();
@@ -254,7 +315,7 @@ BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Act
 
 		auto owner = skeleton.skeleton->m_owner;
 
-		if (owner && owner->formID == on_actor->formID) {
+		if (owner && owner->formID == on_actor_formID) {
 			character_found = true;
 
 			auto& armors = skeleton.getArmors();
@@ -266,7 +327,7 @@ BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Act
 				std::string armorName(armor.armorWorn->m_name);
 
 				char buffer[16];
-				sprintf_s(buffer, "%08X", on_item->formID);
+				sprintf_s(buffer, "%08X", on_item_formID);
 
 				if (armorName.find(buffer) != std::string::npos) {
 					armor_addon_found = true;
@@ -280,9 +341,9 @@ BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Act
 	if (verbose_log)
 		Console_Print(
 			"[DynamicHDT] -- Character (%08X) %s, ArmorAddon (%08X) %s.",
-			on_actor->formID,
+			on_actor_formID,
 			character_found ? "found" : "not found",
-			on_item->formID,
+			on_item_formID,
 			armor_addon_found ? "found" : "not found"
 		);
 
@@ -293,5 +354,3 @@ BSFixedString hdt::papyrus::QueryCurrentPhysicsFile(StaticFunctionTag* base, Act
 
 	return physics_file_path.c_str();
 }
-
-

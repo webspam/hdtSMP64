@@ -99,19 +99,17 @@ namespace hdt
 		}
 	}
 
-	void ActorManager::reloadMeshes()
+	// @brief This happens on a closing RaceSex menu, and on 'smp reset'.
+	void ActorManager::onEvent(const MenuOpenCloseEvent&)
 	{
-		const FrameEvent e
-		{
-			false
-		};
+		// The ActorManager members are protected from parallel events by ActorManager.m_lock.
+		std::lock_guard<decltype(m_lock)> l(m_lock);
+		if (m_shutdown) return;
 
-		onEvent(e);
+		setSkeletonsActive();
 
 		for (auto& i : m_skeletons)
-		{
 			i.reloadMeshes();
-		}
 	}
 
 	void ActorManager::onEvent(const FrameEvent& e)
@@ -125,6 +123,12 @@ namespace hdt
 		std::unique_lock<decltype(m_lock)> lock(m_lock, std::try_to_lock);
 		if (!lock.owns_lock()) return;
 
+		setSkeletonsActive();
+	}
+
+	// @brief This function is called by different events, with different locking needs, and is therefore extracted from the events.
+	void ActorManager::setSkeletonsActive()
+	{
 		if (m_shutdown) return;
 
 		// We get the player character and its cell.
@@ -133,37 +137,54 @@ namespace hdt
 		auto playerCell = (playerCharacter != m_skeletons.end() && playerCharacter->skeleton->m_parent) ? playerCharacter->skeleton->m_parent->m_parent : nullptr;
 
 		// We get the camera, its position and orientation.
+		// TODO Can this be reconciled between VR and AE/SE?
 #ifndef SKYRIMVR
-		auto camera = PlayerCamera::GetSingleton()->cameraNode->m_worldTransform;
-		auto cameraPosition = camera.pos;
-		auto cameraOrientation = camera.rot * NiPoint3(0., 1., 0.); // The camera matrix is relative to the world.
+		const auto cameraNode = PlayerCamera::GetSingleton()->cameraNode;
 #else
-		//camera info taken from Shizof's cpbc under MIT. https://www.nexusmods.com/skyrimspecialedition/mods/21224?tab=files
-		//commented out translations were to put the camera behind the player to widen fov and aren't needed
+		// Camera info taken from Shizof's cpbc under MIT. https://www.nexusmods.com/skyrimspecialedition/mods/21224?tab=files
 		if (!(*g_thePlayer)->loadedState)
 			return;
-		auto cameraPosition = (*g_thePlayer)->loadedState->node->m_worldTransform.pos;// +((*g_thePlayer)->loadedState->node->m_worldTransform.rot * NiPoint3(0, -200.0f, 0));
-		auto cameraOrientation = /*cameraPosition +*/ ((*g_thePlayer)->loadedState->node->m_worldTransform.rot * NiPoint3(0, 1.0f, 0));
+		const auto cameraNode = (*g_thePlayer)->loadedState->node;
 #endif
-		activeSkeletons = 0;
+		const auto cameraTransform = cameraNode->m_worldTransform;
+		const auto cameraPosition = cameraTransform.pos;
+		const auto cameraOrientation = cameraTransform.rot * NiPoint3(0., 1., 0.); // The camera matrix is relative to the world.
+
 		std::for_each(m_skeletons.begin(), m_skeletons.end(), [&](Skeleton& skel)
 			{
-				skel.calculateDistanceFromSource(cameraPosition);
-				float heading = 0.f;
-				float attitude = 0.f;
-				skel.GetAttitudeAndHeadingFromSource(cameraPosition, attitude, heading);
-				/*if (skel.isInPlayerView(cameraPosition, cameraOrientation, m_cosMaxAngle2))
-					_MESSAGE("actor %s heading %f", skel.name(), heading);*/
-				skel.percentFromCameraCenter = std::max(abs(heading) > m_maxAngle ? 1 : 1 - ((m_maxAngle - abs(heading)) / m_maxAngle), .001f); // avoid 0 percent which would collapse all actors in center of view regardles of distance
+				skel.calculateDistanceAndOrientationDifferenceFromSource(cameraPosition, cameraOrientation);
+			});
 
-			});
-		// sort by the distance weighted by the percentage from the center.
-		std::sort(
-			m_skeletons.begin(),
-			m_skeletons.end(),
+		// We sort the skeletons depending on the angle and distance.
+		std::sort(m_skeletons.begin(), m_skeletons.end(),
 			[](auto&& a_lhs, auto&& a_rhs) {
-				return (a_lhs.distanceFromPlayerSqd * a_lhs.percentFromCameraCenter) < (a_rhs.distanceFromPlayerSqd * a_rhs.percentFromCameraCenter);
+				auto cr = a_rhs.m_cosAngleFromCameraDirectionTimesSkeletonDistance;
+				auto cl = a_lhs.m_cosAngleFromCameraDirectionTimesSkeletonDistance;
+				auto dr = a_rhs.m_distanceFromCamera2;
+				auto dl = a_lhs.m_distanceFromCamera2;
+				return
+				// If one of the skeletons is at distance zero (1st person player) from the camera
+				(btFuzzyZero(dl) || btFuzzyZero(dr))
+				// then it is first.
+				? (dl < dr)
+
+				// If one of the skeletons is exacly on the side of the camera (cos = 0)
+				: (btFuzzyZero(cl) || btFuzzyZero(cr))
+				// then it is last.
+				? abs(cl) > abs(cr)
+
+				// If both are on the same side of the camera (product of cos > 0):
+				// we want first the smallest angle (so the highest cosinus), and the smallest distance,
+				// so we want the smallest distance / cosinus.
+				// cl = cosinus * distance, dl = distance² => distance / cosinus = dl/cl
+				// So we want dl/cl < dr/cr.
+				// Moreover, this test manages the case where one of the skeletons is behind the camera and the other in front of the camera too;
+				// the one behind the camera is last (the one with cos(angle) = cr < 0).
+				: (dl * cr < dr * cl);
 			});
+
+		// We set which skeletons are active and we count them.
+		activeSkeletons = 0;
 		for (auto& i : m_skeletons)
 		{
 			if (i.skeleton->m_uiRefCount == 1)
@@ -171,11 +192,8 @@ namespace hdt
 				i.clear();
 				i.skeleton = nullptr;
 			}
-			else if (i.hasPhysics) {
-				// TODO Ease of configuration: maxAngle could be autocalculated depending on the FOV.
-				if (i.updateAttachedState(cameraPosition, m_maxDistance2, playerCell, cameraOrientation, m_cosMaxAngle2, activeSkeletons >= maxActiveSkeletons))
-					activeSkeletons++;
-			}
+			else if (i.hasPhysics && i.updateAttachedState(playerCell, activeSkeletons >= maxActiveSkeletons))
+				activeSkeletons++;
 		}
 
 		m_skeletons.erase(
@@ -187,25 +205,28 @@ namespace hdt
 			i.cleanArmor();
 			i.cleanHead();
 		}
-		if (!SkyrimPhysicsWorld::get()->isSuspended() && // do not do metrics while paused
-			frameCount++ % SkyrimPhysicsWorld::get()->min_fps == 0) // check every 1 second (i.e., 60 fps should wait for 60th frames)
+
+		const auto world = SkyrimPhysicsWorld::get();
+		if (!world->isSuspended() && // do not do metrics while paused
+			frameCount++ % world->min_fps == 0) // check every min-fps frames (i.e., a stable 60 fps should wait for 1 second)
 		{
-			auto processing_time = SkyrimPhysicsWorld::get()->m_averageProcessingTime;
-			auto target_time = SkyrimPhysicsWorld::get()->m_timeTick * SkyrimPhysicsWorld::get()->m_percentageOfFrameTime; // 30% of processing time is in hdt per profiling; setting higher provides more time for hdt processing and can activate more skeletons
+			const auto processing_time = world->m_averageProcessingTime;
+			// 30% of processing time is in hdt per profiling;
+			// Setting it higher provides more time for hdt processing and can activate more skeletons.
+			const auto target_time = world->m_timeTick * world->m_percentageOfFrameTime;
 			auto averageTimePerSkeleton = 0.f;
 			if (activeSkeletons > 0) {
 				averageTimePerSkeleton = processing_time / activeSkeletons;
-				//calculate rolling average
-				rollingAverage -= (rollingAverage / m_sampleSize);
-				rollingAverage += (averageTimePerSkeleton / m_sampleSize);
+				// calculate rolling average
+				rollingAverage += (averageTimePerSkeleton - rollingAverage) / m_sampleSize;
 			}
-			_MESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
+
+			_DMESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
+
 			if (m_autoAdjustMaxSkeletons) {
-				if (processing_time > target_time)
-					maxActiveSkeletons = activeSkeletons - 2;
-				else
-					maxActiveSkeletons = static_cast<int>(target_time / rollingAverage);
-				maxActiveSkeletons = std::clamp(maxActiveSkeletons, 1, m_maxActiveSkeletons); // clamp the value to the m_maxActiveSkeletons value
+				maxActiveSkeletons = processing_time > target_time ? activeSkeletons - 2 : static_cast<int>(target_time / rollingAverage);
+				// clamp the value to the m_maxActiveSkeletons value
+				maxActiveSkeletons = std::clamp(maxActiveSkeletons, 1, m_maxActiveSkeletons);
 				frameCount = 1;
 			}
 		}
@@ -628,58 +649,29 @@ namespace hdt
 		head.headNode = nullptr;
 		armors.clear();
 	}
-	/* calculate distance from skeleton to player; this is distance squared for performance reasons*/
-	void ActorManager::Skeleton::calculateDistanceFromSource(NiPoint3 source)
+
+	void ActorManager::Skeleton::calculateDistanceAndOrientationDifferenceFromSource(NiPoint3 sourcePosition, NiPoint3 sourceOrientation)
 	{
 		if (isPlayerCharacter())
 		{
-			distanceFromPlayerSqd = 0.f;
+			m_distanceFromCamera2 = 0.f;
+			return;
 		}
-		else
-		{
-			auto pos = position();
-			if (pos.has_value())
-			{
-				// We calculate the vector between camera and the skeleton feets.
-				auto camera2SkeletonVector = pos.value() - source;
-				// This is the distance (squared) between the camera and the skeleton feets.
-				distanceFromPlayerSqd = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
-			}
-			else
-			{
-				distanceFromPlayerSqd = std::numeric_limits<float>::max();
-			}
-		}
-	}
-	//GetAttitudeAndHeadingFromSource modified from Shizof's cpbc under MIT. https://www.nexusmods.com/skyrimspecialedition/mods/21224?tab=files
-	void ActorManager::Skeleton::GetAttitudeAndHeadingFromSource(NiPoint3 source, float& attitude, float& heading)
-	{
+
 		auto pos = position();
 		if (!pos.has_value())
+		{
+			m_distanceFromCamera2 = std::numeric_limits<float>::max();
 			return;
-
-		auto target = pos.value();
-		//target.z = source.z; //cpbpc merged camera data into the target; not sure if necessary
-		NiPoint3 vector = target - source;
-
-		const float sqr = vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
-		if (sqr != 0)
-		{
-			vector = vector * (1.0f / sqrtf(sqr));
-
-			attitude = (float)atan2(vector.z, sqrtf(vector.y * vector.y + vector.x * vector.x)) * -1;
-
-			heading = (float)atan2(vector.x, vector.y);
-			heading = heading * 57.295776f + 140;
-			if (heading > 180) heading -= 360;
 		}
-		else
-		{
-			attitude = 0;
-			heading = 0;
-		}
+
+		// We calculate the vector between camera and the skeleton feets.
+		const auto camera2SkeletonVector = pos.value() - sourcePosition;
+		// This is the distance (squared) between the camera and the skeleton feets.
+		m_distanceFromCamera2 = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
+		// This is |camera2SkeletonVector|*cos(angle between both vectors)
+		m_cosAngleFromCameraDirectionTimesSkeletonDistance = camera2SkeletonVector.x * sourceOrientation.x + camera2SkeletonVector.y * sourceOrientation.y + camera2SkeletonVector.z * sourceOrientation.z;
 	}
-
 
 	// Is called to print messages only
 	bool ActorManager::Skeleton::checkPhysics()
@@ -709,52 +701,24 @@ namespace hdt
 
 	bool ActorManager::Skeleton::isPlayerCharacter() const
 	{
-		// TODO magic number to remove
-		return skeletonOwner == *g_thePlayer.GetPtr() || (skeleton->m_owner && skeleton->m_owner->formID == 0x14);
+		constexpr UInt32 playerFormID = 0x14;
+		return skeletonOwner == *g_thePlayer.GetPtr() || (skeleton->m_owner && skeleton->m_owner->formID == playerFormID);
 	}
 
-	bool ActorManager::Skeleton::isInPlayerView(NiPoint3 cameraPosition, NiPoint3 cameraOrientation, float maxAngleCosinus2)
+	bool ActorManager::Skeleton::isInPlayerView()
 	{
-		if (isPlayerCharacter())
-		{
-			return true;
-		}
-		else
-		{
-			auto pos = position();
-			if (pos.has_value())
-			{
-				// We calculate the vector between camera and the skeleton feets.
-				auto camera2SkeletonVector = pos.value() - cameraPosition;
-				// This is the distance (squared) between the camera and the skeleton feets.
-				auto c2SVMagnitude2 = camera2SkeletonVector.x * camera2SkeletonVector.x + camera2SkeletonVector.y * camera2SkeletonVector.y + camera2SkeletonVector.z * camera2SkeletonVector.z;
-				/* We calculate the angle between the camera direction and the camera2SkeletonVector.
-					* Demonstration leading to our check, based on scalar product of vectors (sometimes called inner product):
-					* 1/ dot(v1->, v2->) = |v1->| * |v2->| * cos(a) with a the angle between v1-> and v2->
-					* 2/ dot(v1->, v2->) = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
-					* => cos(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z) / (|v1->| * |v2->|)
-					* => cos^2(a) = (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2) * (v2.x^2 + v2.y^2 + v2.z^2))
-					* In our case, we have:
-					* 1/ a < maxAngle (our test)
-					* 2/ |cameraOrientation| = 1 (because I built it by applying the rotational matrix to (0,1,0) which length is 1.)
-					* => cos(a) > cos(maxAngle)
-					* => cos^2(a) > cos^2(maxAngle) && cos(a) > 0
-					* => (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z)^2 / ((v1.x^2 + v1.y^2 + v1.z^2)) > cos^2(maxAngle)
-					*    with v1-> = camera2SkeletonVector and v2-> = cameraOrientation
-					*    && dot(v1->, v2->) > 0
-					* => a^2 / c2SVMagnitude2 > cos^2(maxAngle)
-					*	  && a > 0
-					*    with a = dot(camera2SkeletonVector, cameraOrientation)
-					*           = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
-					* => a > 0 && a^2 > cos^2(maxAngle) * c2SVMagnitude2
-					*    with a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z
-					*/
-				auto a = camera2SkeletonVector.x * cameraOrientation.x + camera2SkeletonVector.y * cameraOrientation.y + camera2SkeletonVector.z * cameraOrientation.z;
-				UINT8 unk1 = 0;
-				return (HasLOS((*g_thePlayer), skeleton->m_owner, &unk1) && a > 0 && a * a > maxAngleCosinus2 * c2SVMagnitude2);
-			}
-		}
-		return false;
+		// This function is called only when the skeleton isn't the player character.
+		// This might change in the future; in that case this test will have to be enabled.
+		//if (isPlayerCharacter())
+		//	return true;
+
+		// We don't enable the skeletons behind the camera or on its side.
+		if (m_cosAngleFromCameraDirectionTimesSkeletonDistance <= 0)
+			return false;
+
+		// We enable only the skeletons that the PC sees.
+		UINT8 unk1 = 0;
+		return HasLOS((*g_thePlayer), skeleton->m_owner, &unk1);
 	}
 
 	std::optional<NiPoint3> ActorManager::Skeleton::position() const
@@ -768,7 +732,7 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	bool ActorManager::Skeleton::updateAttachedState(NiPoint3 cameraPosition, float maxDistance2, const NiNode* playerCell, NiPoint3 cameraOrientation, float maxAngleCosinus2, bool deactivate = false)
+	bool ActorManager::Skeleton::updateAttachedState(const NiNode* playerCell, bool deactivate = false)
 	{
 		// 1- Skeletons that aren't active in any scene are always detached, unless they are in the
 		// same cell as the player character (workaround for issue in Ancestor Glade).
@@ -779,28 +743,31 @@ namespace hdt
 		isActive = false;
 		state = SkeletonState::e_InactiveNotInScene;
 
-		if (!deactivate && (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell))
+		if (deactivate)
+			state = SkeletonState::e_InactiveTooFar;
+		else if (isActiveInScene() || skeleton->m_parent && skeleton->m_parent->m_parent == playerCell)
 		{
 			if (isPlayerCharacter())
 			{
-				isActive = true;
-				state = SkeletonState::e_ActiveIsPlayer;
-			}
-			else
-			{
-				state = SkeletonState::e_InactiveTooFar;
-				/* If the distance is greater than the max distance, we let the skeleton inactive.
-				 * We compare their squares rather than the distances themselves to avoid costly sqrt() operations. */
-				if (distanceFromPlayerSqd < maxDistance2 && isInPlayerView(cameraPosition, cameraOrientation, maxAngleCosinus2))
+				// That setting defines whether we don't set the PC skeleton as active
+				// when it is in 1st person view, to avoid calculating physics uselessly.
+				if (!(instance()->m_disable1stPersonViewPhysics // disabling?
+					&& PlayerCamera::GetSingleton()->cameraState == PlayerCamera::GetSingleton()->cameraStates[0])) // 1st person view
 				{
 					isActive = true;
-					state = SkeletonState::e_ActiveNearPlayer;
-					//Tint(skeleton->m_owner, green);
+					state = SkeletonState::e_ActiveIsPlayer;
 				}
 			}
+			else if (isInPlayerView())
+			{
+				isActive = true;
+				state = SkeletonState::e_ActiveNearPlayer;
+			}
+			else
+				state = SkeletonState::e_InactiveUnseenByPlayer;
 		}
 
-		// We update the active state of armors and head parts.
+		// We update the activity state of armors and head parts, and add and remove SkinnedMeshSystems to these parts in consequence.
 		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.updateActive(isActive); });
 		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.updateActive(isActive); });
 		return isActive;
