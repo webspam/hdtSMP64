@@ -1,8 +1,11 @@
+#include <random>
 #include "hdtSkinnedMeshWorld.h"
 #include "hdtSkinnedMeshAlgorithm.h"
 #include "hdtDispatcher.h"
 #include "hdtSimulationIslandManager.h"
 #include "hdtBoneScaleConstraint.h"
+#include "hdtSkyrimSystem.h"
+#include "hdtSkyrimPhysicsWorld.h"
 
 namespace hdt
 {
@@ -97,6 +100,8 @@ namespace hdt
 	int SkinnedMeshWorld::stepSimulation(btScalar remainingTimeStep, int maxSubSteps, btScalar fixedTimeStep)
 	{
 		applyGravity();
+		if (hdt::SkyrimPhysicsWorld::get()->m_enableWind)
+			applyWind();
 
 		while (remainingTimeStep > fixedTimeStep)
 		{
@@ -139,6 +144,25 @@ namespace hdt
 		}
 
 		btDiscreteDynamicsWorld::applyGravity();
+	}
+
+	void SkinnedMeshWorld::applyWind()
+	{
+		for (auto& i : m_systems)
+		{
+			auto system = static_cast<SkyrimSystem*>(i());
+			if (system->m_windFactor == 0.f) // skip any systems that aren't affected by wind
+				continue;
+			for (auto& j : i->m_bones)
+			{
+				auto body = &j->m_rig;
+				if (!body->isStaticOrKinematicObject()
+					&& (rand() % 5)) // apply randomly 80% of the time to desync wind across npcs
+				{
+					body->applyCentralForce(m_windSpeed *j->m_windFactor * system->m_windFactor);
+				}
+			}
+		}
 	}
 
 	void SkinnedMeshWorld::predictUnconstraintMotion(btScalar timeStep)

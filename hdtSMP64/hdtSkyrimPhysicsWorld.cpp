@@ -11,7 +11,6 @@ namespace hdt
 	{
 		gDisableDeactivation = true;
 		setGravity(btVector3(0, 0, -9.8 * scaleSkyrim));
-		m_windSpeed.setValue(0, 0, 5 * scaleSkyrim);
 
 		getSolverInfo().m_friction = 0;
 		m_averageInterval = m_timeTick;
@@ -152,6 +151,18 @@ namespace hdt
 				rig->getWorldTransform().getOrigin() += offset;
 			}
 		}
+	}
+
+	void SkyrimPhysicsWorld::setWind(NiPoint3* a_point, float a_scale, uint32_t a_smoothingSamples)
+	{
+		if (a_smoothingSamples == 0) {
+			_ERROR("setWind a_smoothingSamples must be > 0; values ignored");
+			return;
+		}
+		const auto oldValueWeight = a_smoothingSamples - 1;
+		m_windSpeed.setValue((oldValueWeight * m_windSpeed.getX() + a_point->x * a_scale) / a_smoothingSamples, (oldValueWeight * m_windSpeed.getY() + a_point->y * a_scale) / a_smoothingSamples, (oldValueWeight * m_windSpeed.getZ() + a_point->z * a_scale) / a_smoothingSamples);
+		_DMESSAGE("Wind Speed now (%.2f, %.2f, %.2f), target (%.2f, %.2f, %.2f) using %d samples", m_windSpeed.getX(), m_windSpeed.getY(), m_windSpeed.getZ(), a_point->x * a_scale, a_point->y * a_scale, a_point->z * a_scale, a_smoothingSamples);
+
 	}
 
 	void SkyrimPhysicsWorld::updateActiveState()

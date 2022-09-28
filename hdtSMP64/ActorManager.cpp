@@ -1,5 +1,6 @@
 #include "skse64/GameReferences.h"
 
+#include "WeatherManager.h"
 #include "ActorManager.h"
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
@@ -126,6 +127,12 @@ namespace hdt
 		setSkeletonsActive();
 	}
 
+	//NiAVObject* Actor::CalculateLOS_1405FD2C0(Actor *aActor, NiPoint3 *aTargetPosition, NiPoint3 *aRayHitPosition, float aViewCone)
+	//Used to ray cast from the actor. Will return nonNull if it hits something with position at aTargetPosition.
+	//Pass in 2pi to aViewCone to ignore LOS of actor.
+	typedef NiAVObject* (*_Actor_CalculateLOS)(Actor* aActor, NiPoint3* aTargetPosition, NiPoint3* aRayHitPosition, float aViewCone);
+	RelocAddr<_Actor_CalculateLOS> Actor_CalculateLOS(offset::Actor_CalculateLOS);
+
 	// @brief This function is called by different events, with different locking needs, and is therefore extracted from the events.
 	void ActorManager::setSkeletonsActive()
 	{
@@ -176,7 +183,7 @@ namespace hdt
 				// If both are on the same side of the camera (product of cos > 0):
 				// we want first the smallest angle (so the highest cosinus), and the smallest distance,
 				// so we want the smallest distance / cosinus.
-				// cl = cosinus * distance, dl = distance² => distance / cosinus = dl/cl
+				// cl = cosinus * distance, dl = distanceï¿½ => distance / cosinus = dl/cl
 				// So we want dl/cl < dr/cr.
 				// Moreover, this test manages the case where one of the skeletons is behind the camera and the other in front of the camera too;
 				// the one behind the camera is last (the one with cos(angle) = cr < 0).
@@ -192,8 +199,28 @@ namespace hdt
 				i.clear();
 				i.skeleton = nullptr;
 			}
-			else if (i.hasPhysics && i.updateAttachedState(playerCell, activeSkeletons >= maxActiveSkeletons))
+			else if (i.hasPhysics && i.updateAttachedState(playerCell, activeSkeletons >= maxActiveSkeletons)) {
 				activeSkeletons++;
+				//check wind obstructions
+				const auto world = SkyrimPhysicsWorld::get();
+				const auto wind = getWindDirection();
+				if (world->m_enableWind && wind && !(wind->x == 0.f && wind->y == 0.f && wind->z == 0.f)) {
+					const auto owner = DYNAMIC_CAST(i.skeletonOwner.get(), TESForm, Actor);
+					auto windray = *wind * -1; // reverse wind raycast to find obstruction
+					NiPoint3 hitLocation;
+					//Raycast for object in direction of wind
+					const auto object = Actor_CalculateLOS(owner, &windray, &hitLocation, 6.28);
+					if (object) { //object found
+						auto diff = (owner->pos - hitLocation);
+						diff.z = 0;	//remove z component difference
+						const auto dist = hdt::magnitude(diff);
+						// wind is a linear reduction, with a minimum floor since objects may have a minimum distance
+						const auto windFactor = dist <= world->m_distanceForNoWind ? 0.0 : min(1.0f, abs(dist - world->m_distanceForNoWind) / world->m_distanceForMaxWind);
+						_DMESSAGE("%s (%.2f, %.2f, %.2f) blocked by %s at (%.2f, %.2f, %.2f) with distance %.2f; setting windFactor %.2f", i.name(), owner->pos.x, owner->pos.y, owner->pos.z, object->m_name, hitLocation.x, hitLocation.y, hitLocation.z, dist, windFactor);
+						i.updateWindFactor(windFactor);
+					}
+				}
+			}
 		}
 
 		m_skeletons.erase(
@@ -360,6 +387,12 @@ namespace hdt
 		{
 			m_physics->m_world->removeSkinnedMeshSystem(m_physics);
 		}
+	}
+
+	void ActorManager::PhysicsItem::setWindFactor(float a_windFactor)
+	{
+		if (m_physics)
+			m_physics->m_windFactor = a_windFactor;
 	}
 
 	std::vector<ActorManager::Skeleton>& ActorManager::getSkeletons()
@@ -730,6 +763,14 @@ namespace hdt
 			if (rootNode) return std::optional<NiPoint3>(rootNode->m_worldTransform.pos);
 		}
 		return std::optional<NiPoint3>();
+	}
+
+	// Update windfactor for all armors and headparts attached to skeleton.
+	// a_windFactor is a percentage [0,1] with 0 being no wind efect to 1 being full wind effect.
+	void ActorManager::Skeleton::updateWindFactor(float a_windFactor)
+	{
+		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.setWindFactor(a_windFactor); });
+		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.setWindFactor(a_windFactor); });
 	}
 
 	bool ActorManager::Skeleton::updateAttachedState(const NiNode* playerCell, bool deactivate = false)

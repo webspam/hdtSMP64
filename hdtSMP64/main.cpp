@@ -23,6 +23,8 @@
 #include "hdtSkinnedMesh/hdtFrameTimer.h"
 #endif
 
+#include "WeatherManager.h"
+
 namespace hdt
 {
 	IDebugLog gLog;
@@ -592,7 +594,6 @@ extern "C" {
 						if (mm)
 							mm->MenuOpenCloseEventDispatcher()->AddEventSink(&hdt::g_freezeEventHandler);
 						hdt::checkOldPlugins();
-						hdt::loadConfig();
 
 // I think we only have _DEBUG now...
 #ifdef DEBUG
@@ -662,7 +663,12 @@ extern "C" {
 		}
 
 		hdt::papyrus::RegisterAllFunctions(reinterpret_cast<SKSEPapyrusInterface*>(skse->QueryInterface(kInterface_Papyrus)));
-
+		hdt::loadConfig();
+		if (hdt::SkyrimPhysicsWorld::get()->m_enableWind) {
+			_MESSAGE("Wind enabled");
+			std::thread t(hdt::WeatherCheck);
+			t.detach();
+		}
 		return true;
 	}
 }

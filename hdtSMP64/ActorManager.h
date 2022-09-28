@@ -65,6 +65,10 @@ namespace hdt
 
 			void updateActive(bool active);
 
+			// Update windfactor for all armors attached to skeleton.
+			// a_windFactor is a percentage [0,1] with 0 being no wind efect to 1 being full wind effect.
+			void setWindFactor(float a_windFactor);
+
 			Ref<SkyrimSystem> m_physics;
 		};
 
@@ -123,6 +127,10 @@ namespace hdt
 			bool isInPlayerView();
 			bool hasPhysics = false;
 			std::optional<NiPoint3> position() const;
+
+			// @brief Update windfactor for skeleton
+			// @param a_windFactor is a percentage [0,1] with 0 being no wind efect to 1 being full wind effect.
+			void updateWindFactor(float a_windFactor);
 
 			// @brief Updates the states and activity of skeletons, their heads parts and armors.
 			// @param playerCell The skeletons not in the player cell are automatically inactive.

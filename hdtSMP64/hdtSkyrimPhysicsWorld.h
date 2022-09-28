@@ -61,6 +61,12 @@ namespace hdt
 
 		btContactSolverInfo& getSolverInfo() { return btDiscreteDynamicsWorld::getSolverInfo(); }
 
+		// @brief setWind force value for the world
+		// @param a_direction wind direction
+		// @a_scale Amount to scale the windForce. Defaults to scaleSkyrim
+		// @a_smoothingSamples How many samples to smooth. Defaults to 8. Must be greater than 0. Value of 1 means no smoothing
+		void setWind(NiPoint3* a_direction, float a_scale = scaleSkyrim, uint32_t a_smoothingSamples = 8);
+
 		int min_fps = 60;
 		int m_percentageOfFrameTime = 300; // percentage of time per frame doing hdt. Profiler shows 30% is reasonable. Out of 1000.
 		float m_timeTick = 1 / 60.f;
@@ -71,6 +77,12 @@ namespace hdt
 		float m_averageProcessingTime = 0;
 		bool disabled = false;
 		uint8_t m_resetPc;
+
+		//wind settings
+		bool m_enableWind = true;
+		float m_windStrength = 2.0f; // compare to gravity acceleration of 9.8
+		float m_distanceForNoWind = 50.0f; // how close to wind obstruction to fully block wind
+		float m_distanceForMaxWind = 3000.0f; // how far to wind obstruction to not block wind
 
 	private:
 

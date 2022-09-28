@@ -43,26 +43,32 @@ namespace hdt
 		}
 	}
 
-	//static void wind(XMLReader& reader)
-	//{
-	//	while (reader.Inspect())
-	//	{
-	//		switch (reader.GetInspected())
-	//		{
-	//		case XMLReader::Inspected::StartTag:
-	//			if (reader.GetLocalName() == "windStrength")
-	//				SkyrimPhysicsWorld::get()->getWindCtrl()->m_windStrength = btClamped(reader.readFloat(), 0.f, 10000.f);
-	//			else
-	//			{
-	//				_WARNING("Unknown config : ", reader.GetLocalName());
-	//				reader.skipCurrentElement();
-	//			}
-	//			break;
-	//		case XMLReader::Inspected::EndTag:
-	//			return;
-	//		}
-	//	}
-	//}
+	static void wind(XMLReader& reader)
+	{
+		while (reader.Inspect())
+		{
+			switch (reader.GetInspected())
+			{
+			case XMLReader::Inspected::StartTag:
+				if (reader.GetLocalName() == "windStrength")
+					SkyrimPhysicsWorld::get()->m_windStrength = btClamped(reader.readFloat(), 0.f, 1000.f);
+				else if (reader.GetLocalName() == "enabled")
+					SkyrimPhysicsWorld::get()->m_enableWind = reader.readBool();
+				else if (reader.GetLocalName() == "distanceForNoWind")
+					SkyrimPhysicsWorld::get()->m_distanceForNoWind = btClamped(reader.readFloat(), 0.f, 10000.f);
+				else if (reader.GetLocalName() == "distanceForMaxWind")
+					SkyrimPhysicsWorld::get()->m_distanceForMaxWind = btClamped(reader.readFloat(), 0.f, 10000.f);
+				else
+				{
+					_WARNING("Unknown config : ", reader.GetLocalName());
+					reader.skipCurrentElement();
+				}
+				break;
+			case XMLReader::Inspected::EndTag:
+				return;
+			}
+		}
+	}
 
 	static void smp(XMLReader& reader)
 	{
@@ -133,8 +139,8 @@ namespace hdt
 			case XMLReader::Inspected::StartTag:
 				if (reader.GetLocalName() == "solver")
 					solver(reader);
-				//else if (reader.GetLocalName() == "wind")
-				//	wind(reader);
+				else if (reader.GetLocalName() == "wind")
+					wind(reader);
 				else if (reader.GetLocalName() == "smp")
 					smp(reader);
 				else

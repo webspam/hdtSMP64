@@ -11,6 +11,8 @@
 //GameShutdownFunction               0x01293D20    0x013B9A90    105623    0x013b99f0   0x013ba910   0x013ba9a0   0x013b8230	0x013b8160
 //TESNPC_GetFaceGeomPath             0x00363210    0x0037A240    24726     0x0037a1b0   0x0037a340   0x0037a1b0   0x0037c1e0    0x0037c1e0
 //BSFaceGenModelExtraData_BoneLimit  0x0036B4C8
+//Actor_CalculateLOS				 0x005FD2C0
+//SkyPointer						 0x00F013D8
 
 namespace hdt
 {
@@ -70,6 +72,21 @@ namespace hdt
 		// 8B 70 58 EB 02
 		constexpr std::uintptr_t BSFaceGenModelExtraData_BoneLimit = 0x0036B4C8;
 
+		//Actor_CalculateLOS
+#ifdef ANNIVERSARY_EDITION
+		constexpr std::uintptr_t Actor_CalculateLOS = 0; //TODO: Fix
+#else
+		constexpr std::uintptr_t Actor_CalculateLOS = 0x05fd2c0;
+#endif
+
+
+		//SkyPointer
+#ifdef ANNIVERSARY_EDITION
+		constexpr std::uintptr_t SkyPtr = 0; //TODO: Fix
+#else
+		constexpr std::uintptr_t SkyPtr = 0xF013D8;
+#endif
+
 #else
 		constexpr std::uintptr_t GameStepTimer_SlowTime = 0x030C3A08;
 		constexpr std::uintptr_t ArmorAttachFunction = 0x001DB9E0;
@@ -79,6 +96,8 @@ namespace hdt
 		constexpr std::uintptr_t GameShutdownFunction = 0x012CC630;
 		constexpr std::uintptr_t TESNPC_GetFaceGeomPath = 0x000372b30;
 		constexpr std::uintptr_t BSFaceGenModelExtraData_BoneLimit = 0x00037ae28;
+		constexpr std::uintptr_t Actor_CalculateLOS = 0x0605b10;
+		constexpr std::uintptr_t SkyPtr = 0x2FC62C8;
 #endif
 
 		// .text:00000001403D88D4                 cmp     ebx, 8

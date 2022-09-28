@@ -36,6 +36,7 @@ namespace hdt
 		Ref<NiNode> m_skeleton;
 		Ref<NiNode> m_oldRoot;
 		bool m_initialized = false;
+		float m_windFactor = 1.f; // wind factor for the system (i.e., full actor/skeleton) (calculated based off obstructions)
 
 		// angular velocity damper
 		btQuaternion m_lastRootRotation;
