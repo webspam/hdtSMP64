@@ -202,7 +202,7 @@
       Wind can be detected generally from the sky object or by a weather object.
       Wind can be tested when snow or rain is falling (e.g., SkyrimStormSnow)
     -->
-    <enabled>enabled</enabled>
+    <enabled>true</enabled>
     <!--
       windStrength: (float) Base strength of wind. Compare to gravity which uses
       9.8 m/s^2, default is 2.0.
