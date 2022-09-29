@@ -139,14 +139,14 @@ void hdt::WeatherCheck()
 			precipDirection = NiPoint3{ 0.f, 1.f, 0.f };
 			if (skyPtr->currentWeather)
 			{
-				_MESSAGE("Wind Speed: %.2f, Wind Direction: %.2f, Weather Wind Speed: %.2f WindDir:%.2f WindDirRange:%.2f", skyPtr->windSpeed, skyPtr->windDirection, skyPtr->currentWeather->data.windSpeed, skyPtr->currentWeather->data.windDirection * 180.0f / 256.0f, skyPtr->currentWeather->data.windDirectionRange * 360.0f / 256.0f);
+				_MESSAGE("Wind Speed: %2.2g, Wind Direction: %2.2g, Weather Wind Speed: %2.2g WindDir:%2.2g WindDirRange:%2.2g", skyPtr->windSpeed, skyPtr->windDirection, skyPtr->currentWeather->data.windSpeed, skyPtr->currentWeather->data.windDirection * 180.0f / 256.0f, skyPtr->currentWeather->data.windDirectionRange * 360.0f / 256.0f);
 				// use weather wind info
 				//Wind Speed is the only thing that changes. Wind direction and range are same all the time as set in CK.
 				const float theta = (((skyPtr->currentWeather->data.windDirection) * 180.0f) / 256.0f) - 90.f + randomGenerator(-range, range);
 				precipDirection = rotate(precipDirection, NiPoint3(0, 0, 1.0f), theta / 57.295776f);
 				world->setWind(&precipDirection, world->m_windStrength * scaleSkyrim * skyPtr->windSpeed);
 			}else {
-				_MESSAGE("Wind Speed: %.2f, Wind Direction: %.2f", skyPtr->windSpeed, skyPtr->windDirection);
+				_MESSAGE("Wind Speed: %2.2g, Wind Direction: %2.2g", skyPtr->windSpeed, skyPtr->windDirection);
 				// use sky wind info
 				const float theta = (((skyPtr->windDirection) * 180.0f) / 256.0f) - 90.f + randomGenerator(-range, range);
 				precipDirection = rotate(precipDirection, NiPoint3(0, 0, 1.0f), theta / 57.295776f);
