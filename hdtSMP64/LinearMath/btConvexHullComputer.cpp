@@ -105,7 +105,7 @@ public:
 
 		Point64 cross(const Point32& b) const
 		{
-			return Point64(y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x);
+			return Point64(((int64_t)y) * b.z - ((int64_t)z) * b.y, ((int64_t)z) * b.x - ((int64_t)x) * b.z, ((int64_t)x) * b.y - ((int64_t)y) * b.x);
 		}
 
 		Point64 cross(const Point64& b) const
@@ -115,7 +115,7 @@ public:
 
 		int64_t dot(const Point32& b) const
 		{
-			return x * b.x + y * b.y + z * b.z;
+			return ((int64_t)x) * b.x + ((int64_t)y) * b.y + ((int64_t)z) * b.z;
 		}
 
 		int64_t dot(const Point64& b) const
@@ -1955,7 +1955,7 @@ public:
 
 void btConvexHullInternal::compute(const void* coords, bool doubleCoords, int stride, int count)
 {
-	btVector3 minoo(btScalar(1e30), btScalar(1e30), btScalar(1e30)), maxoo(btScalar(-1e30), btScalar(-1e30), btScalar(-1e30));
+	btVector3 min(btScalar(1e30), btScalar(1e30), btScalar(1e30)), max(btScalar(-1e30), btScalar(-1e30), btScalar(-1e30));
 	const char* ptr = (const char*)coords;
 	if (doubleCoords)
 	{
@@ -1964,8 +1964,8 @@ void btConvexHullInternal::compute(const void* coords, bool doubleCoords, int st
 			const double* v = (const double*)ptr;
 			btVector3 p((btScalar)v[0], (btScalar)v[1], (btScalar)v[2]);
 			ptr += stride;
-			minoo.setMin(p);
-			maxoo.setMax(p);
+			min.setMin(p);
+			max.setMax(p);
 		}
 	}
 	else
@@ -1975,12 +1975,12 @@ void btConvexHullInternal::compute(const void* coords, bool doubleCoords, int st
 			const float* v = (const float*)ptr;
 			btVector3 p(v[0], v[1], v[2]);
 			ptr += stride;
-			minoo.setMin(p);
-			maxoo.setMax(p);
+			min.setMin(p);
+			max.setMax(p);
 		}
 	}
 
-	btVector3 s = maxoo - minoo;
+	btVector3 s = max - min;
 	maxAxis = s.maxAxis();
 	minAxis = s.minAxis();
 	if (minAxis == maxAxis)
@@ -2009,7 +2009,7 @@ void btConvexHullInternal::compute(const void* coords, bool doubleCoords, int st
 		s[2] = btScalar(1) / s[2];
 	}
 
-	center = (minoo + maxoo) * btScalar(0.5);
+	center = (min + max) * btScalar(0.5);
 
 	btAlignedObjectArray<Point32> points;
 	points.resize(count);
@@ -2673,6 +2673,7 @@ btScalar btConvexHullComputer::compute(const void* coords, bool doubleCoords, in
 	}
 
 	vertices.resize(0);
+	original_vertex_index.resize(0);
 	edges.resize(0);
 	faces.resize(0);
 
@@ -2683,6 +2684,7 @@ btScalar btConvexHullComputer::compute(const void* coords, bool doubleCoords, in
 	{
 		btConvexHullInternal::Vertex* v = oldVertices[copied];
 		vertices.push_back(hull.getCoordinates(v));
+		original_vertex_index.push_back(v->point.index);
 		btConvexHullInternal::Edge* firstEdge = v->edges;
 		if (firstEdge)
 		{
