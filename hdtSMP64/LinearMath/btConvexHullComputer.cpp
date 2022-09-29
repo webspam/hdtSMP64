@@ -12,6 +12,9 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+#undef min
+#undef max
+
 #include <string.h>
 
 #include "btConvexHullComputer.h"
