@@ -216,8 +216,13 @@ namespace hdt
 						const auto dist = hdt::magnitude(diff);
 						// wind is a linear reduction, with a minimum floor since objects may have a minimum distance
 						const auto windFactor = dist <= world->m_distanceForNoWind ? 0.0 : min(1.0f, abs(dist - world->m_distanceForNoWind) / world->m_distanceForMaxWind);
-						_DMESSAGE("%s (%.2f, %.2f, %.2f) blocked by %s at (%.2f, %.2f, %.2f) with distance %.2f; setting windFactor %.2f", i.name(), owner->pos.x, owner->pos.y, owner->pos.z, object->m_name, hitLocation.x, hitLocation.y, hitLocation.z, dist, windFactor);
-						i.updateWindFactor(windFactor);
+						if (!btFuzzyZero(windFactor - i.getWindFactor())) {
+							_DMESSAGE("%s blocked by %s %s %s with distance %2.2g; setting windFactor %2.2g",
+								i.name(), object->m_name,
+								object->m_parent ? object->m_parent->m_name : "",
+								object->m_owner ? object->m_owner->GetName() : "", dist, windFactor);
+							i.updateWindFactor(windFactor);
+						}
 					}
 				}
 			}
@@ -765,12 +770,16 @@ namespace hdt
 		return std::optional<NiPoint3>();
 	}
 
-	// Update windfactor for all armors and headparts attached to skeleton.
-	// a_windFactor is a percentage [0,1] with 0 being no wind efect to 1 being full wind effect.
 	void ActorManager::Skeleton::updateWindFactor(float a_windFactor)
 	{
+		this->currentWindFactor = a_windFactor;
 		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.setWindFactor(a_windFactor); });
 		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.setWindFactor(a_windFactor); });
+	}
+
+	float ActorManager::Skeleton::getWindFactor()
+	{
+		return this->currentWindFactor;
 	}
 
 	bool ActorManager::Skeleton::updateAttachedState(const NiNode* playerCell, bool deactivate = false)

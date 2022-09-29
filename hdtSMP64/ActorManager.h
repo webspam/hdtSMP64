@@ -131,6 +131,8 @@ namespace hdt
 			// @brief Update windfactor for skeleton
 			// @param a_windFactor is a percentage [0,1] with 0 being no wind efect to 1 being full wind effect.
 			void updateWindFactor(float a_windFactor);
+			// @brief Get windfactor for skeleton
+			float getWindFactor();
 
 			// @brief Updates the states and activity of skeletons, their heads parts and armors.
 			// @param playerCell The skeletons not in the player cell are automatically inactive.
@@ -162,6 +164,7 @@ namespace hdt
 			bool checkPhysics();
 
 			bool isActive = false;
+			float currentWindFactor = 0.f;
 			std::vector<Armor> armors;
 		};
 
