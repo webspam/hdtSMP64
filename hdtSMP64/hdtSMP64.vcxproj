@@ -4442,6 +4442,7 @@ copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-
     <ClInclude Include="LinearMath\TaskScheduler\btThreadSupportInterface.h" />
     <ClInclude Include="Offsets.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="WeatherManager.h" />
     <ClInclude Include="XmlInspector\CharactersReader.hpp" />
     <ClInclude Include="XmlInspector\CharactersWriter.hpp" />
     <ClInclude Include="XmlInspector\XmlInspector.hpp" />
@@ -4639,6 +4640,7 @@ copy "$(SolutionDir)configs\configs.xml" "$(TargetDir)..\..\..\..\..\Faster HDT-
     <ClCompile Include="LinearMath\TaskScheduler\btThreadSupportPosix.cpp" />
     <ClCompile Include="LinearMath\TaskScheduler\btThreadSupportWin32.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="WeatherManager.cpp" />
     <ClCompile Include="XmlReader.cpp" />
   </ItemGroup>
   <ItemGroup>
