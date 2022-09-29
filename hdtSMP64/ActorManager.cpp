@@ -204,7 +204,7 @@ namespace hdt
 				//check wind obstructions
 				const auto world = SkyrimPhysicsWorld::get();
 				const auto wind = getWindDirection();
-				if (world->m_enableWind && wind && !(wind->x == 0.f && wind->y == 0.f && wind->z == 0.f)) {
+				if (world->m_enableWind && wind && !(btFuzzyZero(hdt::magnitude(*wind)))) {
 					const auto owner = DYNAMIC_CAST(i.skeletonOwner.get(), TESForm, Actor);
 					auto windray = *wind * -1; // reverse wind raycast to find obstruction
 					NiPoint3 hitLocation;
