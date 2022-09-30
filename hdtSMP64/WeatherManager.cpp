@@ -113,7 +113,7 @@ void hdt::WeatherCheck()
 			continue;
 		}
 
-		if (!(cell->unk120)) //Interior cell
+		if (!(cell->worldSpace)) //Interior cell
 		{
 			//LOG("In interior cell. Waiting for 5 seconds");
 			world->setWind(&NiPoint3{ 0,0,0 }, 0, 1); // remove wind immediately
@@ -122,7 +122,7 @@ void hdt::WeatherCheck()
 		}
 		else
 		{
-			if (std::find(notExteriorWorlds.begin(), notExteriorWorlds.end(), cell->unk120->formID) != notExteriorWorlds.end())
+			if (std::find(notExteriorWorlds.begin(), notExteriorWorlds.end(), cell->worldSpace->formID) != notExteriorWorlds.end())
 			{
 				//LOG("In interior cell world. Waiting for 5 seconds");
 				world->setWind(&NiPoint3{ 0,0,0 }, 0, 1); // remove wind immediately
@@ -139,10 +139,22 @@ void hdt::WeatherCheck()
 			precipDirection = NiPoint3{ 0.f, 1.f, 0.f };
 			if (skyPtr->currentWeather)
 			{
-				_MESSAGE("Wind Speed: %2.2g, Wind Direction: %2.2g, Weather Wind Speed: %2.2g WindDir:%2.2g WindDirRange:%2.2g", skyPtr->windSpeed, skyPtr->windDirection, skyPtr->currentWeather->data.windSpeed, skyPtr->currentWeather->data.windDirection * 180.0f / 256.0f, skyPtr->currentWeather->data.windDirectionRange * 360.0f / 256.0f);
+				_MESSAGE("Wind Speed: %2.2g, Wind Direction: %2.2g, Weather Wind Speed: %2.2g WindDir:%2.2g WindDirRange:%2.2g", skyPtr->windSpeed, skyPtr->windDirection,
+#ifndef SKYRIMVR
+					skyPtr->currentWeather->general.windSpeed, skyPtr->currentWeather->general.windDirection * 180.0f / 256.0f, skyPtr->currentWeather->general.windDirRange * 360.0f / 256.0f
+#else
+ 					skyPtr->currentWeather->data.windSpeed, skyPtr->currentWeather->data.windDirection * 180.0f / 256.0f, skyPtr->currentWeather->data.windDirectionRange * 360.0f / 256.0f
+#endif
+				);
 				// use weather wind info
 				//Wind Speed is the only thing that changes. Wind direction and range are same all the time as set in CK.
-				const float theta = (((skyPtr->currentWeather->data.windDirection) * 180.0f) / 256.0f) - 90.f + randomGenerator(-range, range);
+				const float theta = (((
+#ifndef SKYRIMVR
+					skyPtr->currentWeather->general.windDirection
+#else
+					skyPtr->currentWeather->data.windDirection
+#endif
+					) * 180.0f) / 256.0f) - 90.f + randomGenerator(-range, range);
 				precipDirection = rotate(precipDirection, NiPoint3(0, 0, 1.0f), theta / 57.295776f);
 				world->setWind(&precipDirection, world->m_windStrength * scaleSkyrim * skyPtr->windSpeed);
 			}else {

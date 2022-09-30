@@ -84,7 +84,7 @@ namespace hdt
 #ifdef ANNIVERSARY_EDITION
 		constexpr std::uintptr_t SkyPtr = 0; //TODO: Fix
 #else
-		constexpr std::uintptr_t SkyPtr = 0xF013D8;
+		constexpr std::uintptr_t SkyPtr = 0x2f013d8;
 #endif
 
 #else
