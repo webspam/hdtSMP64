@@ -43,7 +43,7 @@ namespace hdt
 			}
 		};
 
-		static void registerAlgorithm(btCollisionDispatcher* dispatcher);
+		static void registerAlgorithm(btCollisionDispatcherMt* dispatcher);
 
 		static const int MaxCollisionCount = 256;
 

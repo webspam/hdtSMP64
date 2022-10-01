@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hdtBulletHelper.h"
+#include "BulletCollision/CollisionDispatch/btCollisionDispatcherMt.h"
 #include <ppl.h>
 #include <ppltasks.h>
 #include <vector>
@@ -9,28 +10,24 @@ namespace hdt
 {
 	class SkinnedMeshBody;
 
-	class CollisionDispatcher : public btCollisionDispatcher
+	class CollisionDispatcher : public btCollisionDispatcherMt
 	{
 	public:
 
-		CollisionDispatcher(btCollisionConfiguration* collisionConfiguration) : btCollisionDispatcher(
+		CollisionDispatcher(btCollisionConfiguration* collisionConfiguration) : btCollisionDispatcherMt(
 			collisionConfiguration)
 		{
 		}
 
 		btPersistentManifold* getNewManifold(const btCollisionObject* b0, const btCollisionObject* b1) override
 		{
-			m_lock.lock();
-			auto ret = btCollisionDispatcher::getNewManifold(b0, b1);
-			m_lock.unlock();
+			auto ret = btCollisionDispatcherMt::getNewManifold(b0, b1);
 			return ret;
 		}
 
 		void releaseManifold(btPersistentManifold* manifold) override
 		{
-			m_lock.lock();
-			btCollisionDispatcher::releaseManifold(manifold);
-			m_lock.unlock();
+			btCollisionDispatcherMt::releaseManifold(manifold);
 		}
 
 		bool needsCollision(const btCollisionObject* body0, const btCollisionObject* body1) override;
