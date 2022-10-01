@@ -1,6 +1,8 @@
 #pragma once
 
 #include <BulletDynamics/ConstraintSolver/btNNCGConstraintSolver.h>
+#include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolverMt.h>
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorldMt.h>
 #include <BulletDynamics/MLCPSolvers/btMLCPSolver.h>
 #include "hdtSkinnedMeshSystem.h"
 
@@ -90,9 +92,9 @@ namespace hdt
 		btSingleConstraintRowSolver m_solverLowerLimit;
 	};
 
-	class GroupConstraintSolver : public btSequentialImpulseConstraintSolver
+	class GroupConstraintSolver : public btSequentialImpulseConstraintSolverMt
 	{
-		typedef btSequentialImpulseConstraintSolver Base;
+		typedef btSequentialImpulseConstraintSolverMt Base;
 	public:
 		GroupConstraintSolver::GroupConstraintSolver();
 

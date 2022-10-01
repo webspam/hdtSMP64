@@ -4,7 +4,7 @@
 
 namespace hdt
 {
-	class SkinnedMeshWorld : protected btDiscreteDynamicsWorld
+	class SkinnedMeshWorld : protected btDiscreteDynamicsWorldMt
 	{
 	public:
 
@@ -50,7 +50,7 @@ namespace hdt
 
 		std::vector<SkinnedMeshBody*> _bodies;
 		std::vector<SkinnedMeshShape*> _shapes;
-
+		btConstraintSolverPoolMt* m_solverPool;
 		GroupConstraintSolver m_constraintSolver;
 	};
 }
