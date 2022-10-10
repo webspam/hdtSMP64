@@ -206,23 +206,28 @@ namespace hdt
 				const auto wind = getWindDirection();
 				if (world->m_enableWind && wind && !(btFuzzyZero(hdt::magnitude(*wind)))) {
 					const auto owner = DYNAMIC_CAST(i.skeletonOwner.get(), TESForm, Actor);
-					auto windray = *wind * -1; // reverse wind raycast to find obstruction
-					NiPoint3 hitLocation;
-					//Raycast for object in direction of wind
-					const auto object = Actor_CalculateLOS(owner, &windray, &hitLocation, 6.28);
-					if (object) { //object found
-						auto diff = (owner->pos - hitLocation);
-						diff.z = 0;	//remove z component difference
-						const auto dist = hdt::magnitude(diff);
-						// wind is a linear reduction, with a minimum floor since objects may have a minimum distance
-						const auto windFactor = dist <= world->m_distanceForNoWind ? 0.0 : min(1.0f, abs(dist - world->m_distanceForNoWind) / world->m_distanceForMaxWind);
-						if (!btFuzzyZero(windFactor - i.getWindFactor())) {
-							_DMESSAGE("%s blocked by %s %s %s with distance %2.2g; setting windFactor %2.2g",
-								i.name(), object->m_name,
-								object->m_parent ? object->m_parent->m_name : "",
-								object->m_owner ? object->m_owner->GetName() : "", dist, windFactor);
-							i.updateWindFactor(windFactor);
+					if (owner) {
+						auto windray = *wind * -1; // reverse wind raycast to find obstruction
+						NiPoint3 hitLocation;
+						//Raycast for object in direction of wind
+						const auto object = Actor_CalculateLOS(owner, &windray, &hitLocation, 6.28);
+						if (object) { //object found
+							auto diff = (owner->pos - hitLocation);
+							diff.z = 0;	//remove z component difference
+							const auto dist = hdt::magnitude(diff);
+							// wind is a linear reduction, with a minimum floor since objects may have a minimum distance
+							const auto windFactor = dist <= world->m_distanceForNoWind ? 0.0 : min(1.0f, abs(dist - world->m_distanceForNoWind) / world->m_distanceForMaxWind);
+							if (!btFuzzyZero(windFactor - i.getWindFactor())) {
+								_DMESSAGE("%s blocked by %s %s %s with distance %2.2g; setting windFactor %2.2g",
+									i.name(), object->m_name,
+									object->m_parent ? object->m_parent->m_name : "",
+									object->m_owner ? object->m_owner->GetName() : "", dist, windFactor);
+								i.updateWindFactor(windFactor);
+							}
 						}
+					}
+					else {
+						_DMESSAGE("%s is active skeleton but failed to cast to Actor, no wind obstruction check possible", i.name());
 					}
 				}
 			}
