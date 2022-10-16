@@ -567,6 +567,8 @@ extern "C" {
 			_FATALERROR("Couldn't create codegen buffer. This is fatal. Skipping remainder of init process.");
 			return false;
 		}
+
+		hdt::g_PluginHandle = skse->GetPluginHandle();
 #endif // ANNIVERSARY_EDITION
 
 		hdt::g_frameEventDispatcher.addListener(hdt::ActorManager::instance());
