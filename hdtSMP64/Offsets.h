@@ -37,7 +37,7 @@ namespace hdt
 		struct offsetData
 		{
 			int id;
-			uintptr_t V [8];
+			uintptr_t V[8];
 		};
 
 		struct
@@ -50,7 +50,10 @@ namespace hdt
 			offsetData GameShutdownFunction;
 			offsetData TESNPC_GetFaceGeomPath;
 			offsetData BSFaceGenModelExtraData_BoneLimit;
+			offsetData Actor_CalculateLOS;
+			offsetData SkyPointer;
 		}
+
 		constexpr functionsOffsets =
 		{
 			{ 410199, { 0x030C3A08, 0x02F6B948, 0x030064C8, 0x030064c8, 0x03007708, 0x03007708, 0x03006808, 0x03006808 }},
@@ -59,18 +62,22 @@ namespace hdt
 			{ 26987,  { 0x003e81b0, 0x003D8840, 0x003F0A50, 0x003f09c0, 0x003f0b50, 0x003f09c0, 0x003f2b20, 0x003f2b20 }},
 			{ 36564,  { 0x005BAB10, 0x005B2FF0, 0x005D9F50, 0x005D9CC0, 0x005dae80, 0x005dace0, 0x005ec310, 0x005ec240 }},
 			{ 105623, { 0x012CC630, 0x01293D20, 0x013B9A90, 0x013b99f0, 0x013ba910, 0x013ba9a0, 0x013b8230, 0x013b8160 }},
-			{ 24726,  { 0x000372b30,0x00363210, 0x0037A240, 0x0037a1b0, 0x0037a340, 0x0037a1b0, 0x0037c1e0, 0x0037c1e0 }},
-			{ 0,      { 0x00037ae28,0x0036B4C8, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 }}
+			{ 24726,  { 0x00372b30, 0x00363210, 0x0037A240, 0x0037a1b0, 0x0037a340, 0x0037a1b0, 0x0037c1e0, 0x0037c1e0 }},
+			{ 0,      { 0x0037ae28, 0x0036B4C8, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 }},
+			{ 37770,  { 0x00605b10, 0x005fd2c0, 0x006241F0, 0x00000000, 0x00000000, 0x140624f90,0x00000000, 0x006364f0 }},
+			{ 401651, { 0x02FC62C8, 0x02f013d8, 0x02F9BAF8, 0x00000000, 0x00000000, 0x00181810, 0x00000000, 0x00183530 }},
 		};
 
-		constexpr auto GameStepTimer_SlowTime				= functionsOffsets.GameStepTimer_SlowTime				.V[CURRENTVERSION];
-		constexpr auto ArmorAttachFunction					= functionsOffsets.ArmorAttachFunction					.V[CURRENTVERSION];
-		constexpr auto BSFaceGenNiNode_SkinAllGeometry		= functionsOffsets.BSFaceGenNiNode_SkinAllGeometry		.V[CURRENTVERSION];
-		constexpr auto BSFaceGenNiNode_SkinSingleGeometry	= functionsOffsets.BSFaceGenNiNode_SkinSingleGeometry	.V[CURRENTVERSION];
-		constexpr auto GameLoopFunction						= functionsOffsets.GameLoopFunction						.V[CURRENTVERSION];
-		constexpr auto GameShutdownFunction					= functionsOffsets.GameShutdownFunction					.V[CURRENTVERSION];
-		constexpr auto TESNPC_GetFaceGeomPath				= functionsOffsets.TESNPC_GetFaceGeomPath				.V[CURRENTVERSION];
-		constexpr auto BSFaceGenModelExtraData_BoneLimit	= functionsOffsets.BSFaceGenModelExtraData_BoneLimit	.V[CURRENTVERSION];
+		constexpr auto GameStepTimer_SlowTime             = functionsOffsets.GameStepTimer_SlowTime            .V[CURRENTVERSION];
+		constexpr auto ArmorAttachFunction                = functionsOffsets.ArmorAttachFunction               .V[CURRENTVERSION];
+		constexpr auto BSFaceGenNiNode_SkinAllGeometry    = functionsOffsets.BSFaceGenNiNode_SkinAllGeometry   .V[CURRENTVERSION];
+		constexpr auto BSFaceGenNiNode_SkinSingleGeometry = functionsOffsets.BSFaceGenNiNode_SkinSingleGeometry.V[CURRENTVERSION];
+		constexpr auto GameLoopFunction                   = functionsOffsets.GameLoopFunction                  .V[CURRENTVERSION];
+		constexpr auto GameShutdownFunction               = functionsOffsets.GameShutdownFunction              .V[CURRENTVERSION];
+		constexpr auto TESNPC_GetFaceGeomPath             = functionsOffsets.TESNPC_GetFaceGeomPath            .V[CURRENTVERSION];
+		constexpr auto BSFaceGenModelExtraData_BoneLimit  = functionsOffsets.BSFaceGenModelExtraData_BoneLimit .V[CURRENTVERSION];
+		constexpr auto Actor_CalculateLOS                 = functionsOffsets.Actor_CalculateLOS                .V[CURRENTVERSION];
+		constexpr auto SkyPointer                         = functionsOffsets.SkyPointer                        .V[CURRENTVERSION];
 
 		// .text:00000001403D88D4                 cmp     ebx, 8
 		// patch 8 -> 7
