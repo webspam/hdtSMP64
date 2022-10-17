@@ -76,7 +76,7 @@ void hdt::WeatherCheck()
 	TESObjectCELL* cell = nullptr;
 
 	Actor* player = nullptr;
-	g_SkyPtr = RelocPtr<Sky*>(offset::SkyPtr);
+	g_SkyPtr = RelocPtr<Sky*>(offset::SkyPointer);
 
 	const auto world = SkyrimPhysicsWorld::get();
 	while (true)
