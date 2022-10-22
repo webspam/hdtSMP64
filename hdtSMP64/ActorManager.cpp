@@ -219,10 +219,8 @@ namespace hdt
 							// windfactor = 0 when dist <= m_distanceForNoWind, = 1 when dist >= m_distanceForMaxWind, and is linear with dist between these 2 values.
 							const auto windFactor = std::clamp((dist - world->m_distanceForNoWind) / (world->m_distanceForMaxWind - world->m_distanceForNoWind), 0.f, 1.f);
 							if (!btFuzzyZero(windFactor - i.getWindFactor())) {
-								_DMESSAGE("%s blocked by %s %s %s with distance %2.2g; setting windFactor %2.2g",
-									i.name(), object->m_name,
-									object->m_parent ? object->m_parent->m_name : "",
-									object->m_owner ? object->m_owner->GetName() : "", dist, windFactor);
+								_DMESSAGE("%s blocked by %s with distance %2.2g; setting windFactor %2.2g",
+									i.name(), object->m_name, dist, windFactor);
 								i.updateWindFactor(windFactor);
 							}
 						}
