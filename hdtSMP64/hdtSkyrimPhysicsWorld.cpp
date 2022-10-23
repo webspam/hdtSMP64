@@ -1,8 +1,6 @@
 #include "hdtSkyrimPhysicsWorld.h"
 #include <ppl.h>
 #include "Offsets.h"
-#include "PluginInterfaceImpl.h"
-
 #include "skse64/GameMenus.h"
 
 namespace hdt
@@ -93,17 +91,11 @@ namespace hdt
 				const auto remainingTimeStep = std::min(m_accumulatedInterval, tick * m_maxSubSteps);
 
 				readTransform(remainingTimeStep);
-
-				g_pluginInterface.onPreStep({ this, remainingTimeStep});
-
 				updateActiveState();
 				auto offset = applyTranslationOffset();
 				stepSimulation(remainingTimeStep, 0/*=maxSubSteps, ignored*/, tick);
 				restoreTranslationOffset(offset);
 				m_accumulatedInterval = 0;
-
-				g_pluginInterface.onPostStep({ this, remainingTimeStep });
-
 				writeTransform();
 			}
 		}
