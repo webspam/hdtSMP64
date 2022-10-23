@@ -337,6 +337,6 @@ namespace hdt
 
 	btPersistentManifold** CollisionDispatcher::getInternalManifoldPointer()
 	{
-		return btCollisionDispatcher::getInternalManifoldPointer();
+		return btCollisionDispatcherMt::getInternalManifoldPointer();
 	}
 }

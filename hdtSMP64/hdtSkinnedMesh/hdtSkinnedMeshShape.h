@@ -48,7 +48,7 @@ namespace hdt
 #endif // CUDA
 		vectorA16<Collider> m_colliders;
 		ColliderTree m_tree;
-		float m_windEffect = 0.f;
+		float m_windEffect = 0.f; //effect from xml m_windEffect
 
 #ifdef ENABLE_CL
 		cl::Buffer		m_aabbCL;

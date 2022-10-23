@@ -788,7 +788,7 @@ namespace hdt
 		merge.release();
 	}
 
-	void SkinnedMeshAlgorithm::registerAlgorithm(btCollisionDispatcher* dispatcher)
+	void SkinnedMeshAlgorithm::registerAlgorithm(btCollisionDispatcherMt* dispatcher)
 	{
 		static CreateFunc s_gimpact_cf;
 		dispatcher->registerCollisionCreateFunc(CUSTOM_CONCAVE_SHAPE_TYPE, CUSTOM_CONCAVE_SHAPE_TYPE, &s_gimpact_cf);

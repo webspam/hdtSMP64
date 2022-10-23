@@ -1,5 +1,6 @@
 #include "skse64/GameReferences.h"
 
+#include "WeatherManager.h"
 #include "ActorManager.h"
 #include "hdtSkyrimPhysicsWorld.h"
 #include "hdtDefaultBBP.h"
@@ -126,6 +127,12 @@ namespace hdt
 		setSkeletonsActive();
 	}
 
+	//NiAVObject* Actor::CalculateLOS_1405FD2C0(Actor *aActor, NiPoint3 *aTargetPosition, NiPoint3 *aRayHitPosition, float aViewCone)
+	//Used to ray cast from the actor. Will return nonNull if it hits something with position at aTargetPosition.
+	//Pass in 2pi to aViewCone to ignore LOS of actor.
+	typedef NiAVObject* (*_Actor_CalculateLOS)(Actor* aActor, NiPoint3* aTargetPosition, NiPoint3* aRayHitPosition, float aViewCone);
+	RelocAddr<_Actor_CalculateLOS> Actor_CalculateLOS(offset::Actor_CalculateLOS);
+
 	// @brief This function is called by different events, with different locking needs, and is therefore extracted from the events.
 	void ActorManager::setSkeletonsActive()
 	{
@@ -176,7 +183,7 @@ namespace hdt
 				// If both are on the same side of the camera (product of cos > 0):
 				// we want first the smallest angle (so the highest cosinus), and the smallest distance,
 				// so we want the smallest distance / cosinus.
-				// cl = cosinus * distance, dl = distance² => distance / cosinus = dl/cl
+				// cl = cosinus * distance, dl = distanceï¿½ => distance / cosinus = dl/cl
 				// So we want dl/cl < dr/cr.
 				// Moreover, this test manages the case where one of the skeletons is behind the camera and the other in front of the camera too;
 				// the one behind the camera is last (the one with cos(angle) = cr < 0).
@@ -192,8 +199,37 @@ namespace hdt
 				i.clear();
 				i.skeleton = nullptr;
 			}
-			else if (i.hasPhysics && i.updateAttachedState(playerCell, activeSkeletons >= maxActiveSkeletons))
+			else if (i.hasPhysics && i.updateAttachedState(playerCell, activeSkeletons >= maxActiveSkeletons)) {
 				activeSkeletons++;
+				//check wind obstructions
+				const auto world = SkyrimPhysicsWorld::get();
+				const auto wind = getWindDirection();
+				if (world->m_enableWind && wind && !(btFuzzyZero(hdt::magnitude(*wind)))) {
+					const auto owner = DYNAMIC_CAST(i.skeletonOwner.get(), TESForm, Actor);
+					if (owner) {
+						auto windray = *wind * -1; // reverse wind raycast to find obstruction
+						NiPoint3 hitLocation;
+						//Raycast for object in direction of wind
+						const auto object = Actor_CalculateLOS(owner, &windray, &hitLocation, 6.28);
+						if (object) { //object found
+							auto diff = (owner->pos - hitLocation);
+							diff.z = 0;	//remove z component difference
+							const auto dist = hdt::magnitude(diff);
+							// wind is a linear reduction, with a minimum floor since objects may have a minimum distance
+							// windfactor = 0 when dist <= m_distanceForNoWind, = 1 when dist >= m_distanceForMaxWind, and is linear with dist between these 2 values.
+							const auto windFactor = std::clamp((dist - world->m_distanceForNoWind) / (world->m_distanceForMaxWind - world->m_distanceForNoWind), 0.f, 1.f);
+							if (!btFuzzyZero(windFactor - i.getWindFactor())) {
+								_DMESSAGE("%s blocked by %s with distance %2.2g; setting windFactor %2.2g",
+									i.name(), object->m_name, dist, windFactor);
+								i.updateWindFactor(windFactor);
+							}
+						}
+					}
+					else {
+						_DMESSAGE("%s is active skeleton but failed to cast to Actor, no wind obstruction check possible", i.name());
+					}
+				}
+			}
 		}
 
 		m_skeletons.erase(
@@ -220,9 +256,7 @@ namespace hdt
 				// calculate rolling average
 				rollingAverage += (averageTimePerSkeleton - rollingAverage) / m_sampleSize;
 			}
-
-			_DMESSAGE("msecs/activeSkeleton %f rollingAverage %f activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %f/%f", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
-
+			_DMESSAGE("msecs/activeSkeleton %2.2g rollingAverage %2.2g activeSkeletons/maxActive/total %d/%d/%d processTime/targetTime %2.2g/%2.2g", averageTimePerSkeleton, rollingAverage, activeSkeletons, maxActiveSkeletons, m_skeletons.size(), processing_time, target_time);
 			if (m_autoAdjustMaxSkeletons) {
 				maxActiveSkeletons = processing_time > target_time ? activeSkeletons - 2 : static_cast<int>(target_time / rollingAverage);
 				// clamp the value to the m_maxActiveSkeletons value
@@ -360,6 +394,12 @@ namespace hdt
 		{
 			m_physics->m_world->removeSkinnedMeshSystem(m_physics);
 		}
+	}
+
+	void ActorManager::PhysicsItem::setWindFactor(float a_windFactor)
+	{
+		if (m_physics)
+			m_physics->m_windFactor = a_windFactor;
 	}
 
 	std::vector<ActorManager::Skeleton>& ActorManager::getSkeletons()
@@ -730,6 +770,18 @@ namespace hdt
 			if (rootNode) return std::optional<NiPoint3>(rootNode->m_worldTransform.pos);
 		}
 		return std::optional<NiPoint3>();
+	}
+
+	void ActorManager::Skeleton::updateWindFactor(float a_windFactor)
+	{
+		this->currentWindFactor = a_windFactor;
+		std::for_each(armors.begin(), armors.end(), [=](Armor& armor) { armor.setWindFactor(a_windFactor); });
+		std::for_each(head.headParts.begin(), head.headParts.end(), [=](Head::HeadPart& headPart) { headPart.setWindFactor(a_windFactor); });
+	}
+
+	float ActorManager::Skeleton::getWindFactor()
+	{
+		return this->currentWindFactor;
 	}
 
 	bool ActorManager::Skeleton::updateAttachedState(const NiNode* playerCell, bool deactivate = false)

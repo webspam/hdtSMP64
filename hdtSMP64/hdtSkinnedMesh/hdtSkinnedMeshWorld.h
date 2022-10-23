@@ -4,7 +4,7 @@
 
 namespace hdt
 {
-	class SkinnedMeshWorld : protected btDiscreteDynamicsWorld
+	class SkinnedMeshWorld : protected btDiscreteDynamicsWorldMt
 	{
 	public:
 
@@ -35,6 +35,7 @@ namespace hdt
 		void writeTransform() { for (int i = 0; i < m_systems.size(); ++i) m_systems[i]->writeTransform(); }
 
 		void applyGravity() override;
+		void applyWind();
 
 		void predictUnconstraintMotion(btScalar timeStep) override;
 		void integrateTransforms(btScalar timeStep) override;
@@ -43,13 +44,13 @@ namespace hdt
 
 		std::vector<Ref<SkinnedMeshSystem>> m_systems;
 
-		btVector3 m_windSpeed;
+		btVector3 m_windSpeed; // world windspeed
 
 	private:
 
 		std::vector<SkinnedMeshBody*> _bodies;
 		std::vector<SkinnedMeshShape*> _shapes;
-
+		btConstraintSolverPoolMt* m_solverPool;
 		GroupConstraintSolver m_constraintSolver;
 	};
 }

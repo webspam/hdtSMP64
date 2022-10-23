@@ -856,6 +856,9 @@
     <ClInclude Include="hdtSerialization.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WeatherManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PluginAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1438,6 +1441,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hdtSerialization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WeatherManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PluginInterfaceImpl.cpp">
