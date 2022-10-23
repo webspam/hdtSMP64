@@ -17,22 +17,21 @@
 * The PluginInterface pointer shall remain valid until shutdown.
 */
 
-template<typename T> class btAlignedObjectArray;
-class btCollisionObject;
+class btDynamicsWorld;
 
 namespace hdt
 {
 	//Sent right before the physics simulation begins updating
 	struct PreStepEvent
 	{
-		const btAlignedObjectArray<btCollisionObject*>& objects;
+		const btDynamicsWorld* world{ nullptr };
 		float timeStep{ 0.0f };
 	};
 
 	//Sent right after the physics simulation has finished updating
 	struct PostStepEvent
 	{
-		const btAlignedObjectArray<btCollisionObject*>& objects;
+		const btDynamicsWorld* world{ nullptr };
 		float timeStep{ 0.0f };
 	};
 
@@ -62,7 +61,7 @@ namespace hdt
 
 	public:
 		//Consider the interface to be unstable for now
-		constexpr static Version INTERFACE_VERSION{ 0, 2, 0 };
+		constexpr static Version INTERFACE_VERSION{ 0, 1, 0 };
 		
 		//Is this defined somewhere already? Should it be?
 		constexpr static Version BULLET_VERSION{ 3, 24, 0 };
