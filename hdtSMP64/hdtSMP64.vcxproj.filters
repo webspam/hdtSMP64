@@ -859,6 +859,12 @@
     <ClInclude Include="WeatherManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PluginAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginInterfaceImpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hdtSkinnedMesh\hdtAabb.cpp">
@@ -1438,6 +1444,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WeatherManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginInterfaceImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

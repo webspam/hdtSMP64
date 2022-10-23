@@ -12,6 +12,7 @@
 #include "Hooks.h"
 #include "Offsets.h"
 #include "HookEvents.h"
+#include "PluginInterfaceImpl.h"
 
 #include <numeric>
 
@@ -568,6 +569,8 @@ extern "C" {
 			_FATALERROR("Couldn't create codegen buffer. This is fatal. Skipping remainder of init process.");
 			return false;
 		}
+
+		hdt::g_PluginHandle = skse->GetPluginHandle();
 #endif // ANNIVERSARY_EDITION
 
 		hdt::g_frameEventDispatcher.addListener(hdt::ActorManager::instance());
@@ -579,6 +582,8 @@ extern "C" {
 		hdt::g_skinAllHeadGeometryEventDispatcher.addListener(hdt::ActorManager::instance());
 
 		hdt::hookAll();
+
+		hdt::g_pluginInterface.init(skse);
 
 		const auto messageInterface = reinterpret_cast<SKSEMessagingInterface*>(skse->QueryInterface(kInterface_Messaging));
 		if (messageInterface)
@@ -631,6 +636,12 @@ extern "C" {
 							data << ifs.rdbuf();
 							hdt::Override::OverrideManager::GetSingleton()->Deserialize(data);
 						}
+					}
+
+					//Send our public interface to registered plugins
+					if (msg && msg->type == SKSEMessagingInterface::kMessage_PostPostLoad)
+					{
+						hdt::g_pluginInterface.onPostPostLoad();
 					}
 				});
 		}
