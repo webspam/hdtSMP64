@@ -22,17 +22,14 @@ class btCollisionObject;
 
 namespace hdt
 {
-	//Sent right before the physics simulation begins updating.
-	//Only forces and torques may be applied during this event.
-	//The collision objects must in every other regard be treated as read-only.
+	//Sent right before the physics simulation begins updating
 	struct PreStepEvent
 	{
 		const btAlignedObjectArray<btCollisionObject*>& objects;
 		float timeStep{ 0.0f };
 	};
 
-	//Sent right after the physics simulation has finished updating.
-	//The collision objects must in every regard be treated as read-only.
+	//Sent right after the physics simulation has finished updating
 	struct PostStepEvent
 	{
 		const btAlignedObjectArray<btCollisionObject*>& objects;
@@ -64,7 +61,10 @@ namespace hdt
 		};
 
 	public:
+		//Consider the interface to be unstable for now
 		constexpr static Version INTERFACE_VERSION{ 0, 2, 0 };
+		
+		//Is this defined somewhere already? Should it be?
 		constexpr static Version BULLET_VERSION{ 3, 24, 0 };
 
 	public:
