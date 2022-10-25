@@ -101,7 +101,7 @@ void hdt::WeatherCheck()
 #ifdef SKYRIMVR
 		TESWorldSpace* worldSpace = cell->unk120;
 #else
-		TESWorldSpace* worldSpace = cell->worldspace;
+		TESWorldSpace* worldSpace = cell->worldSpace;
 #endif
 		if (!worldSpace) // Interior cell
 		{
