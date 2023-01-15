@@ -34,6 +34,11 @@
     <clampRotations>true</clampRotations>
 
     <!--
+      clampLimit: (float) lower this to reduce the speed of clamped rotations.
+    -->
+    <clampLimit>10.0</clampLimit>
+
+    <!--
       unclampedResets: (boolean) when unclamped, if you do a large turn (full
       180° for example), we will attempt to apply physics for that enormous
       turn. Setting this to true will instead trigger a physics reset on the
