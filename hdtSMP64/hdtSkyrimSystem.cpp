@@ -92,7 +92,7 @@ namespace hdt
 
 				if (SkyrimPhysicsWorld::get()->m_clampRotations)
 				{
-					float limit = SkyrimPhysicsWorld::get()->m_clampLimit * timeStep;
+					float limit = SkyrimPhysicsWorld::get()->m_rotationSpeedLimit * timeStep;
 
 					if (rotAngle < -limit || rotAngle > limit)
 					{

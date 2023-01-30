@@ -34,9 +34,11 @@
     <clampRotations>true</clampRotations>
 
     <!--
-      clampLimit: (float) lower this to reduce the speed of clamped rotations.
+      rotationSpeedLimit: (float) rotation speed limit of the PC in radians per
+      second. Must be positive.
+      If no value is set, default is 10.0.
     -->
-    <clampLimit>10.0</clampLimit>
+    <rotationSpeedLimit>10.0</rotationSpeedLimit>
 
     <!--
       unclampedResets: (boolean) when unclamped, if you do a large turn (full
